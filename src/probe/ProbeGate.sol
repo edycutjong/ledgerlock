@@ -12,7 +12,10 @@ contract ProbeGate is Gate {
 
     error ProbeFail(uint64 lastEpoch);
 
-    constructor(address callbackProxy_, address rsc_, address guardian_) payable Gate(callbackProxy_, rsc_, guardian_) {}
+    constructor(address callbackProxy_, address rsc_, address guardian_)
+        payable
+        Gate(callbackProxy_, rsc_, guardian_)
+    {}
 
     function setFailNext(bool v) external onlyGuardian {
         failNext = v;

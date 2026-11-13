@@ -4,74 +4,175 @@ pragma solidity ^0.8.29;
 import {AbstractReactive} from "reactive-lib-omni/base/AbstractReactive.sol";
 import {ISystemContract} from "reactive-lib-omni/interfaces/ISystemContract.sol";
 import {CronTopics} from "reactive-kit/CronTopics.sol";
+import {CallbackFailureWatch} from "reactive-kit/CallbackFailureWatch.sol";
 
-/// @title LedgerlockReactive (spike v0, one route, NONCE mode)
-/// @notice Pause-first bridge guard on Reactive Lasna. It reads both sides of a lock-and-mint route itself:
-///         `Locked` on the source chain, `Minted` on the destination chain. A mint whose lock it has not seen pauses
-///         BOTH gates from the same `react()` (two callbacks to two chains); the matching lock arriving later
-///         resumes them. A lock or a matched mint costs no callback.
-/// @dev Spike scope (gate G1 + first live triples): one route, auto-resume on the matching lock, owner `resolve`.
-///      The incident latch, window W, recipient-bound keys, `(r, dir, key)` namespace, retries and the release
-///      direction come with the core flow. Probe hooks: `probeHop` (self-callback to Lasna) and a one-shot runtime
-///      Cron subscribe/unsubscribe from `react()` (`armCronProbe`).
+/// @title LedgerlockReactive
+/// @notice Pause-first bridge guard on Reactive Lasna. For each guarded route it reads both sides of the bridge itself
+///         (lock/release on the source chain, mint/burn on the destination chain) and keeps a dual ledger. A mint (or a
+///         release) it cannot match pauses BOTH gates from the same `react()`: two callbacks to two chains. If the matching
+///         lock (or burn) arrives within the route's window W, the gates reopen on their own. A forged, replayed or late
+///         transfer latches an incident instead, and only the owner's `resolve()` reopens the route.
+/// @dev Timer-free decision: ordering is by arrival on Lasna (`block.timestamp` of this chain only); no origin-chain
+///      timestamp is ever compared. A runtime Cron10 subscription exists only while a gate ack is outstanding (the ack
+///      watchdog), and is dropped when the last ack lands.
+///      Modes: NONCE (the bridge puts a transfer key in a topic) and SUPPLY (totals only, e.g. a Hyperlane warp route:
+///      any violation pauses and latches, since totals cannot name the bad transfer).
 contract LedgerlockReactive is AbstractReactive {
-    uint256 internal constant LOCKED_T0 = uint256(keccak256("Locked(uint64,address,uint256)"));
-    uint256 internal constant MINTED_T0 = uint256(keccak256("Minted(uint64,address,uint256)"));
-    uint256 internal constant PAUSED_T0 = uint256(keccak256("Paused(uint256,uint64,bytes32,uint256)"));
-    uint256 internal constant RESUMED_T0 = uint256(keccak256("Resumed(uint256,uint64,bytes32,uint256)"));
-    uint64 internal constant CALLBACK_GAS = 1_000_000;
-    uint64 internal constant HOP_GAS = 300_000;
-    uint256 public constant ROUTE_ID = 1;
+    // ------------------------------------------------------------------ types
+
+    enum Mode {
+        NONCE,
+        SUPPLY
+    }
 
     enum Side {
         LOCK,
         MINT,
+        BURN,
+        RELEASE,
         ACK_PAUSED,
-        ACK_RESUMED
+        ACK_RESUMED,
+        HELD,
+        FAIL,
+        SEIZED,
+        DRILL
     }
 
+    enum Cause {
+        NONE,
+        REPEAT, // forged key (beyond highest lock + K), replayed / consumed key, same-key copycat, lock already seen with other fields
+        LATE_LOCK, // the matching lock arrived after W
+        OVERDUE, // the oldest pending entry is older than W (checked lazily on the next route event)
+        FLOOD, // more than MAX_PENDING unmatched entries at once
+        FAILSAFE, // a PAUSE callback was not confirmed after one retry
+        SUPPLY, // SUPPLY-mode invariant violated
+        DRILL // labelled operator drill
+    }
+
+    enum Kind {
+        NONE,
+        PAUSE,
+        RESUME
+    }
+
+    /// @notice Adapter config for one guarded route. `src` = the lock/release chain, `dst` = the mint/burn chain.
+    struct Route {
+        Mode mode;
+        uint256 srcChain;
+        uint256 dstChain;
+        address lockSrc; // emits Locked + Released (route A: LockBox; route B: Hyperlane collateral router)
+        address mintDst; // emits Minted + Burned (+ Seized on the fixture) (route B: Hyperlane synthetic router)
+        uint8 keyTopic; // 1..3 (NONCE) or 0 (SUPPLY)
+        uint8 amountWord; // index of the 32-byte data word holding the amount
+        uint8 recipientTopic; // 1..3, or 0 = recipient not checked
+        address gateSrc;
+        address gateDst;
+        uint32 windowSec; // W
+        address drillBeacon; // 0 = none; its `Drill(routeId)` log pauses + latches DRILL
+        uint32 keySlack; // K: a key above highest lock + K is implausible
+    }
+
+    struct State {
+        bool paused;
+        bool incident;
+        Cause cause;
+        uint64 epoch;
+        uint32 pendingCount;
+        uint32 qHead;
+        uint32 copycatsSameKey;
+        uint256 unbacked; // forward: minted without a matching lock (seizable)
+        uint256 unbackedRel; // reverse: released without a matching burn (collateral that left)
+        // SUPPLY totals
+        uint256 lockedTotal;
+        uint256 mintedTotal;
+        uint256 burnedTotal;
+        uint256 releasedTotal;
+    }
+
+    /// @dev One `(route, dir, key)` slot. dir 0 = FWD (Locked → Minted), 1 = REV (Burned → Released).
+    struct Slot {
+        uint256 srcAmt;
+        address srcTo;
+        bool srcSeen;
+        bool consumed;
+        uint64 pendSince;
+        uint256 pendAmt;
+        address pendTo;
+    }
+
+    /// @dev Per (route, gate) ack bookkeeping. c 0 = gate on dst (mint side), 1 = gate on src (release side).
+    struct Ack {
+        bool owed;
+        Kind kind;
+        uint64 epoch;
+        uint64 requestedAt;
+        uint64 rerequestedAt; // 0 = not retried yet; one retry per request
+        uint64 acked; // highest epoch acked
+        bytes32 originTx;
+        uint256 key;
+    }
+
+    // ------------------------------------------------------------------ constants
+
+    uint256 internal constant PAUSED_T0 = uint256(keccak256("Paused(uint256,uint64,bytes32,uint256)"));
+    uint256 internal constant RESUMED_T0 = uint256(keccak256("Resumed(uint256,uint64,bytes32,uint256)"));
+    uint256 internal constant HELD_T0 = uint256(keccak256("HeldByGuardian(uint256,uint64)"));
+    bytes4 internal constant PAUSE_SEL = bytes4(keccak256("pause(address,uint256,uint64,bytes32,uint256)"));
+    bytes4 internal constant RESUME_SEL = bytes4(keccak256("resume(address,uint256,uint64,bytes32,uint256)"));
+    uint64 internal constant CALLBACK_GAS = 1_000_000;
+    uint32 public constant MAX_PENDING = 32;
+    uint8 internal constant FWD = 0;
+    uint8 internal constant REV = 1;
+
+    // ------------------------------------------------------------------ storage
+
     address public immutable owner;
+    uint32 public ackDeadline = 30; // seconds before one re-request, and again before GateUnreachable
+    uint256 public routeCount;
+    uint32 public outstandingAcks;
+    bool public cronOn;
 
-    // route config (set once by `init`)
-    uint256 public srcChain;
-    uint256 public dstChain;
-    address public lockBox;
-    address public minter;
-    address public gateSrc;
-    address public gateDst;
-    bool public initialized;
+    mapping(uint256 => Route) internal routes;
+    mapping(uint256 => State) internal states;
+    mapping(uint256 => mapping(uint8 => mapping(uint256 => Slot))) public slots;
+    mapping(uint256 => mapping(uint8 => uint256)) public highestSrc;
+    mapping(uint256 => mapping(address => uint256)) public unbackedOf;
+    mapping(uint256 => uint256[]) internal pendingQ; // packed (dir << 128) | key, oldest first
+    mapping(uint256 => mapping(uint8 => Ack)) public acks;
+    mapping(bytes32 => uint256) internal dispatch; // keccak(chainId, emitter, topic0) => (routeId << 8) | (side + 1)
+    mapping(uint256 => mapping(address => uint256)) public gateToRoute; // chainId => gate => routeId * 2 + c
+    mapping(uint256 => address) public proxyOf; // chainId => callback proxy (emits CallbackFailure)
+    mapping(bytes32 => bool) public seen; // keccak(chainId, txHash, logIndex)
 
-    // dual ledger (spike)
-    mapping(uint256 => uint256) public lockAmt;
-    mapping(uint256 => address) public lockTo;
-    mapping(uint256 => bool) public minted;
-    mapping(uint256 => uint256) public pendingAmt;
-    mapping(uint256 => address) public pendingTo;
-    mapping(uint256 => uint256) public pendingSince;
-    uint256 public pendingCount;
-    uint256 public unbacked;
+    // ------------------------------------------------------------------ events
 
-    bool public paused;
-    uint64 public epoch;
-    mapping(bytes32 => bool) public seen;
-
-    // probes
-    uint8 public cronProbe; // 0 off, 1 armed, 2 subscribed, 3 done
-    uint256 public hopSeq;
-
+    event RouteAdded(uint256 indexed routeId, Mode mode, uint256 srcChain, uint256 dstChain);
     event Observed(uint256 indexed routeId, Side side, uint256 key, bytes32 indexed originTx);
-    event Mismatch(uint256 indexed routeId, uint256 key, uint256 amount, address to, bytes32 indexed originTx, uint64 epoch);
+    event Mismatch(
+        uint256 indexed routeId,
+        Side side,
+        uint256 key,
+        uint256 amount,
+        address to,
+        bytes32 indexed originTx,
+        uint64 epoch
+    );
     event Matched(uint256 indexed routeId, uint256 key, bytes32 indexed originTx, uint32 waitedSec);
+    event IncidentLatched(uint256 indexed routeId, Cause cause, uint64 epoch);
     event PauseRequested(uint256 indexed routeId, uint64 epoch, bytes32 indexed originTx, uint256 key);
     event ResumeRequested(uint256 indexed routeId, uint64 epoch, bytes32 indexed originTx, uint256 key);
-    event AckSeen(uint256 indexed routeId, uint256 chainId, bool pausedAck, uint64 epoch, bytes32 indexed originTx);
-    event Resolved(uint256 indexed routeId, uint256 cleared, uint256 unbacked, uint64 epoch);
-    event HopRequested(uint256 indexed seq);
-    event HopSeen(uint256 indexed seq, address sender, address rvm, bool authorised);
-    event CronProbe(uint8 stage, uint256 at);
+    event AckSeen(uint256 indexed routeId, uint256 chainId, Side side, uint64 epoch);
+    event Retried(uint256 indexed routeId, uint256 chainId, uint64 epoch);
+    event GateUnreachable(uint256 indexed routeId, uint256 chainId, uint64 epoch);
+    event Resolved(
+        uint256 indexed routeId, uint8 reason, uint256 unbacked, uint256 unbackedRel, bool deficitAccepted, uint64 epoch
+    );
+    event Remediated(uint256 indexed routeId, uint256 amount, bytes32 indexed originTx);
+    event CronWatch(bool on);
 
     error NotOwner();
-    error AlreadyInitialized();
+    error Deficit(uint256 unbacked, uint256 unbackedRel);
+    error BadRoute();
 
     constructor() payable {
         owner = msg.sender;
@@ -82,26 +183,53 @@ contract LedgerlockReactive is AbstractReactive {
         _;
     }
 
+    // ------------------------------------------------------------------ owner config
 
-    /// @notice Wire the route and subscribe: Locked (source), Minted (destination), Paused/Resumed acks on both gates.
-    function init(uint256 srcChain_, address lockBox_, address gateSrc_, uint256 dstChain_, address minter_, address gateDst_)
-        external
-        onlyOwner
-    {
-        if (initialized) revert AlreadyInitialized();
-        initialized = true;
-        (srcChain, lockBox, gateSrc, dstChain, minter, gateDst) = (srcChain_, lockBox_, gateSrc_, dstChain_, minter_, gateDst_);
-        epoch = 1;
-        _sub(srcChain_, lockBox_, LOCKED_T0);
-        _sub(dstChain_, minter_, MINTED_T0);
-        _sub(srcChain_, gateSrc_, PAUSED_T0);
-        _sub(srcChain_, gateSrc_, RESUMED_T0);
-        _sub(dstChain_, gateDst_, PAUSED_T0);
-        _sub(dstChain_, gateDst_, RESUMED_T0);
+    /// @notice Register the callback proxy of a destination chain (its `CallbackFailure` log is watched per gate).
+    function setProxy(uint256 chainId, address proxy) external onlyOwner {
+        proxyOf[chainId] = proxy;
     }
 
-    function _sub(uint256 chainId, address c, uint256 t0) internal {
-        SYSTEM.subscribe(chainId, c, t0, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
+    function setAckDeadline(uint32 secs) external onlyOwner {
+        ackDeadline = secs;
+    }
+
+    /// @notice Arm a route before its first transfer. `t0s` = topic0 of [Locked, Minted, Burned, Released, Seized, Drill]
+    ///         (0 = not subscribed). Also subscribes each gate's Paused/Resumed/HeldByGuardian and, where a proxy is
+    ///         set, the proxy's CallbackFailure filtered on that gate.
+    function addRoute(Route calldata rt, uint256[6] calldata t0s) external onlyOwner returns (uint256 r) {
+        if (rt.gateSrc == address(0) || rt.gateDst == address(0) || rt.windowSec == 0) revert BadRoute();
+        if (rt.mode == Mode.NONCE && (rt.keyTopic == 0 || rt.keyTopic > 3)) revert BadRoute();
+        r = ++routeCount;
+        routes[r] = rt;
+        _bind(r, rt.srcChain, rt.lockSrc, t0s[0], Side.LOCK);
+        _bind(r, rt.dstChain, rt.mintDst, t0s[1], Side.MINT);
+        _bind(r, rt.dstChain, rt.mintDst, t0s[2], Side.BURN);
+        _bind(r, rt.srcChain, rt.lockSrc, t0s[3], Side.RELEASE);
+        _bind(r, rt.dstChain, rt.mintDst, t0s[4], Side.SEIZED);
+        if (rt.drillBeacon != address(0)) _bind(r, rt.srcChain, rt.drillBeacon, t0s[5], Side.DRILL);
+        _bindGate(r, rt.dstChain, rt.gateDst, 0);
+        _bindGate(r, rt.srcChain, rt.gateSrc, 1);
+        emit RouteAdded(r, rt.mode, rt.srcChain, rt.dstChain);
+    }
+
+    function _bind(uint256 r, uint256 chainId, address emitter, uint256 t0, Side side) internal {
+        if (t0 == 0) return;
+        dispatch[keccak256(abi.encode(chainId, emitter, t0))] = (r << 8) | (uint256(side) + 1);
+        SYSTEM.subscribe(chainId, emitter, t0, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
+    }
+
+    function _bindGate(uint256 r, uint256 chainId, address gate, uint256 c) internal {
+        gateToRoute[chainId][gate] = r * 2 + c;
+        _bind(r, chainId, gate, PAUSED_T0, Side.ACK_PAUSED);
+        _bind(r, chainId, gate, RESUMED_T0, Side.ACK_RESUMED);
+        _bind(r, chainId, gate, HELD_T0, Side.HELD);
+        address proxy = proxyOf[chainId];
+        if (proxy != address(0)) {
+            SYSTEM.subscribe(
+                chainId, proxy, CallbackFailureWatch.TOPIC, uint256(uint160(gate)), REACTIVE_IGNORE, REACTIVE_IGNORE
+            );
+        }
     }
 
     // ------------------------------------------------------------------ the decision
@@ -116,169 +244,430 @@ contract LedgerlockReactive is AbstractReactive {
         seen[logId] = true;
         bytes32 originTx = bytes32(log_.txHash);
 
-        if (log_.chainId == srcChain && log_.contractAddress == lockBox && log_.topic0 == LOCKED_T0) {
-            emit Observed(ROUTE_ID, Side.LOCK, log_.topic1, originTx);
-            _onLocked(log_.topic1, address(uint160(log_.topic2)), abi.decode(log_.data, (uint256)), originTx);
-        } else if (log_.chainId == dstChain && log_.contractAddress == minter && log_.topic0 == MINTED_T0) {
-            emit Observed(ROUTE_ID, Side.MINT, log_.topic1, originTx);
-            _onMinted(log_.topic1, address(uint160(log_.topic2)), abi.decode(log_.data, (uint256)), originTx);
-        } else if (log_.topic0 == PAUSED_T0 || log_.topic0 == RESUMED_T0) {
-            bool isPause = log_.topic0 == PAUSED_T0;
-            if (
-                !((log_.chainId == srcChain && log_.contractAddress == gateSrc)
-                        || (log_.chainId == dstChain && log_.contractAddress == gateDst))
-            ) return;
-            (uint64 e,) = abi.decode(log_.data, (uint64, uint256));
-            emit Observed(ROUTE_ID, isPause ? Side.ACK_PAUSED : Side.ACK_RESUMED, 0, originTx);
-            emit AckSeen(ROUTE_ID, log_.chainId, isPause, e, bytes32(log_.topic2));
-            if (cronProbe == 1) {
-                cronProbe = 2;
-                SYSTEM.subscribe(
-                    block.chainid, CronTopics.LEGACY_SYSTEM_ADDR, CronTopics.CRON10, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE
-                );
-                emit CronProbe(2, block.timestamp);
+        if (log_.topic0 == CallbackFailureWatch.TOPIC) {
+            _onFailure(log_, originTx);
+            return;
+        }
+        uint256 d = dispatch[keccak256(abi.encode(log_.chainId, log_.contractAddress, log_.topic0))];
+        if (d == 0) return;
+        uint256 r = d >> 8;
+        Side side = Side(uint8(d & 0xff) - 1);
+        Route storage rt = routes[r];
+
+        if (side <= Side.RELEASE) {
+            (uint256 key, address to, uint256 amt) = _fields(rt, log_);
+            emit Observed(r, side, key, originTx);
+            if (rt.mode == Mode.SUPPLY) {
+                _onSupply(r, side, amt, to, originTx);
+            } else if (side == Side.LOCK || side == Side.BURN) {
+                _onSrc(r, side == Side.LOCK ? FWD : REV, key, to, amt, originTx);
+            } else {
+                _onDst(r, side, key, to, amt, originTx);
+            }
+            if (rt.mode == Mode.NONCE) _checkOverdue(r);
+        } else if (side == Side.SEIZED) {
+            emit Observed(r, side, 0, originTx);
+            _onSeized(r, address(uint160(log_.topic1)), _word(log_.data, 0), originTx);
+        } else if (side == Side.DRILL) {
+            emit Observed(r, side, 0, originTx);
+            _pauseBoth(r, originTx, 0);
+            _latch(r, Cause.DRILL);
+        } else {
+            // gate ack: Paused/Resumed(routeId, epoch, originTx, key) or HeldByGuardian(routeId, epoch); epoch = data word 0
+            uint64 e = uint64(_word(log_.data, 0));
+            uint256 c = gateToRoute[log_.chainId][log_.contractAddress] & 1;
+            emit Observed(r, side, e, originTx);
+            _onAck(r, c, side, e);
+        }
+        _ackDeadline(r);
+    }
+
+    function _fields(Route storage rt, LogRecord calldata l)
+        internal
+        view
+        returns (uint256 key, address to, uint256 amt)
+    {
+        key = _topic(l, rt.keyTopic);
+        to = rt.recipientTopic == 0 ? address(0) : address(uint160(_topic(l, rt.recipientTopic)));
+        amt = _word(l.data, rt.amountWord);
+    }
+
+    function _topic(LogRecord calldata l, uint8 i) internal pure returns (uint256) {
+        if (i == 1) return l.topic1;
+        if (i == 2) return l.topic2;
+        if (i == 3) return l.topic3;
+        return 0;
+    }
+
+    function _word(bytes calldata data, uint256 i) internal pure returns (uint256) {
+        if (data.length < 32 * (i + 1)) return 0;
+        return uint256(bytes32(data[32 * i:32 * (i + 1)]));
+    }
+
+    /// @dev Locked (FWD) or Burned (REV): record the source side; clear a waiting entry it matches.
+    function _onSrc(uint256 r, uint8 dir, uint256 key, address to, uint256 amt, bytes32 originTx) internal {
+        State storage st = states[r];
+        Slot storage s = slots[r][dir][key];
+        s.srcAmt = amt;
+        s.srcTo = to;
+        s.srcSeen = true;
+        if (key > highestSrc[r][dir]) highestSrc[r][dir] = key;
+        if (s.pendAmt == 0 || s.pendAmt != amt || s.pendTo != to) return;
+
+        uint256 waited = block.timestamp - s.pendSince;
+        bool late = waited > routes[r].windowSec;
+        s.pendAmt = 0;
+        s.pendTo = address(0);
+        s.pendSince = 0;
+        s.consumed = true;
+        st.pendingCount--;
+        if (dir == FWD) {
+            uint256 dd = _min3(amt, unbackedOf[r][to], st.unbacked);
+            unbackedOf[r][to] -= dd;
+            st.unbacked -= dd;
+        } else {
+            st.unbackedRel -= amt < st.unbackedRel ? amt : st.unbackedRel;
+        }
+        if (late) {
+            _latch(r, Cause.LATE_LOCK);
+        } else if (!st.incident) {
+            emit Matched(r, key, originTx, uint32(waited));
+        }
+        if (st.pendingCount == 0 && !st.incident && st.paused) _resumeBoth(r, originTx, key);
+    }
+
+    /// @dev Minted (FWD) or Released (REV): a matching source record means the normal path (no callback); anything else
+    ///      pauses in this react() and waits (plausible) or latches (implausible).
+    function _onDst(uint256 r, Side side, uint256 key, address to, uint256 amt, bytes32 originTx) internal {
+        uint8 dir = side == Side.MINT ? FWD : REV;
+        State storage st = states[r];
+        Slot storage s = slots[r][dir][key];
+        if (s.srcSeen && !s.consumed && s.srcAmt == amt && s.srcTo == to && s.pendAmt == 0) {
+            s.consumed = true;
+            return;
+        }
+        bool implausible = key > highestSrc[r][dir] + routes[r].keySlack || s.consumed || s.pendAmt != 0 || s.srcSeen;
+        if (dir == FWD) {
+            st.unbacked += amt;
+            unbackedOf[r][to] += amt;
+        } else {
+            st.unbackedRel += amt;
+        }
+        _pauseBoth(r, originTx, key); // two callbacks in THIS react() (no-op if already paused)
+        emit Mismatch(r, side, key, amt, to, originTx, st.epoch);
+        if (implausible) _latch(r, Cause.REPEAT);
+        if (s.pendAmt != 0) {
+            st.copycatsSameKey++;
+        } else if (st.pendingCount < MAX_PENDING) {
+            s.pendAmt = amt;
+            s.pendTo = to;
+            s.pendSince = uint64(block.timestamp);
+            pendingQ[r].push((uint256(dir) << 128) | key);
+            st.pendingCount++;
+        } else {
+            _latch(r, Cause.FLOOD);
+        }
+    }
+
+    /// @dev Lazy, timer-free OVERDUE: after the side handler, the oldest live pending entry older than W latches.
+    function _checkOverdue(uint256 r) internal {
+        State storage st = states[r];
+        if (st.pendingCount == 0) return;
+        uint256[] storage q = pendingQ[r];
+        uint256 h = st.qHead;
+        Slot storage s;
+        while (h < q.length) {
+            s = slots[r][uint8(q[h] >> 128)][uint128(q[h])];
+            if (s.pendAmt != 0) {
+                if (block.timestamp - s.pendSince > routes[r].windowSec) _latch(r, Cause.OVERDUE);
+                break;
+            }
+            h++;
+        }
+        st.qHead = uint32(h);
+    }
+
+    function _onSupply(uint256 r, Side side, uint256 amt, address to, bytes32 originTx) internal {
+        State storage st = states[r];
+        bool bad;
+        if (side == Side.LOCK) {
+            st.lockedTotal += amt;
+        } else if (side == Side.MINT) {
+            st.mintedTotal += amt;
+            bad = st.mintedTotal > st.lockedTotal;
+        } else if (side == Side.BURN) {
+            st.burnedTotal += amt;
+        } else {
+            st.releasedTotal += amt;
+            bad = st.releasedTotal > st.burnedTotal;
+        }
+        if (!bad) return;
+        _pauseBoth(r, originTx, 0);
+        emit Mismatch(r, side, 0, amt, to, originTx, st.epoch);
+        _latch(r, Cause.SUPPLY);
+    }
+
+    function _onSeized(uint256 r, address holder, uint256 amt, bytes32 originTx) internal {
+        State storage st = states[r];
+        uint256 dd = _min3(amt, unbackedOf[r][holder], st.unbacked);
+        unbackedOf[r][holder] -= dd;
+        st.unbacked -= dd;
+        emit Remediated(r, dd, originTx);
+    }
+
+    function _latch(uint256 r, Cause cause) internal {
+        State storage st = states[r];
+        if (st.incident) return;
+        st.incident = true;
+        st.cause = cause;
+        emit IncidentLatched(r, cause, st.epoch);
+    }
+
+    // ------------------------------------------------------------------ callbacks, acks, retries
+
+    function _pauseBoth(uint256 r, bytes32 originTx, uint256 key) internal {
+        State storage st = states[r];
+        if (st.paused) return; // copycats never re-bill: an outstanding pause is re-requested only by the watchdog
+        st.paused = true;
+        uint64 e = ++st.epoch;
+        emit PauseRequested(r, e, originTx, key);
+        _request(r, 0, Kind.PAUSE, e, originTx, key); // mint side first: it stops further issuance
+        _request(r, 1, Kind.PAUSE, e, originTx, key); // release side: freezes collateral exits
+    }
+
+    function _resumeBoth(uint256 r, bytes32 originTx, uint256 key) internal {
+        State storage st = states[r];
+        st.paused = false;
+        uint64 e = ++st.epoch;
+        emit ResumeRequested(r, e, originTx, key);
+        _request(r, 0, Kind.RESUME, e, originTx, key);
+        _request(r, 1, Kind.RESUME, e, originTx, key);
+    }
+
+    function _request(uint256 r, uint256 c, Kind kind, uint64 e, bytes32 originTx, uint256 key) internal {
+        Ack storage a = acks[r][uint8(c)];
+        if (!a.owed) {
+            a.owed = true; // a newer epoch supersedes whatever was still owed on this gate
+            outstandingAcks++;
+        }
+        a.kind = kind;
+        a.epoch = e;
+        a.originTx = originTx;
+        a.key = key;
+        a.requestedAt = uint64(block.timestamp);
+        a.rerequestedAt = 0;
+        if (!cronOn) {
+            cronOn = true;
+            SYSTEM.subscribe(
+                block.chainid,
+                CronTopics.LEGACY_SYSTEM_ADDR,
+                CronTopics.CRON10,
+                REACTIVE_IGNORE,
+                REACTIVE_IGNORE,
+                REACTIVE_IGNORE
+            );
+            emit CronWatch(true);
+        }
+        _send(r, c);
+    }
+
+    /// @dev (Re)build the exact callback from the stored request, so a retry carries the same epoch and origin tx.
+    function _send(uint256 r, uint256 c) internal {
+        Ack storage a = acks[r][uint8(c)];
+        Route storage rt = routes[r];
+        bytes memory payload = abi.encodeWithSelector(
+            a.kind == Kind.PAUSE ? PAUSE_SEL : RESUME_SEL, address(0), r, a.epoch, a.originTx, a.key
+        );
+        SYSTEM.requestCallbackV_1_0(
+            ISystemContract.CallbackConfiguration_V_1_0({
+                chainId: c == 0 ? rt.dstChain : rt.srcChain,
+                recipient: c == 0 ? rt.gateDst : rt.gateSrc,
+                gasLimit: CALLBACK_GAS,
+                payload: payload
+            })
+        );
+    }
+
+    function _settle(Ack storage a) internal {
+        if (!a.owed) return;
+        a.owed = false;
+        outstandingAcks--;
+        if (outstandingAcks == 0 && cronOn) {
+            cronOn = false;
+            SYSTEM.unsubscribe(
+                block.chainid,
+                CronTopics.LEGACY_SYSTEM_ADDR,
+                CronTopics.CRON10,
+                REACTIVE_IGNORE,
+                REACTIVE_IGNORE,
+                REACTIVE_IGNORE
+            );
+            emit CronWatch(false);
+        }
+    }
+
+    function _onAck(uint256 r, uint256 c, Side side, uint64 e) internal {
+        Ack storage a = acks[r][uint8(c)];
+        if (e > a.acked) a.acked = e;
+        emit AckSeen(r, _chainOf(r, c), side, e);
+        if (a.owed && e == a.epoch) _settle(a); // a held gate answers a RESUME with HeldByGuardian: settled, no latch
+    }
+
+    /// @dev The proxy's CallbackFailure(target, payload): the payload is the full callback calldata with the requesting
+    ///      RSC in word 0 (measured on both proxies), so the epoch is argument word 2. Obsolete failures are ignored.
+    function _onFailure(LogRecord calldata l, bytes32 originTx) internal {
+        if (l.contractAddress != proxyOf[l.chainId]) return;
+        uint256 g = gateToRoute[l.chainId][address(uint160(l.topic1))];
+        if (g == 0) return;
+        uint256 r = g >> 1;
+        uint256 c = g & 1;
+        bytes memory p = abi.decode(l.data, (bytes));
+        uint64 fEpoch = p.length >= 4 + 32 * 3 ? uint64(CallbackFailureWatch.argWord(p, 2)) : 0;
+        emit Observed(r, Side.FAIL, fEpoch, originTx);
+        Ack storage a = acks[r][uint8(c)];
+        if (!a.owed || fEpoch != a.epoch) return; // obsolete (older epoch) or already settled
+        if (a.rerequestedAt == 0) {
+            a.rerequestedAt = uint64(block.timestamp);
+            _send(r, c);
+            emit Retried(r, _chainOf(r, c), fEpoch);
+        } else {
+            _unreachable(r, c);
+        }
+    }
+
+    /// @dev Ack watchdog: one re-request after `ackDeadline`, then GateUnreachable (+ FAILSAFE latch for a PAUSE; a
+    ///      stuck RESUME leaves that gate shut and does not latch).
+    function _ackDeadline(uint256 r) internal {
+        for (uint256 c; c < 2; c++) {
+            Ack storage a = acks[r][uint8(c)];
+            if (!a.owed) continue;
+            if (a.rerequestedAt == 0) {
+                if (block.timestamp - a.requestedAt > ackDeadline) {
+                    a.rerequestedAt = uint64(block.timestamp);
+                    _send(r, c);
+                    emit Retried(r, _chainOf(r, c), a.epoch);
+                }
+            } else if (block.timestamp - a.rerequestedAt > ackDeadline) {
+                _unreachable(r, c);
             }
         }
     }
 
-    function _onLocked(uint256 key, address to, uint256 amt, bytes32 originTx) internal {
-        lockAmt[key] = amt;
-        lockTo[key] = to;
-        if (pendingAmt[key] != 0 && pendingAmt[key] == amt && pendingTo[key] == to) {
-            uint32 waited = uint32(block.timestamp - pendingSince[key]);
-            delete pendingAmt[key];
-            delete pendingTo[key];
-            delete pendingSince[key];
-            pendingCount--;
-            minted[key] = true;
-            unbacked -= amt;
-            emit Matched(ROUTE_ID, key, originTx, waited);
-            if (pendingCount == 0 && paused) _resumeBoth(originTx, key);
+    function _unreachable(uint256 r, uint256 c) internal {
+        Ack storage a = acks[r][uint8(c)];
+        Kind kind = a.kind;
+        uint64 e = a.epoch;
+        _settle(a);
+        emit GateUnreachable(r, _chainOf(r, c), e);
+        if (kind == Kind.PAUSE) _latch(r, Cause.FAILSAFE);
+    }
+
+    function _onCron() internal {
+        uint256 n = routeCount;
+        for (uint256 r = 1; r <= n; r++) {
+            if (acks[r][0].owed || acks[r][1].owed) _ackDeadline(r);
         }
     }
 
-    function _onMinted(uint256 key, address to, uint256 amt, bytes32 originTx) internal {
-        if (lockAmt[key] == amt && amt != 0 && lockTo[key] == to && !minted[key]) {
-            minted[key] = true; // normal path: no callback
-            emit Matched(ROUTE_ID, key, originTx, 0);
-            return;
-        }
-        emit Mismatch(ROUTE_ID, key, amt, to, originTx, epoch);
-        unbacked += amt;
-        if (pendingAmt[key] == 0) {
-            pendingAmt[key] = amt;
-            pendingTo[key] = to;
-            pendingSince[key] = block.timestamp;
-            pendingCount++;
-        } else {
-            // a second mint on a key that is already pending: over-issuance, so the entry can no longer equal one
-            // lock's amount (no auto-resume) and `resolve` clears the whole amount
-            pendingAmt[key] += amt;
-        }
-        if (!paused) _pauseBoth(originTx, key);
+    function _chainOf(uint256 r, uint256 c) internal view returns (uint256) {
+        return c == 0 ? routes[r].dstChain : routes[r].srcChain;
     }
 
-    // ------------------------------------------------------------------ callbacks
-
-    function _pauseBoth(bytes32 originTx, uint256 key) internal {
-        paused = true;
-        uint64 e = ++epoch;
-        emit PauseRequested(ROUTE_ID, e, originTx, key);
-        bytes memory payload = abi.encodeWithSignature(
-            "pause(address,uint256,uint64,bytes32,uint256)", address(0), ROUTE_ID, e, originTx, key
-        );
-        _cb(dstChain, gateDst, payload); // mint side first: it stops further issuance
-        _cb(srcChain, gateSrc, payload); // release side: freezes collateral exits
-    }
-
-    function _resumeBoth(bytes32 originTx, uint256 key) internal {
-        paused = false;
-        uint64 e = ++epoch;
-        emit ResumeRequested(ROUTE_ID, e, originTx, key);
-        bytes memory payload = abi.encodeWithSignature(
-            "resume(address,uint256,uint64,bytes32,uint256)", address(0), ROUTE_ID, e, originTx, key
-        );
-        _cb(dstChain, gateDst, payload);
-        _cb(srcChain, gateSrc, payload);
-    }
-
-    function _cb(uint256 chainId, address recipient, bytes memory payload) internal {
-        SYSTEM.requestCallbackV_1_0(
-            ISystemContract.CallbackConfiguration_V_1_0({
-                chainId: chainId, recipient: recipient, gasLimit: CALLBACK_GAS, payload: payload
-            })
-        );
+    function _min3(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 m) {
+        m = a < b ? a : b;
+        if (c < m) m = c;
     }
 
     // ------------------------------------------------------------------ owner
 
-    /// @notice Clear the listed pending mints; when nothing is left pending, reopen both gates (a plain external method
-    ///         requesting callbacks). A partial resolve keeps the gates shut and requests nothing.
-    function resolve(uint256[] calldata keys) external onlyOwner {
-        uint256 cleared;
-        for (uint256 i; i < keys.length; i++) {
-            uint256 k = keys[i];
-            if (pendingAmt[k] != 0) {
-                unbacked -= pendingAmt[k];
-                delete pendingAmt[k];
-                delete pendingTo[k];
-                delete pendingSince[k];
-                pendingCount--;
-                cleared++;
+    /// @notice Reopen a latched or paused route. Reverts while a deficit is outstanding unless `acceptDeficit`, so
+    ///         reopening never hides unbacked supply. Every live pending entry is marked consumed (a later replay of that
+    ///         key is unmatched). A plain external method requesting the two resume callbacks.
+    function resolve(uint256 r, uint8 reason, bool acceptDeficit) external onlyOwner {
+        if (r == 0 || r > routeCount) revert BadRoute();
+        State storage st = states[r];
+        (uint256 def, uint256 defRel) = _deficit(r);
+        if (def + defRel != 0 && !acceptDeficit) revert Deficit(def, defRel);
+        uint256[] storage q = pendingQ[r];
+        for (uint256 h = st.qHead; h < q.length; h++) {
+            Slot storage s = slots[r][uint8(q[h] >> 128)][uint128(q[h])];
+            if (s.pendAmt != 0) {
+                s.pendAmt = 0;
+                s.pendTo = address(0);
+                s.pendSince = 0;
+                s.consumed = true;
             }
         }
-        bool reopen = pendingCount == 0 && paused;
-        emit Resolved(ROUTE_ID, cleared, unbacked, reopen ? epoch + 1 : epoch);
-        if (reopen) _resumeBoth(bytes32(0), 0);
+        st.qHead = uint32(q.length);
+        st.pendingCount = 0;
+        st.incident = false;
+        st.cause = Cause.NONE;
+        if (acceptDeficit) {
+            st.unbacked = 0;
+            st.unbackedRel = 0;
+            if (st.mintedTotal > st.lockedTotal) st.lockedTotal = st.mintedTotal;
+            if (st.releasedTotal > st.burnedTotal) st.burnedTotal = st.releasedTotal;
+        }
+        emit Resolved(r, reason, def, defRel, acceptDeficit, st.paused ? st.epoch + 1 : st.epoch);
+        if (st.paused) _resumeBoth(r, bytes32(0), 0);
     }
 
-    // ------------------------------------------------------------------ probes
-
-    /// @notice Probe: one self-callback to this contract on Lasna (the hop path's transport).
-    function probeHop() external onlyOwner {
-        uint256 seq = ++hopSeq;
-        emit HopRequested(seq);
-        SYSTEM.requestCallbackV_1_0(
-            ISystemContract.CallbackConfiguration_V_1_0({
-                chainId: block.chainid,
-                recipient: address(this),
-                gasLimit: HOP_GAS,
-                payload: abi.encodeWithSignature("hop(address,uint256)", address(0), seq)
-            })
-        );
-    }
-
-    /// @notice Self-callback target. Records who delivered it; acts only for the system sender + this contract.
-    function hop(address rvm, uint256 seq) external {
-        bool ok = msg.sender == address(SYSTEM) && rvm == address(this);
-        emit HopSeen(seq, msg.sender, rvm, ok);
-    }
-
-    /// @notice Probe: the next gate ack subscribes Cron10 from inside `react()`; the first tick unsubscribes it.
-    function armCronProbe() external onlyOwner {
-        cronProbe = 1;
-    }
-
-    function _onCron() internal {
-        if (cronProbe != 2) return;
-        cronProbe = 3;
-        SYSTEM.unsubscribe(
-            block.chainid, CronTopics.LEGACY_SYSTEM_ADDR, CronTopics.CRON10, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE
-        );
-        emit CronProbe(3, block.timestamp);
-    }
-
-    /// @notice Owner fallback if an in-react unsubscribe did not take.
-    function cronStop() external onlyOwner {
-        SYSTEM.unsubscribe(
-            block.chainid, CronTopics.LEGACY_SYSTEM_ADDR, CronTopics.CRON10, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE
-        );
-        cronProbe = 3;
+    function _deficit(uint256 r) internal view returns (uint256 def, uint256 defRel) {
+        State storage st = states[r];
+        if (routes[r].mode == Mode.SUPPLY) {
+            def = st.mintedTotal > st.lockedTotal ? st.mintedTotal - st.lockedTotal : 0;
+            defRel = st.releasedTotal > st.burnedTotal ? st.releasedTotal - st.burnedTotal : 0;
+        } else {
+            (def, defRel) = (st.unbacked, st.unbackedRel);
+        }
     }
 
     /// @notice Return unspent lREACT to the owner (dev deployments are torn down after their runs).
     function drain() external onlyOwner {
         (bool ok,) = payable(owner).call{value: address(this).balance}("");
         require(ok, "drain");
+    }
+
+    // ------------------------------------------------------------------ views
+
+    function routeState(uint256 r)
+        external
+        view
+        returns (
+            bool paused,
+            bool incident,
+            bool overdue,
+            uint64 epoch,
+            uint32 pending,
+            uint256 unbacked,
+            uint256 unbackedRel
+        )
+    {
+        State storage st = states[r];
+        (unbacked, unbackedRel) = _deficit(r);
+        paused = st.paused;
+        incident = st.incident;
+        epoch = st.epoch;
+        pending = st.pendingCount;
+        uint256[] storage q = pendingQ[r];
+        for (uint256 h = st.qHead; h < q.length; h++) {
+            Slot storage s = slots[r][uint8(q[h] >> 128)][uint128(q[h])];
+            if (s.pendAmt != 0) {
+                overdue = block.timestamp - s.pendSince > routes[r].windowSec;
+                break;
+            }
+        }
+    }
+
+    function getRoute(uint256 r) external view returns (Route memory) {
+        return routes[r];
+    }
+
+    function getState(uint256 r) external view returns (State memory) {
+        return states[r];
+    }
+
+    function pendingQueue(uint256 r) external view returns (uint256[] memory) {
+        return pendingQ[r];
     }
 }
