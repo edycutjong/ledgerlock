@@ -21,6 +21,12 @@ if (!instance || !kind || !countArg) throw new Error("usage: bench.ts <instance>
 const COUNT = Number(countArg), FIRST = Number(firstArg ?? 1);
 const LASNA = 5318007, BASE = 84532, UNI = 1301;
 const POLL_MS = Number(process.env.POLL_MS ?? 400);
+// VERBOSE=1 prints each leg of the loop as the observer sees it, stamped against t0 = the moment the run's mint receipt
+// returned (the same clock as the CSV columns). Display only: the CSV row is computed exactly as without it.
+const VERBOSE = process.env.VERBOSE === "1";
+const say = (s: string) => { if (VERBOSE) console.log(s); };
+const T0 = { at: 0 };
+const rel = (at: number) => `+${((at - T0.at) / 1000).toFixed(3)} s`;
 const A = Object.fromEntries(readFileSync(`evidence/${instance}-addresses.txt`, "utf8").split("\n").filter((l) => l.includes("=")).map((l) => l.split("=") as [string, string])) as Record<string, Hex>;
 const OUT = process.env.BENCH_OUT ?? `evidence/${instance}-bench-runs.csv`;
 const COLS = ["run_id", "kind", "instance", "seq", "key", "amount_tusd", "recipient", "lock_tx", "mint_tx", "mint_sent_ms", "mint_mined_ms", "mint_block_ts",
@@ -99,7 +105,7 @@ async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>, 
   let note = "";
   for (const hd of holders) {
     const bal = (await client(UNI).readContract({ address: A.MINTER, abi: minterAbi, functionName: "balanceOf", args: [hd] })) as bigint;
-    if (bal > 0n) await send(UNI, A.MINTER, minterAbi, "seize", [hd, bal]);
+    if (bal > 0n) { const sz = await send(UNI, A.MINTER, minterAbi, "seize", [hd, bal]); say(`recovery: seize ${bal / E18} tUSD from the attacker on Unichain  tx ${sz.tx}`); }
   }
   const pre = await heads();
   let resolveTx: Hex | null = null;
@@ -108,7 +114,7 @@ async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>, 
     if (st.unbacked === 0n && st.unbackedRel === 0n) {
       try {
         const r = await send(LASNA, A.RC, rcAbi, "resolve", [ROUTE, 1, false], 3_000_000n);
-        if (r.status === "success") resolveTx = r.tx; else note += `resolve retry ${i}: receipt ${r.status}; `;
+        if (r.status === "success") { resolveTx = r.tx; say(`recovery: owner resolve() on Lasna  tx ${r.tx}`); } else note += `resolve retry ${i}: receipt ${r.status}; `;
       } catch (e) { note += `resolve retry ${i}: ${String(e).slice(0, 60)}; `; }
     }
     if (!resolveTx) await sleep(3000);
@@ -119,6 +125,7 @@ async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>, 
     watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), pre.base + 1n, (l) => ((l.args?.epoch as bigint | undefined) ?? 0n) > minEpoch, 120_000),
   ]);
   void from;
+  say(ru && rb ? `recovery: gate U Resumed · gate B Resumed  ${((Date.now() - t0) / 1000).toFixed(1)} s after recovery began` : "recovery: a gate did not reopen (timeout)");
   return { resumeU: ru, resumeB: rb, ms: Date.now() - t0, note, ok: !!(ru && rb) };
 }
 
@@ -155,6 +162,7 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
   const user = addrOf(`ledgerlock-user-${i % 4}`), attacker = addrOf(`ledgerlock-attacker-${runId}`);
   const row: Record<string, unknown> = { run_id: runId, kind, seq: i, amount_tusd: amount / E18, outcome: "ok" };
   const hd0 = await heads();
+  say(`run ${runId} · ${kind} · ${instance} · route A clean, both gates open`);
   try {
     if (kind === "legit_strict") {
       const lk = await send(BASE, A.LOCKBOX, lockboxAbi, "lock", [user, amount]);
@@ -184,9 +192,18 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
       // the Resumed watchers start with the Paused ones, so a resume landing while a pause leg is still polled is not stamped late
       const rU = watch(UNI, A.GATE_U, E(gateAbi, "Resumed"), hd0.uni + 1n, isKey, 150_000);
       const rB = watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), hd0.base + 1n, isKey, 150_000);
+      let mintSeen!: () => void;
+      const minted = new Promise<void>((r) => { mintSeen = r; });
+      if (VERBOSE) [[wL, "Lasna  PauseRequested (no lock seen yet)"], [wU, "gate U Paused (Unichain)"], [wB, "gate B Paused (Base)"],
+        [rU, "gate U Resumed by itself (lock matched)"], [rB, "gate B Resumed by itself (lock matched)"]].forEach(([w, name]) =>
+        void (w as Promise<Hit | null>).then(async (hit) => { await minted; say(hit ? `${name}  ${rel(hit.at)}  tx ${hit.tx}` : `${name}: not seen (timeout)`); }));
+      say(`legit transfer sent OUT OF ORDER on purpose: mint key ${nonce} first, its lock ${delayMs / 1000} s later`);
       const mint = await send(UNI, A.MINTER, minterAbi, "mint", [nonce, user, amount]);
+      T0.at = mint.minedAt; mintSeen();
+      say(`mint mined on Unichain, ${amount / E18} tUSD, lock not sent yet  tx ${mint.tx}  (t0)`);
       await sleep(delayMs);
       const lk = await send(BASE, A.LOCKBOX, lockboxAbi, "lock", [user, amount]);
+      say(`lock mined on Base  ${rel(lk.minedAt)}  tx ${lk.tx}`);
       const [pu, pb, pl, ru, rb] = await Promise.all([wU, wB, wL, rU, rB]);
       const all4 = !!(pu && pb && ru && rb);
       // a resume observed before its pause on the same gate is poll jitter: no duration, never a negative one
@@ -197,6 +214,7 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
         false_pause: 1, note: `forced fill-before-deposit; lock sent ${delayMs} ms after the mint`, outcome: all4 ? "ok" : "timeout" });
       if (!all4) note += "forced run did not complete; ";
       if (inverted) note += "observer order inverted; ";
+      if (all4 && !inverted) say(`false-pause cost: ${row.pause_seconds} s shut, reopened with no human action`);
     } else {
       // attack kinds: key forged (beyond highest lock + K) or plausible (just above the lock nonce)
       const lockNonce = BigInt(await client(BASE).readContract({ address: A.LOCKBOX, abi: lockboxAbi, functionName: "nonce" }) as bigint);
@@ -207,20 +225,29 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
         watch(BASE, A.GATE_B, E(gateAbi, "Paused"), hd0.base + 1n, (l) => l.args?.key === key, 120_000),
       ];
       const ws = watchers();
+      let mintSeen!: () => void;
+      const minted = new Promise<void>((r) => { mintSeen = r; });
+      if (VERBOSE) ["Lasna  PauseRequested (detection)", "gate U Paused (Unichain)", "gate B Paused (Base)"].forEach((name, j) =>
+        void ws[j].then(async (hit) => { await minted; say(hit ? `${name}  ${rel(hit.at)}  tx ${hit.tx}` : `${name}: not seen (timeout)`); }));
+      say(`forged mint: key ${key}, ${amount / E18} tUSD to the attacker, no lock behind it on Base`);
       const mint = await send(UNI, A.MINTER, minterAbi, "mint", [key, attacker, amount]);
+      T0.at = mint.minedAt; mintSeen();
+      say(`mint mined on Unichain  tx ${mint.tx}  (t0)`);
       let fired = 0, landed = 0, reverted = "", carryTx = "", carryStatus = "", burstErr = false;
       if (kind === "burst") {
         for (let c = 1; c <= 30; c++) {
           fired = c;
           const cp = await send(UNI, A.MINTER, minterAbi, "mint", [key + BigInt(c), attacker, amount], 300_000n).catch((e) => ({ status: "error", tx: "" as Hex, err: String(e) }));
-          if (cp.status === "success") landed++;
-          else if (cp.status === "reverted" && cp.tx) { reverted = cp.tx; break; } // only a mined revert is the stopping revert
+          if (cp.status === "success") { landed++; say(`copycat ${c} landed  ${rel(Date.now())}`); }
+          else if (cp.status === "reverted" && cp.tx) { reverted = cp.tx; say(`copycat ${c} reverted  ${rel(Date.now())}  tx ${cp.tx}`); break; } // only a mined revert is the stopping revert
           else { burstErr = true; note += `copycat ${c} send failed (no mined revert): ${(cp as { err?: string }).err?.slice(0, 80) ?? cp.status}; `; break; }
         }
-        const rel = await send(BASE, A.LOCKBOX, lockboxAbi, "releaseByRelayer", [key + 1000n, attacker, amount], 300_000n).catch((e) => ({ status: `error:${String(e).slice(0, 40)}`, tx: "" as Hex }));
-        carryTx = rel.tx; carryStatus = rel.status;
+        const rel2 = await send(BASE, A.LOCKBOX, lockboxAbi, "releaseByRelayer", [key + 1000n, attacker, amount], 300_000n).catch((e) => ({ status: `error:${String(e).slice(0, 40)}`, tx: "" as Hex }));
+        carryTx = rel2.tx; carryStatus = rel2.status;
+        say(`forged release on Base (carry-home): ${rel2.status}${rel2.tx ? `  tx ${rel2.tx}` : ""}`);
       }
       const [pl, pu, pb] = await Promise.all(ws);
+      if (pl && pu && pb) say(`both gates shut  ${rel(Math.max(pu.at, pb.at))}`);
       const mined = mint.minedAt;
       Object.assign(row, { key, recipient: attacker, mint_tx: mint.tx, mint_sent_ms: mint.sentAt, mint_mined_ms: mined, mint_block_ts: await blockTs(UNI, mint.block),
         lasna_seen_ms: pl?.at, lasna_tx: pl?.tx, lasna_block_ts: await blockTs(LASNA, pl?.block),
