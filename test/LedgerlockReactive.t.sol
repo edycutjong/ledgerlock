@@ -1075,6 +1075,16 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         (paused, incident,,,,,) = rsc.routeState(r2);
         assertTrue(paused && incident);
         assertEq(uint8(rsc.getState(r2).cause), uint8(LedgerlockReactive.Cause.SUPPLY));
+        // a saturated source total hides any deficit, so it counts as one: reopening needs acceptDeficit, which rebases it
+        vm.expectRevert(abi.encodeWithSelector(LedgerlockReactive.Deficit.selector, type(uint256).max, uint256(0)));
+        rsc.resolve(r2, 1, false);
+        rsc.resolve(r2, 1, true);
+        assertEq(rsc.getState(r2).lockedTotal, rsc.getState(r2).mintedTotal);
+        // NONCE: unbacked saturated + a release deficit: resolve() must not overflow on the sum
+        deliver(_R(9_000_000, thief, 1e18));
+        vm.expectRevert(abi.encodeWithSelector(LedgerlockReactive.Deficit.selector, type(uint256).max, uint256(1e18)));
+        rsc.resolve(R, 1, false);
+        rsc.resolve(R, 1, true);
     }
 
     /// Normal path: with both gates acked, a copycat and a resolve() on a healthy route send nothing extra.

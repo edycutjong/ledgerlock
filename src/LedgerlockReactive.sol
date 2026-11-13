@@ -586,7 +586,8 @@ contract LedgerlockReactive is AbstractReactive {
     /// @dev Ack watchdog: one re-request after `ackDeadline`, then GateUnreachable (+ FAILSAFE latch for a PAUSE; a
     ///      stuck RESUME leaves that gate shut and does not latch). Budget per request: at most two re-sends, one on the
     ///      watchdog deadline and one on a matching CallbackFailure, then GateUnreachable. After that the next mismatch
-    ///      (`_pauseBoth`) or the owner's next `resolve()` opens a new epoch to both gates.
+    ///      (`_pauseBoth`) or the owner's next `resolve()` opens a new epoch to both gates; that new request supersedes
+    ///      the other gate's in-flight one too (its budget restarts with the new epoch).
     function _ackDeadline(uint256 r) internal {
         for (uint256 c; c < 2; c++) {
             Ack storage a = acks[r][uint8(c)];
@@ -637,7 +638,7 @@ contract LedgerlockReactive is AbstractReactive {
         if (r == 0 || r > routeCount) revert BadRoute();
         State storage st = states[r];
         (uint256 def, uint256 defRel) = _deficit(r);
-        if (def + defRel != 0 && !acceptDeficit) revert Deficit(def, defRel);
+        if ((def != 0 || defRel != 0) && !acceptDeficit) revert Deficit(def, defRel); // no add: a side may be saturated
         uint256[] storage q = pendingQ[r];
         for (uint256 h = st.qHead; h < q.length; h++) {
             Slot storage s = slots[r][uint8(q[h] >> 128)][uint128(q[h])];
@@ -656,8 +657,10 @@ contract LedgerlockReactive is AbstractReactive {
             deficitEra[r]++; // a stale holder's later seize can no longer offset a new attack's deficit
             st.unbacked = 0;
             st.unbackedRel = 0;
-            if (st.mintedTotal > st.lockedTotal) st.lockedTotal = st.mintedTotal;
-            if (st.releasedTotal > st.burnedTotal) st.burnedTotal = st.releasedTotal;
+            // lift the source side to the destination side; a saturated source total (blind invariant) is rebased too
+            uint256 max = type(uint256).max;
+            if (st.mintedTotal > st.lockedTotal || st.lockedTotal == max) st.lockedTotal = st.mintedTotal;
+            if (st.releasedTotal > st.burnedTotal || st.burnedTotal == max) st.burnedTotal = st.releasedTotal;
         }
         // paused → reopen; already reopened but a RESUME went GateUnreachable (that gate is still shut) → a new resume epoch
         bool reopen = st.paused || _exhausted(r);
@@ -687,8 +690,9 @@ contract LedgerlockReactive is AbstractReactive {
     function _deficit(uint256 r) internal view returns (uint256 def, uint256 defRel) {
         State storage st = states[r];
         if (routes[r].mode == Mode.SUPPLY) {
-            def = st.mintedTotal > st.lockedTotal ? st.mintedTotal - st.lockedTotal : 0;
-            defRel = st.releasedTotal > st.burnedTotal ? st.releasedTotal - st.burnedTotal : 0;
+            uint256 max = type(uint256).max; // a saturated source total hides any deficit: it counts as one
+            def = st.lockedTotal == max ? max : st.mintedTotal > st.lockedTotal ? st.mintedTotal - st.lockedTotal : 0;
+            defRel = st.burnedTotal == max ? max : st.releasedTotal > st.burnedTotal ? st.releasedTotal - st.burnedTotal : 0;
         } else {
             (def, defRel) = (st.unbacked, st.unbackedRel);
         }

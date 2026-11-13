@@ -10,7 +10,7 @@
 - forced fill-before-deposit pause seconds: n=20 p50 10.4 s · p95 21.7 s · max 21.7 s
 - same-chain check, whole-second Unichain block timestamps (mint block → gate U Paused block): n=100 p50 2 s · p95 3 s · max 3 s
 - recovery (seize + resolve + both gates reopened): n=100 p50 14.579 s · p95 15.452 s · max 19.668 s (successful recoveries only; 0 of 100 attack rows left out: a gate resume was not observed)
-- burst exposure: 20 runs: every run stopped before the 30-copycat cap (0 reached the cap); 20/20 stopped at the first reverted copycat mined after the gate U Paused tx (burst-verify: 20/20; gate U receipt holds this run's Paused event 20/20); revert reason GatePaused confirmed 20/20; copycats landed p50 1 · p95 1 · max 1
+- burst exposure: 20 runs: every run stopped before the 30-copycat cap (0 reached the cap); 20/20 stopped at the first reverted copycat mined after the gate U Paused tx (burst-verify: 20/20; gate U receipt holds this run's Paused event 20/20); replaying the stopping copycat at its block reverts GatePaused 20/20; copycats landed p50 1 · p95 1 · max 1
 - burst carry-home release on Base: reverted 20 of 20 rows
 - paired control (bu-021..025 guarded vs scripts/control.ts unguarded): the unguarded arm fires a fixed 6 copycats, the guarded burst fires up to 30 and stops at the first revert, so issuance is an illustration, not a like-for-like rate
 
