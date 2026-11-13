@@ -187,6 +187,8 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         IReactive.LogRecord memory m = _M(3, alice, 500e18); // plausible key (highest lock 2)
         vm.expectEmit(address(rsc));
         emit LedgerlockReactive.PauseRequested(R, 1, bytes32(m.txHash), 3);
+        vm.expectEmit(address(rsc));
+        emit LedgerlockReactive.Mismatch(R, LedgerlockReactive.Side.MINT, 3, 500e18, alice, bytes32(m.txHash), 1);
         deliver(m);
         // one react() -> two callback requests to two chains: mint side first, then the release side
         OmniSystemMock.Request[] memory q = sys.takeRequests();
@@ -259,7 +261,8 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         (bool paused, bool incident,,,, uint256 unbacked,) = rsc.routeState(R);
         assertTrue(paused && incident);
         assertEq(unbacked, 500e18);
-        assertEq(rsc.unbackedOf(R, thief), 500e18);
+        assertEq(rsc.holderUnbacked(R, thief), 500e18);
+        assertEq(uint8(rsc.getState(R).cause), uint8(LedgerlockReactive.Cause.REPEAT));
     }
 
     function test_amount_mismatch_latches() public {
@@ -267,6 +270,7 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         assertEq(feed(_M(4, alice, 1000e18)).length, 2);
         (, bool incident,,,,,) = rsc.routeState(R);
         assertTrue(incident);
+        assertEq(uint8(rsc.getState(R).cause), uint8(LedgerlockReactive.Cause.REPEAT));
     }
 
     function test_replayed_nonce_pauses() public {
@@ -360,7 +364,8 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
 
     function test_mint_lock_replay_latches() public {
         feed(_M(9, alice, 25e18));
-        feed(_L(9, alice, 25e18)); // resume
+        assertEq(feed(_L(9, alice, 25e18)).length, 2); // resume
+        _assertOpen(R, 0);
         assertEq(feed(_M(9, alice, 25e18)).length, 2); // replay of a consumed key
         (bool paused, bool incident,,,,,) = rsc.routeState(R);
         assertTrue(paused && incident);
@@ -384,6 +389,7 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         _lock(bob, 25e18); // Locked(1) on the fixture: route event -> OVERDUE
         (bool paused, bool incident,,,,,) = rsc.routeState(R);
         assertTrue(paused && incident);
+        assertEq(uint8(rsc.getState(R).cause), uint8(LedgerlockReactive.Cause.OVERDUE));
         vm.prank(relayer);
         vm.expectRevert(Minter.GatePaused.selector);
         minter.mint(1, bob, 25e18);
@@ -528,7 +534,7 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         deliver(_fail(UNI, address(gateU), PAUSE_SEL, 1));
         LedgerlockReactive.Cause cause = rsc.getState(R).cause;
         assertEq(uint8(cause), uint8(LedgerlockReactive.Cause.REPEAT)); // forged key latched first; FAILSAFE does not overwrite
-        (bool owed,,,,,,,) = rsc.acks(R, 0);
+        (bool owed,,,,,,,,) = rsc.acks(R, 0);
         assertFalse(owed);
     }
 
@@ -631,7 +637,7 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         deliver(_M(1_000_000, thief, 1e18));
         sys.takeRequests();
         feed(_ack(UNI, address(gateU), 0)); // epoch 0 is not what is owed
-        (bool owed,,,,,,,) = rsc.acks(R, 0);
+        (bool owed,,,,,,,,) = rsc.acks(R, 0);
         assertTrue(owed);
     }
 
@@ -867,6 +873,122 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         (, bool incident,,,,,) = rsc.routeState(R);
         assertFalse(incident);
         assertEq(rsc.outstandingAcks(), 0);
+    }
+
+    // ================================================================== QA round 1 regressions
+
+    function test_queue_head_skips_cleared_entries_gas_flat() public {
+        // 60 honest out-of-order fills (mint, then its lock) must not leave a walk behind for the next pause
+        uint256 g1 = _pauseGasAfterFills(1);
+        uint256 g60 = _pauseGasAfterFills(60);
+        assertEq(rsc.getState(R).qHead, rsc.pendingQueue(R).length); // nothing live: the head skipped every cleared entry
+        assertLe(g60, g1 + 10_000, "pause gas grows with history");
+    }
+
+    function _pauseGasAfterFills(uint256 n) internal returns (uint256 g) {
+        uint256 base = rsc.pendingQueue(R).length + 1;
+        for (uint256 i; i < n; i++) {
+            feed(_M(base + i, alice, 1e18));
+            feed(_L(base + i, alice, 1e18));
+        }
+        IReactive.LogRecord memory m = _M(base + n, alice, 1e18); // plausible: highest lock is base + n - 1
+        vm.prank(SYSTEM_ADDR);
+        g = gasleft();
+        rsc.react(m); // measured directly: the harness's subscription matching grows with every Cron sub/unsub
+        g -= gasleft();
+        _settle();
+        feed(_L(base + n, alice, 1e18)); // reopen for the next round
+        _assertOpen(R, 0);
+    }
+
+    function test_accepted_deficit_stale_holder_seize_cannot_hide_new_deficit() public {
+        address thief2 = makeAddr("thief2");
+        feed(_M(2_000_001, thief, 500e18));
+        rsc.resolve(R, 1, true); // deficit accepted: era 0 -> 1
+        _settle();
+        feed(_M(2_000_002, thief2, 300e18)); // a new attacker
+        feed(_seized(thief, 500e18)); // seizing the OLD attacker's tokens remediates nothing in the new era
+        (,,,,, uint256 unbacked,) = rsc.routeState(R);
+        assertEq(unbacked, 300e18);
+        vm.expectRevert(abi.encodeWithSelector(LedgerlockReactive.Deficit.selector, 300e18, 0));
+        rsc.resolve(R, 1, false);
+        feed(_seized(thief2, 300e18));
+        rsc.resolve(R, 1, false);
+    }
+
+    function test_missing_ack_on_gate_b_failsafe_via_cron() public {
+        gateB.setFailNext(true); // the release-side gate is silent
+        _mintTx(1, alice, 1e18); // plausible key: no REPEAT latch
+        assertFalse(gateU.isOpen());
+        vm.warp(block.timestamp + 31);
+        CallbackResult[] memory r = cron(CronTopics.CRON10);
+        assertEq(r.length, 1);
+        assertEq(r[0].target, address(gateB));
+        vm.warp(block.timestamp + 31);
+        vm.expectEmit(address(rsc));
+        emit LedgerlockReactive.GateUnreachable(R, BASE, 1);
+        vm.expectEmit(address(rsc));
+        emit LedgerlockReactive.IncidentLatched(R, LedgerlockReactive.Cause.FAILSAFE, 1);
+        cron(CronTopics.CRON10);
+        assertFalse(rsc.cronOn());
+    }
+
+    function test_failure_after_watchdog_rerequest_gets_its_own_retry() public {
+        deliver(_M(1, alice, 1e18));
+        sys.takeRequests(); // silent
+        vm.warp(block.timestamp + 31);
+        cron(CronTopics.CRON10); // watchdog re-request (executes: gates pause and ack)
+        // a late CallbackFailure for the ORIGINAL call arrives after the gates already acked: obsolete, ignored
+        deliver(_fail(UNI, address(gateU), PAUSE_SEL, 1));
+        assertEq(sys.takeRequests().length, 0);
+        (, bool incident,,,,,) = rsc.routeState(R);
+        assertFalse(incident);
+    }
+
+    function test_failure_while_watchdog_rerequest_in_flight_retries_once_more() public {
+        deliver(_M(1, alice, 1e18));
+        sys.takeRequests();
+        vm.warp(block.timestamp + 31);
+        deliver(_L(50, bob, 1e18)); // any route event runs the watchdog: one re-request per gate
+        assertEq(sys.takeRequests().length, 2); // dropped again
+        deliver(_fail(UNI, address(gateU), PAUSE_SEL, 1)); // failure of the original: its own retry, not GateUnreachable
+        assertEq(sys.takeRequests().length, 1);
+        (bool owed,,,,,,,,) = rsc.acks(R, 0);
+        assertTrue(owed);
+    }
+
+    function test_supply_reverse_violation_release_without_burn() public {
+        (uint256 r2, address col, address syn) = _addSupplyRoute();
+        feed(_log(BASE, col, SENT_T0, UNI, uint160(alice), abi.encode(uint256(100e18)))); // lock 100
+        feed(_log(UNI, syn, RECV_T0, BASE, uint160(alice), abi.encode(uint256(100e18)))); // mint 100
+        feed(_log(UNI, syn, SENT_T0, BASE, uint160(alice), abi.encode(uint256(40e18)))); // burn 40
+        assertEq(feed(_log(BASE, col, RECV_T0, UNI, uint160(alice), abi.encode(uint256(40e18)))).length, 0); // release 40
+        vm.expectEmit(address(rsc));
+        emit LedgerlockReactive.IncidentLatched(r2, LedgerlockReactive.Cause.SUPPLY, 1);
+        assertEq(feed(_log(BASE, col, RECV_T0, UNI, uint160(thief), abi.encode(uint256(1e18)))).length, 2);
+        (,,,,,, uint256 defRel) = rsc.routeState(r2);
+        assertEq(defRel, 1e18);
+    }
+
+    function test_zero_amount_pending_is_live_and_matchable() public {
+        assertEq(feed(_M(1, alice, 0)).length, 2);
+        (,,,, uint32 pending,,) = rsc.routeState(R);
+        assertEq(pending, 1);
+        assertEq(feed(_L(1, alice, 0)).length, 2); // matched -> resume
+        _assertOpen(R, 0);
+    }
+
+    function test_drill_for_another_route_id_ignored() public {
+        (uint256 r2, DrillBeacon beacon,,) = _addRouteWithBeacon();
+        assertEq(cycle(address(this), address(beacon), abi.encodeCall(DrillBeacon.fire, (r2 + 5))).length, 0);
+        (bool paused,,,,,,) = rsc.routeState(r2);
+        assertFalse(paused);
+    }
+
+    function test_addRoute_requires_proxies() public {
+        LedgerlockReactive fresh = new LedgerlockReactive();
+        vm.expectRevert(abi.encodeWithSelector(LedgerlockReactive.ProxyUnset.selector, UNI));
+        fresh.addRoute(_routeA(address(box), address(minter), address(gateB), address(gateU), address(0)), _t0A());
     }
 
     // ================================================================== helpers

@@ -97,7 +97,7 @@ const ackFor = (chainId: number, paused: boolean, epoch: bigint) =>
     SIDE[Number(d.args.side)] === (paused ? "ACK_PAUSED" : "ACK_RESUMED") && d.args.epoch === epoch);
 
 const keyed: { k: [bigint, number, number]; row: TripleRow }[] = [];
-const gasRows = ["reactive_tx,lasna_block,branch,gas_used,callbacks_requested,cron_subscribe,cron_unsubscribe,latch,instance"];
+const gasRows = ["reactive_tx,lasna_block,branch,gas_used,callbacks_requested,cron_subscribe,cron_unsubscribe,latch,rc_events,instance"];
 const trigChainOf = (side: string) => (side === "LOCK" || side === "RELEASE" || side === "DRILL" ? BASE : UNI);
 
 for (const [tx, ds] of byTx) {
@@ -117,7 +117,7 @@ for (const [tx, ds] of byTx) {
   else if (ds.some((d) => d.name === "RouteAdded")) branch = "add_route";
   else if (ds.some((d) => d.name === "Retried" || d.name === "GateUnreachable")) branch = "cron_watchdog";
   gasRows.push([tx, r.blockNumber, branch, r.gasUsed, nCb, cron.some((d) => d.args.on === true), cron.some((d) => d.args.on === false),
-    latch ? CAUSE[Number(latch.args.cause)] : "", INSTANCE].join(","));
+    latch ? CAUSE[Number(latch.args.cause)] : "", ds.map((d) => d.name).join("|"), INSTANCE].join(","));
   if (!side || side.startsWith("ACK") || side === "HELD" || side === "FAIL") continue;
   const originTx = obs!.args.originTx as Hex;
   const base = { stage: STAGE, seq: 0, triggerKind: "origin_log" as const, triggerChain: trigChainOf(side), triggerTx: originTx, reactiveChain: LASNA, reactiveTx: tx as Hex, instance: INSTANCE };

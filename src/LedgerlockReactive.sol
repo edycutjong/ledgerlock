@@ -95,7 +95,7 @@ contract LedgerlockReactive is AbstractReactive {
         address srcTo;
         bool srcSeen;
         bool consumed;
-        uint64 pendSince;
+        uint64 pendSince; // != 0 = a live pending entry (arrival time on Lasna)
         uint256 pendAmt;
         address pendTo;
     }
@@ -106,7 +106,8 @@ contract LedgerlockReactive is AbstractReactive {
         Kind kind;
         uint64 epoch;
         uint64 requestedAt;
-        uint64 rerequestedAt; // 0 = not retried yet; one retry per request
+        uint64 rerequestedAt; // watchdog: 0 = not re-requested yet; one re-request per request
+        bool failRetried; // CallbackFailure: one retry per request
         uint64 acked; // highest epoch acked
         bytes32 originTx;
         uint256 key;
@@ -136,7 +137,8 @@ contract LedgerlockReactive is AbstractReactive {
     mapping(uint256 => State) internal states;
     mapping(uint256 => mapping(uint8 => mapping(uint256 => Slot))) public slots;
     mapping(uint256 => mapping(uint8 => uint256)) public highestSrc;
-    mapping(uint256 => mapping(address => uint256)) public unbackedOf;
+    mapping(uint256 => mapping(uint64 => mapping(address => uint256))) internal unbackedOf; // route => era => holder
+    mapping(uint256 => uint64) public deficitEra; // bumped when a deficit is accepted: older per-holder figures stop counting
     mapping(uint256 => uint256[]) internal pendingQ; // packed (dir << 128) | key, oldest first
     mapping(uint256 => mapping(uint8 => Ack)) public acks;
     mapping(bytes32 => uint256) internal dispatch; // keccak(chainId, emitter, topic0) => (routeId << 8) | (side + 1)
@@ -173,6 +175,7 @@ contract LedgerlockReactive is AbstractReactive {
     error NotOwner();
     error Deficit(uint256 unbacked, uint256 unbackedRel);
     error BadRoute();
+    error ProxyUnset(uint256 chainId);
 
     constructor() payable {
         owner = msg.sender;
@@ -195,8 +198,8 @@ contract LedgerlockReactive is AbstractReactive {
     }
 
     /// @notice Arm a route before its first transfer. `t0s` = topic0 of [Locked, Minted, Burned, Released, Seized, Drill]
-    ///         (0 = not subscribed). Also subscribes each gate's Paused/Resumed/HeldByGuardian and, where a proxy is
-    ///         set, the proxy's CallbackFailure filtered on that gate.
+    ///         (0 = not subscribed). Also subscribes each gate's Paused/Resumed/HeldByGuardian and the chain's callback
+    ///         proxy's CallbackFailure filtered on that gate (`setProxy` first, else `ProxyUnset`).
     function addRoute(Route calldata rt, uint256[6] calldata t0s) external onlyOwner returns (uint256 r) {
         if (rt.gateSrc == address(0) || rt.gateDst == address(0) || rt.windowSec == 0) revert BadRoute();
         if (rt.mode == Mode.NONCE && (rt.keyTopic == 0 || rt.keyTopic > 3)) revert BadRoute();
@@ -225,11 +228,10 @@ contract LedgerlockReactive is AbstractReactive {
         _bind(r, chainId, gate, RESUMED_T0, Side.ACK_RESUMED);
         _bind(r, chainId, gate, HELD_T0, Side.HELD);
         address proxy = proxyOf[chainId];
-        if (proxy != address(0)) {
-            SYSTEM.subscribe(
-                chainId, proxy, CallbackFailureWatch.TOPIC, uint256(uint160(gate)), REACTIVE_IGNORE, REACTIVE_IGNORE
-            );
-        }
+        if (proxy == address(0)) revert ProxyUnset(chainId); // a gate without its failure watch would retry only via Cron
+        SYSTEM.subscribe(
+            chainId, proxy, CallbackFailureWatch.TOPIC, uint256(uint160(gate)), REACTIVE_IGNORE, REACTIVE_IGNORE
+        );
     }
 
     // ------------------------------------------------------------------ the decision
@@ -269,6 +271,7 @@ contract LedgerlockReactive is AbstractReactive {
             emit Observed(r, side, 0, originTx);
             _onSeized(r, address(uint160(log_.topic1)), _word(log_.data, 0), originTx);
         } else if (side == Side.DRILL) {
+            if (log_.topic1 != r) return; // a beacon fires for one route id
             emit Observed(r, side, 0, originTx);
             _pauseBoth(r, originTx, 0);
             _latch(r, Cause.DRILL);
@@ -312,7 +315,7 @@ contract LedgerlockReactive is AbstractReactive {
         s.srcTo = to;
         s.srcSeen = true;
         if (key > highestSrc[r][dir]) highestSrc[r][dir] = key;
-        if (s.pendAmt == 0 || s.pendAmt != amt || s.pendTo != to) return;
+        if (s.pendSince == 0 || s.pendAmt != amt || s.pendTo != to) return;
 
         uint256 waited = block.timestamp - s.pendSince;
         bool late = waited > routes[r].windowSec;
@@ -320,10 +323,11 @@ contract LedgerlockReactive is AbstractReactive {
         s.pendTo = address(0);
         s.pendSince = 0;
         s.consumed = true;
-        st.pendingCount--;
+        if (--st.pendingCount == 0) st.qHead = uint32(pendingQ[r].length); // nothing live: skip every cleared entry
         if (dir == FWD) {
-            uint256 dd = _min3(amt, unbackedOf[r][to], st.unbacked);
-            unbackedOf[r][to] -= dd;
+            mapping(address => uint256) storage held = unbackedOf[r][deficitEra[r]];
+            uint256 dd = _min3(amt, held[to], st.unbacked);
+            held[to] -= dd;
             st.unbacked -= dd;
         } else {
             st.unbackedRel -= amt < st.unbackedRel ? amt : st.unbackedRel;
@@ -342,21 +346,21 @@ contract LedgerlockReactive is AbstractReactive {
         uint8 dir = side == Side.MINT ? FWD : REV;
         State storage st = states[r];
         Slot storage s = slots[r][dir][key];
-        if (s.srcSeen && !s.consumed && s.srcAmt == amt && s.srcTo == to && s.pendAmt == 0) {
+        if (s.srcSeen && !s.consumed && s.srcAmt == amt && s.srcTo == to && s.pendSince == 0) {
             s.consumed = true;
             return;
         }
-        bool implausible = key > highestSrc[r][dir] + routes[r].keySlack || s.consumed || s.pendAmt != 0 || s.srcSeen;
+        bool implausible = key > highestSrc[r][dir] + routes[r].keySlack || s.consumed || s.pendSince != 0 || s.srcSeen;
         if (dir == FWD) {
             st.unbacked += amt;
-            unbackedOf[r][to] += amt;
+            unbackedOf[r][deficitEra[r]][to] += amt;
         } else {
             st.unbackedRel += amt;
         }
         _pauseBoth(r, originTx, key); // two callbacks in THIS react() (no-op if already paused)
         emit Mismatch(r, side, key, amt, to, originTx, st.epoch);
         if (implausible) _latch(r, Cause.REPEAT);
-        if (s.pendAmt != 0) {
+        if (s.pendSince != 0) {
             st.copycatsSameKey++;
         } else if (st.pendingCount < MAX_PENDING) {
             s.pendAmt = amt;
@@ -372,13 +376,16 @@ contract LedgerlockReactive is AbstractReactive {
     /// @dev Lazy, timer-free OVERDUE: after the side handler, the oldest live pending entry older than W latches.
     function _checkOverdue(uint256 r) internal {
         State storage st = states[r];
-        if (st.pendingCount == 0) return;
         uint256[] storage q = pendingQ[r];
+        if (st.pendingCount == 0) {
+            st.qHead = uint32(q.length);
+            return;
+        }
         uint256 h = st.qHead;
         Slot storage s;
         while (h < q.length) {
             s = slots[r][uint8(q[h] >> 128)][uint128(q[h])];
-            if (s.pendAmt != 0) {
+            if (s.pendSince != 0) {
                 if (block.timestamp - s.pendSince > routes[r].windowSec) _latch(r, Cause.OVERDUE);
                 break;
             }
@@ -409,8 +416,9 @@ contract LedgerlockReactive is AbstractReactive {
 
     function _onSeized(uint256 r, address holder, uint256 amt, bytes32 originTx) internal {
         State storage st = states[r];
-        uint256 dd = _min3(amt, unbackedOf[r][holder], st.unbacked);
-        unbackedOf[r][holder] -= dd;
+        mapping(address => uint256) storage held = unbackedOf[r][deficitEra[r]];
+        uint256 dd = _min3(amt, held[holder], st.unbacked);
+        held[holder] -= dd;
         st.unbacked -= dd;
         emit Remediated(r, dd, originTx);
     }
@@ -456,6 +464,7 @@ contract LedgerlockReactive is AbstractReactive {
         a.key = key;
         a.requestedAt = uint64(block.timestamp);
         a.rerequestedAt = 0;
+        a.failRetried = false;
         if (!cronOn) {
             cronOn = true;
             SYSTEM.subscribe(
@@ -526,8 +535,9 @@ contract LedgerlockReactive is AbstractReactive {
         emit Observed(r, Side.FAIL, fEpoch, originTx);
         Ack storage a = acks[r][uint8(c)];
         if (!a.owed || fEpoch != a.epoch) return; // obsolete (older epoch) or already settled
-        if (a.rerequestedAt == 0) {
-            a.rerequestedAt = uint64(block.timestamp);
+        if (!a.failRetried) {
+            a.failRetried = true;
+            a.requestedAt = uint64(block.timestamp); // the watchdog now waits a full deadline for the retry
             _send(r, c);
             emit Retried(r, _chainOf(r, c), fEpoch);
         } else {
@@ -591,7 +601,7 @@ contract LedgerlockReactive is AbstractReactive {
         uint256[] storage q = pendingQ[r];
         for (uint256 h = st.qHead; h < q.length; h++) {
             Slot storage s = slots[r][uint8(q[h] >> 128)][uint128(q[h])];
-            if (s.pendAmt != 0) {
+            if (s.pendSince != 0) {
                 s.pendAmt = 0;
                 s.pendTo = address(0);
                 s.pendSince = 0;
@@ -603,6 +613,7 @@ contract LedgerlockReactive is AbstractReactive {
         st.incident = false;
         st.cause = Cause.NONE;
         if (acceptDeficit) {
+            deficitEra[r]++; // a stale holder's later seize can no longer offset a new attack's deficit
             st.unbacked = 0;
             st.unbackedRel = 0;
             if (st.mintedTotal > st.lockedTotal) st.lockedTotal = st.mintedTotal;
@@ -652,11 +663,16 @@ contract LedgerlockReactive is AbstractReactive {
         uint256[] storage q = pendingQ[r];
         for (uint256 h = st.qHead; h < q.length; h++) {
             Slot storage s = slots[r][uint8(q[h] >> 128)][uint128(q[h])];
-            if (s.pendAmt != 0) {
+            if (s.pendSince != 0) {
                 overdue = block.timestamp - s.pendSince > routes[r].windowSec;
                 break;
             }
         }
+    }
+
+    /// @notice Unbacked amount minted to `holder` on route `r` in the current deficit era (what a seize can remediate).
+    function holderUnbacked(uint256 r, address holder) external view returns (uint256) {
+        return unbackedOf[r][deficitEra[r]][holder];
     }
 
     function getRoute(uint256 r) external view returns (Route memory) {
