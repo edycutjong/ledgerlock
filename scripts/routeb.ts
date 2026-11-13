@@ -10,9 +10,10 @@ import { nonceManager, privateKeyToAccount } from "viem/accounts";
 import { CHAINS, client } from "../packages/reactive-kit/ts/chains.ts";
 
 const [mode, countArg] = process.argv.slice(2);
-const N = Number(countArg ?? 1), LASNA = 5318007, BASE = 84532, UNI = 1301, ROUTE = 2n;
+const N = Number(countArg ?? 1), LASNA = 5318007, BASE = 84532, UNI = 1301;
 const kv = (p: string) => Object.fromEntries(readFileSync(p, "utf8").split("\n").filter((l) => /^[A-Z_0-9]+=/.test(l)).map((l) => l.replace(/\s+#.*$/, "").split("=") as [string, string])) as Record<string, Hex>;
 const F = kv("evidence/frozen-addresses.txt"), B = kv("evidence/route-b-addresses.txt"), G = kv("evidence/route-b-guard.txt");
+const ROUTE = BigInt(G.ROUTE_ID_B ?? "2"); // written by script/routeb-deploy.sh from routeCount()
 const OUT = "evidence/frozen-routeb-runs.csv";
 const COLS = ["run_id", "kind", "send_tx", "dispatch_mined_ms", "process_tx", "process_mined_ms", "delay_s", "lasna_sent_seen_ms", "lasna_recv_seen_ms", "lasna_order", "false_latch", "pause_lasna_tx", "pause_u_tx", "pause_b_tx", "pause_u_s", "pause_b_s", "held_process_tx", "held_process_status", "resume_u_s", "outcome", "note"];
 if (!existsSync(OUT)) writeFileSync(OUT, COLS.join(",") + "\n");

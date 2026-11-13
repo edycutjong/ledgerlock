@@ -1045,6 +1045,23 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         assertFalse(rsc.cronOn());
     }
 
+    /// Normal path: with both gates acked, a copycat and a resolve() on a healthy route send nothing extra.
+    function test_a2a_no_resend_when_gates_confirmed() public {
+        feed(_M(1_000_000, thief, 1e18)); // forged: pause epoch 1, both acks back
+        assertEq(rsc.outstandingAcks(), 0);
+        deliver(_M(1_000_001, thief, 1e18)); // copycat while paused and confirmed
+        assertEq(sys.takeRequests().length, 0);
+        feed(_L(5, alice, 1e18));
+        feed(_M(5, alice, 1e18)); // a matched legit pair needs no callback, paused or not
+        assertEq(sys.takeRequests().length, 0);
+        deliver(_seized(thief, 2e18)); // remediate both forged mints so resolve() passes the deficit check
+        rsc.resolve(R, 1, false);
+        runCallbacks(); // resume epoch 2 to both gates
+        assertEq(sys.takeRequests().length, 0);
+        rsc.resolve(R, 1, false); // healthy, unpaused, both gates acked at epoch 2: nothing to send
+        assertEq(sys.takeRequests().length, 0);
+    }
+
     /// A resume that went GateUnreachable left that gate shut; the owner's resolve() sends it again.
     function test_a2a_failed_resume_resent_by_resolve() public {
         feed(_M(3, alice, 1e18));

@@ -13,7 +13,7 @@ create() { forge create "$2" --broadcast --rpc-url "$1" --private-key "$DEPLOYER
 G2B=$(create "$BASE_SEPOLIA_RPC" src/Gate.sol:Gate 0.0002ether --constructor-args $BASE_PROXY $RC $DEPLOYER_ADDRESS)
 G2U=$(create "$UNICHAIN_SEPOLIA_RPC" src/Gate.sol:Gate 0.0002ether --constructor-args $UNI_PROXY $RC $DEPLOYER_ADDRESS)
 DB=$(create "$BASE_SEPOLIA_RPC" src/DrillBeacon.sol:DrillBeacon 0)
-snd() { cast send "$@" --private-key "$DEPLOYER_PRIVATE_KEY" --json | jq -r '.transactionHash+" "+.status'; }
+snd() { cast send "$@" --private-key "$DEPLOYER_PRIVATE_KEY" --json | jq -er 'if .status == "0x1" then .transactionHash+" "+.status else error("reverted: "+.transactionHash) end'; }
 out=$(snd $G2B 'setTarget(address)' $BASE_PAUSABLE_ISM --rpc-url $BASE_SEPOLIA_RPC); echo "setTarget B: $out"
 out=$(snd $G2U 'setTarget(address)' $UNI_PAUSABLE_ISM --rpc-url $UNICHAIN_SEPOLIA_RPC); echo "setTarget U: $out"
 out=$(snd $BASE_PAUSABLE_ISM 'transferOwnership(address)' $G2B --rpc-url $BASE_SEPOLIA_RPC); echo "own B: $out"

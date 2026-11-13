@@ -22,13 +22,13 @@ create() { # rpc contract value args...
   local rpc=$1 c=$2 v=$3 extra=(); shift 3
   [ "$rpc" = "$LASNA_RPC" ] && extra=("${LASNA[@]}")
   forge create "$c" --broadcast --rpc-url "$rpc" --private-key "$DEPLOYER_PRIVATE_KEY" --value "$v" --json "${extra[@]}" \
-    ${1:+--constructor-args "$@"} | sed -n "/^{/,\$p" | jq -r .deployedTo
+    ${1:+--constructor-args "$@"} | sed -n "/^{/,\$p" | jq -er .deployedTo
 }
 tx() { # rpc to sig args... -> "hash status gas"
   local rpc=$1 to=$2 sig=$3 extra=(); shift 3
   [ "$rpc" = "$LASNA_RPC" ] && extra=("${LASNA[@]}")
   cast send "$to" "$sig" "$@" --rpc-url "$rpc" --private-key "$DEPLOYER_PRIVATE_KEY" "${extra[@]}" --json \
-    | jq -r '.transactionHash + " " + .status + " gas=" + .gasUsed'
+    | jq -er 'if .status == "0x1" then .transactionHash + " " + .status + " gas=" + .gasUsed else error("reverted: " + .transactionHash) end'
 }
 RC=$(create "$LASNA_RPC" src/LedgerlockReactive.sol:LedgerlockReactive "$RC_FUND");               echo "RC     (5318007): $RC"
 GB=$(create "$BASE_SEPOLIA_RPC" "$GATE" "$GATE_FUND" $BASE_PROXY $RC $DEPLOYER_ADDRESS);          echo "GATE_B (84532):   $GB"

@@ -460,7 +460,10 @@ contract LedgerlockReactive is AbstractReactive {
             // was never confirmed and is no longer owed (GateUnreachable) is asked again on every new mismatch.
             for (uint256 c; c < 2; c++) {
                 Ack storage a = acks[r][uint8(c)];
-                if (!a.owed && a.acked < st.epoch) _request(r, c, Kind.PAUSE, st.epoch, originTx, key);
+                if (!a.owed && a.acked < st.epoch) {
+                    _request(r, c, Kind.PAUSE, st.epoch, originTx, key);
+                    emit Retried(r, _chainOf(r, c), st.epoch);
+                }
             }
             return;
         }
@@ -664,7 +667,10 @@ contract LedgerlockReactive is AbstractReactive {
             // a RESUME that went GateUnreachable left that gate shut: re-send the same epoch to it
             for (uint256 c; c < 2; c++) {
                 Ack storage a = acks[r][uint8(c)];
-                if (!a.owed && a.acked < st.epoch) _request(r, c, Kind.RESUME, st.epoch, a.originTx, a.key);
+                if (!a.owed && a.acked < st.epoch) {
+                    _request(r, c, Kind.RESUME, st.epoch, a.originTx, a.key);
+                    emit Retried(r, _chainOf(r, c), st.epoch);
+                }
             }
         }
     }
