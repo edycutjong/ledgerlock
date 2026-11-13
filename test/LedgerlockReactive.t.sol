@@ -933,7 +933,7 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         assertFalse(rsc.cronOn());
     }
 
-    function test_failure_after_watchdog_rerequest_gets_its_own_retry() public {
+    function test_failure_after_ack_is_obsolete() public {
         deliver(_M(1, alice, 1e18));
         sys.takeRequests(); // silent
         vm.warp(block.timestamp + 31);
@@ -989,6 +989,31 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         LedgerlockReactive fresh = new LedgerlockReactive();
         vm.expectRevert(abi.encodeWithSelector(LedgerlockReactive.ProxyUnset.selector, UNI));
         fresh.addRoute(_routeA(address(box), address(minter), address(gateB), address(gateU), address(0)), _t0A());
+    }
+
+    function test_live_entry_behind_cleared_head_overdue_then_resolve_consumes() public {
+        feed(_L(20, bob, 1e18)); // keys up to 36 plausible
+        feed(_M(21, alice, 1e18)); // A
+        feed(_M(22, alice, 2e18)); // B
+        feed(_L(21, alice, 1e18)); // A matched: B still pending, gates stay shut
+        assertFalse(gateU.isOpen());
+        vm.warp(block.timestamp + W + 1);
+        vm.expectEmit(address(rsc));
+        emit LedgerlockReactive.IncidentLatched(R, LedgerlockReactive.Cause.OVERDUE, 1);
+        feed(_L(23, bob, 1e18)); // any route event: the walk passes A's cleared slot and finds B overdue
+        assertEq(rsc.getState(R).qHead, 1); // head moved past A only
+        rsc.resolve(R, 1, true);
+        (,, bool consumed,, uint256 pendAmt,) = _slot(0, 22);
+        assertTrue(consumed);
+        assertEq(pendAmt, 0);
+        assertEq(rsc.getState(R).qHead, rsc.pendingQueue(R).length);
+    }
+
+    function test_key_beyond_uint128_latches_without_queueing() public {
+        assertEq(feed(_M(uint256(type(uint128).max) + 1, thief, 1e18)).length, 2);
+        (, bool incident,,, uint32 pending,,) = rsc.routeState(R);
+        assertTrue(incident);
+        assertEq(pending, 0);
     }
 
     // ================================================================== helpers

@@ -362,6 +362,8 @@ contract LedgerlockReactive is AbstractReactive {
         if (implausible) _latch(r, Cause.REPEAT);
         if (s.pendSince != 0) {
             st.copycatsSameKey++;
+        } else if (key > type(uint128).max) {
+            _latch(r, Cause.REPEAT); // cannot be queued (packed as dir << 128 | key); no bridge nonce is this large
         } else if (st.pendingCount < MAX_PENDING) {
             s.pendAmt = amt;
             s.pendTo = to;
@@ -538,6 +540,7 @@ contract LedgerlockReactive is AbstractReactive {
         if (!a.failRetried) {
             a.failRetried = true;
             a.requestedAt = uint64(block.timestamp); // the watchdog now waits a full deadline for the retry
+            if (a.rerequestedAt != 0) a.rerequestedAt = uint64(block.timestamp);
             _send(r, c);
             emit Retried(r, _chainOf(r, c), fEpoch);
         } else {

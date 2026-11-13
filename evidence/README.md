@@ -1,10 +1,10 @@
 # evidence/
 
 Raw rows from live runs on Reactive Lasna + Base Sepolia + Unichain Sepolia, regenerated from chain logs. Nothing here is
-typed by hand except `core-dev-actions.csv` and `spike-actions.csv`, which the trigger scripts append as they send each transaction.
+typed by hand except the actions files (`core-dev-actions.csv`, `core-dev2-actions.csv`, `spike-actions.csv`), which the trigger scripts append as they send each transaction.
 
 Both instances below are **dev deployments**: their gates are `ProbeGate`s (a `Gate` plus a forced-failure flag the
-guardian can set). The deployment the final numbers cite comes later and is listed in `deployments/`.
+guardian can set). The deployment the final numbers cite comes later and will be listed in a `deployments/` folder (not created yet).
 
 ## Instance `core-dev` (core flow; `scripts/triples.ts`, `pnpm triples:core`)
 
@@ -14,8 +14,8 @@ fixes in `src/` are covered by the Test Lib suite and reach the chain with the n
 
 | File | Rows |
 |---|---|
-| `core-dev-triples.csv` | origin tx → Lasna `react()` tx → gate callback tx, one row per callback leg (no-op rows have no callback). `resolve()` rows start from the Lasna tx itself. `last_activity_tx` = the gate's ack as seen back on Lasna |
-| `core-dev-react-gas.csv` | every Lasna tx of the instance: branch, gas used, `CallbackRequest` logs it carries, whether it subscribed / unsubscribed the Cron watchdog, the latch cause if one fired, and every guard event in that tx (`rc_events`, e.g. `Retried`, `GateUnreachable`) |
+| `core-dev-triples.csv` | origin tx → Lasna `react()` tx → gate callback tx, one row per callback leg of each pause/resume request (no-op rows have no callback; a leg whose delivery failed has an empty `callback_tx`, and re-sends after a failure appear in the gas file, not as extra triples rows). `resolve()` rows start from the Lasna tx itself. `last_activity_tx` = the gate's ack as seen back on Lasna |
+| `core-dev-react-gas.csv` | every Lasna tx in which the guard emitted an event (a Cron tick or tx with no guard event has no row): branch, gas used, `CallbackRequest` logs it carries, whether it subscribed / unsubscribed the Cron watchdog, the latch cause if one fired, and every guard event in that tx (`rc_events`, e.g. `Retried`, `GateUnreachable`) |
 | `core-dev-callback-failures.csv` | raw `CallbackFailure` logs on both callback proxies for this instance's gates (forced with `setFailNext`), with the selector and the epoch decoded from the payload |
 | `core-dev-actions.csv` | every transaction the trigger script sent (chain, hash, local send time in ms) |
 
@@ -25,6 +25,10 @@ proceeds, then the owner's `resolve()` (two resume callbacks); a mint sent befor
 (auto-resume in the same `react()` that saw it, no latch); a forged mint with both gates forced to fail (each proxy logs
 `CallbackFailure`, the guard re-requests once per chain, the second failure ends in `GateUnreachable`, visible in `rc_events`; the gates
 stayed open, which is the documented failure mode); then `seize` + `resolve()` again.
+
+Live coverage stops there: the Cron watchdog was subscribed and unsubscribed live around every request (the
+`cron_subscribe` / `cron_unsubscribe` columns), but its tick-driven re-request (a gate that stays silent with no
+`CallbackFailure`) has not fired live; that path is covered by the Test Lib suite only.
 
 ## Instance `core-dev2` (core flow after QA fixes; same scripts, `INSTANCE=core-dev2`)
 
