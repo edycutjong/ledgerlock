@@ -6,7 +6,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
     "test:ts": "tsx --test packages/reactive-kit/ts/*.test.ts",
-    "triples": "tsx scripts/spike-triples.ts"
+    "triples": "tsx scripts/spike-triples.ts",
+    "triples:core": "tsx scripts/triples.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
