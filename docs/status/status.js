@@ -18,8 +18,9 @@ async function rpc(chain, method, params) {
 }
 const call = (chain, to, data) => rpc(chain, "eth_call", [{ to, data }, "latest"]);
 
+let PENDING = true; // first paint renders the committed evidence at once; the live gate reads fill in after (no layout shift)
 function stateWord(open, requested) {
-  if (open === null) return { cls: "unk", word: "live read failed" };
+  if (open === null) return { cls: "unk", word: PENDING ? "reading gates" : "live read failed" };
   if (open && requested) return { cls: "warn", word: "pause not confirmed" };
   return open ? { cls: "clear", word: "line clear" } : { cls: "blocked", word: "line blocked" };
 }
@@ -49,7 +50,7 @@ function track(label, sub, gb, gu, req, boxes) {
   const word = split ? { cls: "warn", word: "split: one gate shut" } : s;
   const lamp = (open) => (open === null ? "" : open ? "clear" : "blocked");
   const rail = (open) => (open === null ? "" : open ? "clear" : "blocked");
-  const g = (n, open) => `<div class="needle"><span class="lamp ${lamp(open)}"></span><span>${n}: ${open === null ? "live read failed" : open ? "OPEN" : "SHUT"}</span></div>`;
+  const g = (n, open) => `<div class="needle"><span class="lamp ${lamp(open)}"></span><span>${n}: ${open === null ? (PENDING ? "reading…" : "live read failed") : open ? "OPEN" : "SHUT"}</span></div>`;
   return `<div class="route"><div><div class="eyebrow">${esc(sub)}</div><h3 class="disp">${esc(label)}</h3></div>
   <div class="state ${word.cls}" aria-live="polite">${word.word}</div>
   <div class="track"><div class="box"><h4>Base Sepolia</h4>${g("gate B", gb)}<div class="muted" style="font-size:14px">${esc(boxes.base)}</div><div class="rail ${rail(gb)}"></div></div>
@@ -76,12 +77,12 @@ function render(d, lv) {
       { base: `native router ${short(d.routeB.ROUTE_B_COLLATERAL_BASE)}`, mid: rbr ? `${rbr.legit} legit transfers (self-delivered) · ${rbr.legit_false_latch} false latches · ${rbr.drills.length} drills` : "SUPPLY mode", uni: `synthetic ${short(d.routeB.ROUTE_B_SYNTHETIC_UNI)}` }) : "";
   $("routes").innerHTML =
     track("Route A · fixture bridge", "labelled fixture · we deployed both ends", lv.gateB, lv.gateU, reqB,
-      { base: `LockBox ${short(a.LOCKBOX)}`, mid: rs ? `epoch ${rs.epoch} · ${rs.pending} pending${rs.incident ? " · INCIDENT LATCHED" : ""}` : "guard state: live read failed", uni: `Minter ${short(a.MINTER)}` }) +
+      { base: `LockBox ${short(a.LOCKBOX)}`, mid: rs ? `epoch ${rs.epoch} · ${rs.pending} pending${rs.incident ? " · INCIDENT LATCHED" : ""}` : (PENDING ? "guard state: reading…" : "guard state: live read failed"), uni: `Minter ${short(a.MINTER)}` }) +
     routeBHtml;
   const lowGate = [lv.balB, lv.balU].some((x) => x !== null && x < 0.0003);
   const bad = (lv.balRc !== null && lv.balRc < 1) || lowGate;
   $("health").className = "health" + (bad ? " bad" : "");
-  $("health").textContent = lv.balRc === null ? "health: live read failed (RPC unreachable); evidence below still renders" :
+  $("health").textContent = lv.balRc === null && PENDING ? "health: reading live RPCs…" : lv.balRc === null ? "health: live read failed (RPC unreachable); evidence below still renders" :
     `${bad ? "UNHEALTHY: low reserve or gate balance" : "HEALTHY"} · guard reserve ${fmt(lv.balRc, 2)} lREACT · gate U ${fmt(lv.balU, 4)} ETH · gate B ${fmt(lv.balB, 4)} ETH`;
 
   const inc = d.incident;
@@ -152,8 +153,11 @@ function render(d, lv) {
 
 (async function main() {
   let d;
-  try { d = await (await fetch("data/status.json", { cache: "no-store" })).json(); } catch { $("routes").innerHTML = '<p class="empty">data/status.json could not be loaded.</p>'; return; }
+  try { d = await (await fetch("data/status.json", { cache: "no-store" })).json(); } catch { $("routes").innerHTML = '<p class="empty">data/status.json could not be loaded.</p>'; document.body.classList.remove("loading"); return; }
   const none = { gateB: null, gateU: null, rs: null, balRc: null, balB: null, balU: null };
+  render(d, none);
+  document.body.classList.remove("loading");
   const lv = await Promise.race([live(d), new Promise((r) => setTimeout(() => r(none), 8000))]);
+  PENDING = false;
   render(d, lv);
 })();

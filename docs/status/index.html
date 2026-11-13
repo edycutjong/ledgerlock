@@ -4,9 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ledgerlock status: two chains, one book</title>
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
 <meta name="description" content="Live status of the Ledgerlock guard: Reactive Network watches both chains of a bridge and shuts both ends of the line when a mint has no lock behind it. Testnet; every number is read from committed run rows.">
 <link rel="preload" href="fonts/league-gothic-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+body.loading>section,body.loading>footer{visibility:hidden}
 @font-face{font-family:"League Gothic";src:url(fonts/league-gothic-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Libre Franklin";src:url(fonts/libre-franklin-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Libre Franklin";src:url(fonts/libre-franklin-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
@@ -64,10 +66,12 @@ footer{padding-top:20px;font-size:15px;color:var(--muted)}
 .empty{color:var(--muted);font-style:italic}
 </style>
 </head>
-<body>
+<body class="loading">
+<noscript><style>body.loading>section,body.loading>footer{visibility:visible}</style></noscript>
 <header>
   <h1 class="disp">Ledgerlock</h1>
   <p>Two chains, one book. A Reactive contract keeps both books of a bridge and shuts both ends of the line when a mint has no lock behind it. <span class="muted">Testnet · Lasna 5318007 · Base Sepolia · Unichain Sepolia</span></p>
+  <p class="muted" style="font-size:14px"><a href="../">Overview</a> · <a href="../pitch/">Pitch deck</a> · <a href="https://github.com/edycutjong/ledgerlock">GitHub</a></p>
 </header>
 
 <section aria-labelledby="h-routes">

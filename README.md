@@ -45,7 +45,7 @@ See the diagram above (source: `docs/architecture.svg`).
 | Route A | our own fixture bridge (`src/fixture/LockBox.sol`, `Minter.sol`), labelled as a fixture, with a Nomad-class release bug reproduced on demand |
 | Route B | a Hyperlane warp route we deployed (`PausableIsm` = Hyperlane's pausable interchain security module) (Base collateral → Unichain synthetic) with a `PausableIsm` behind the gate; deliveries were made by **our own `Mailbox.process`**, because the public relayer did not deliver within 6 minutes |
 | Tests | Foundry with the Reactive Test Lib; scripts in TypeScript (viem) |
-| Status page | static, `status/`, reads the committed rows |
+| Status page | static, `docs/status/`, reads the committed rows |
 
 `tUSD` is the fixture's unit of account (internal bookkeeping, not an ERC-20) and lREACT is Lasna's gas token. Two guard instances: route A is guarded by `frozen3` (the final frozen deployment) and route B by `frozen` (its `PausableIsm` is owned by `frozen`'s gates, which have no ownership transfer). Per-route addresses: `deployments/testnet.json`.
 
@@ -73,7 +73,7 @@ Testnet only; no wallet is needed to verify anything below, every item is a read
 | Gate (Unichain Sepolia) | `0x6533d804Ef6D70765b981931083Fd332D4F78ef1` |
 | LockBox (Base Sepolia) / Minter (Unichain Sepolia) | `0x871b6da60da6Cf44482a055EE24031220021873F` / `0x7be8C4bf9De88Cc037F61203C8692E3514ec4e90` |
 
-Route B's addresses are in `deployments/testnet.json`. Explorers: [Base Sepolia](https://sepolia.basescan.org), [Unichain Sepolia](https://sepolia.uniscan.xyz), [Lasna](https://lasna.reactscan.net).
+Landing page, pitch deck and read-only status page: <https://edycutjong.github.io/ledgerlock/> (GitHub Pages from `docs/`; `/pitch/`, `/status/`). Route B's addresses are in `deployments/testnet.json`. Explorers: [Base Sepolia](https://sepolia.basescan.org), [Unichain Sepolia](https://sepolia.uniscan.xyz), [Lasna](https://lasna.reactscan.net).
 
 Every pause is a triple: origin transaction → Lasna `react()` → gate callback. `evidence/frozen3-triples.csv` has 846 rows, each an origin transaction joined to its Lasna `react()`; 500 of them carry a gate callback (500 of 500 callback legs joined: 250 pause legs = 125 `react()`s × 2 gates, 40 auto-resume legs, 210 resolve-driven resume legs) and 0 `CallbackFailure`. The other 346 rows send no callback: 140 locks, 80 matched mints, 105 seizures, 21 mints that arrived while the gates were already paused.
 
@@ -142,7 +142,7 @@ Re-running the live bench needs your own funded testnet keys; steps are in [DEMO
 | `packages/reactive-kit/` | shared Omni building blocks, copied unchanged from the same author's Heirloom repo (MIT; see its README) |
 | `script/`, `scripts/` | deploy and trigger shell scripts; bench, summary and join scripts |
 | `evidence/` | committed raw rows from live runs; start with `evidence/README.md` |
-| `status/` | read-only status page |
+| `docs/` | landing page (`index.html`), pitch deck (`pitch/`), read-only status page (`status/`), architecture diagram |
 | `deployments/testnet.json` | per-route addresses |
 
 ## 📄 License

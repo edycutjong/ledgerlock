@@ -1,4 +1,4 @@
-// Builds status/data/status.json (what the read-only status page renders) from committed evidence. Nothing is typed in.
+// Builds docs/status/data/status.json (what the read-only status page renders) from committed evidence. Nothing is typed in.
 // Usage: tsx scripts/status-data.ts [instance]
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { parseCsvLine } from "../packages/reactive-kit/ts/triples.ts";
@@ -48,5 +48,5 @@ const out = {
   lockDelays: csv(`evidence/${instance}-bench-runs.csv`).filter((r) => r.kind === "legit_forced").map((r) => Number((/lock sent (\d+) ms/.exec(r.note) ?? [])[1]) / 1000),
   controlArmIds: runs.filter((r) => isControlArm(r.id)).map((r) => r.id),
 };
-writeFileSync("status/data/status.json", JSON.stringify(out) + "\n");
+writeFileSync("docs/status/data/status.json", JSON.stringify(out) + "\n");
 console.log(`status.json: ${runs.length} runs, ${triples.length} triples, summary ${out.summary ? "yes" : "no"}`);
