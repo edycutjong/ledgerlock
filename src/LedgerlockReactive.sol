@@ -17,6 +17,11 @@ import {CallbackFailureWatch} from "reactive-kit/CallbackFailureWatch.sol";
 ///      watchdog), and is dropped when the last ack lands.
 ///      Modes: NONCE (the bridge puts a transfer key in a topic) and SUPPLY (totals only, e.g. a Hyperlane warp route:
 ///      any violation pauses and latches, since totals cannot name the bad transfer).
+///      Adapter limits: NONCE matching needs the same amount and recipient on both sides (a fee-taking bridge needs an
+///      adapter that reports the net amount on both); a missing data word decodes as 0. SUPPLY sums every log of the
+///      enrolled routers (no per-domain split), so the routers must carry this route only, and a forged mint is seen
+///      only once it exceeds the legit amount in flight. An event on a quiet route is never re-examined by a timer: a
+///      pending entry past W latches OVERDUE on the next route event (the gates are already shut meanwhile).
 contract LedgerlockReactive is AbstractReactive {
     // ------------------------------------------------------------------ types
 
@@ -176,6 +181,7 @@ contract LedgerlockReactive is AbstractReactive {
     error Deficit(uint256 unbacked, uint256 unbackedRel);
     error BadRoute();
     error ProxyUnset(uint256 chainId);
+    error ProxySet(uint256 chainId);
 
     constructor() payable {
         owner = msg.sender;
@@ -189,7 +195,10 @@ contract LedgerlockReactive is AbstractReactive {
     // ------------------------------------------------------------------ owner config
 
     /// @notice Register the callback proxy of a destination chain (its `CallbackFailure` log is watched per gate).
+    ///         Set once per chain: the failure watch is subscribed to this proxy when a gate is bound, so a later change
+    ///         would silently orphan it (a wrong proxy = redeploy).
     function setProxy(uint256 chainId, address proxy) external onlyOwner {
+        if (proxyOf[chainId] != address(0)) revert ProxySet(chainId);
         proxyOf[chainId] = proxy;
     }
 
@@ -218,11 +227,14 @@ contract LedgerlockReactive is AbstractReactive {
 
     function _bind(uint256 r, uint256 chainId, address emitter, uint256 t0, Side side) internal {
         if (t0 == 0) return;
-        dispatch[keccak256(abi.encode(chainId, emitter, t0))] = (r << 8) | (uint256(side) + 1);
+        bytes32 k = keccak256(abi.encode(chainId, emitter, t0));
+        if (dispatch[k] != 0) revert BadRoute(); // one (chain, emitter, topic0) feeds exactly one route side
+        dispatch[k] = (r << 8) | (uint256(side) + 1);
         SYSTEM.subscribe(chainId, emitter, t0, REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
     }
 
     function _bindGate(uint256 r, uint256 chainId, address gate, uint256 c) internal {
+        if (gateToRoute[chainId][gate] != 0) revert BadRoute(); // a gate serves one side of one route
         gateToRoute[chainId][gate] = r * 2 + c;
         _bind(r, chainId, gate, PAUSED_T0, Side.ACK_PAUSED);
         _bind(r, chainId, gate, RESUMED_T0, Side.ACK_RESUMED);
@@ -277,6 +289,7 @@ contract LedgerlockReactive is AbstractReactive {
             _latch(r, Cause.DRILL);
         } else {
             // gate ack: Paused/Resumed(routeId, epoch, originTx, key) or HeldByGuardian(routeId, epoch); epoch = data word 0
+            if (log_.topic1 != r) return; // the gate's indexed routeId must name the route this gate is bound to
             uint64 e = uint64(_word(log_.data, 0));
             uint256 c = gateToRoute[log_.chainId][log_.contractAddress] & 1;
             emit Observed(r, side, e, originTx);
@@ -315,7 +328,11 @@ contract LedgerlockReactive is AbstractReactive {
         s.srcTo = to;
         s.srcSeen = true;
         if (key > highestSrc[r][dir]) highestSrc[r][dir] = key;
-        if (s.pendSince == 0 || s.pendAmt != amt || s.pendTo != to) return;
+        if (s.pendSince == 0) return;
+        if (s.pendAmt != amt || s.pendTo != to) {
+            _latch(r, Cause.REPEAT); // the waiting mint carries other fields than its own lock: forged, latch now
+            return;
+        }
 
         uint256 waited = block.timestamp - s.pendSince;
         bool late = waited > routes[r].windowSec;
@@ -350,7 +367,8 @@ contract LedgerlockReactive is AbstractReactive {
             s.consumed = true;
             return;
         }
-        bool implausible = key > highestSrc[r][dir] + routes[r].keySlack || s.consumed || s.pendSince != 0 || s.srcSeen;
+        uint256 hs = highestSrc[r][dir];
+        bool implausible = (key > hs && key - hs > routes[r].keySlack) || s.consumed || s.pendSince != 0 || s.srcSeen;
         if (dir == FWD) {
             st.unbacked += amt;
             unbackedOf[r][deficitEra[r]][to] += amt;
@@ -437,7 +455,15 @@ contract LedgerlockReactive is AbstractReactive {
 
     function _pauseBoth(uint256 r, bytes32 originTx, uint256 key) internal {
         State storage st = states[r];
-        if (st.paused) return; // copycats never re-bill: an outstanding pause is re-requested only by the watchdog
+        if (st.paused) {
+            // Copycats never re-bill a pause still in flight (the watchdog owns that). A gate whose pause for this epoch
+            // was never confirmed and is no longer owed (GateUnreachable) is asked again on every new mismatch.
+            for (uint256 c; c < 2; c++) {
+                Ack storage a = acks[r][uint8(c)];
+                if (!a.owed && a.acked < st.epoch) _request(r, c, Kind.PAUSE, st.epoch, originTx, key);
+            }
+            return;
+        }
         st.paused = true;
         uint64 e = ++st.epoch;
         emit PauseRequested(r, e, originTx, key);
@@ -537,6 +563,13 @@ contract LedgerlockReactive is AbstractReactive {
         emit Observed(r, Side.FAIL, fEpoch, originTx);
         Ack storage a = acks[r][uint8(c)];
         if (!a.owed || fEpoch != a.epoch) return; // obsolete (older epoch) or already settled
+        // Any reactive contract can make the proxy fail a callback to our gate (the gate rejects its RVM id), so the
+        // failure counts only if the proxy-injected requester is this contract and the call is our current request.
+        if (
+            bytes4(p) != (a.kind == Kind.PAUSE ? PAUSE_SEL : RESUME_SEL)
+                || CallbackFailureWatch.argWord(p, 0) != uint256(uint160(address(this)))
+                || CallbackFailureWatch.argWord(p, 1) != r
+        ) return;
         if (!a.failRetried) {
             a.failRetried = true;
             a.requestedAt = uint64(block.timestamp); // the watchdog now waits a full deadline for the retry
@@ -549,7 +582,9 @@ contract LedgerlockReactive is AbstractReactive {
     }
 
     /// @dev Ack watchdog: one re-request after `ackDeadline`, then GateUnreachable (+ FAILSAFE latch for a PAUSE; a
-    ///      stuck RESUME leaves that gate shut and does not latch).
+    ///      stuck RESUME leaves that gate shut and does not latch). Budget per request: at most two re-sends, one on the
+    ///      watchdog deadline and one on a matching CallbackFailure, then GateUnreachable. After that a PAUSE is re-sent on
+    ///      the next mismatch (`_pauseBoth`) and a RESUME on the owner's next `resolve()`.
     function _ackDeadline(uint256 r) internal {
         for (uint256 c; c < 2; c++) {
             Ack storage a = acks[r][uint8(c)];
@@ -623,7 +658,15 @@ contract LedgerlockReactive is AbstractReactive {
             if (st.releasedTotal > st.burnedTotal) st.burnedTotal = st.releasedTotal;
         }
         emit Resolved(r, reason, def, defRel, acceptDeficit, st.paused ? st.epoch + 1 : st.epoch);
-        if (st.paused) _resumeBoth(r, bytes32(0), 0);
+        if (st.paused) {
+            _resumeBoth(r, bytes32(0), 0);
+        } else {
+            // a RESUME that went GateUnreachable left that gate shut: re-send the same epoch to it
+            for (uint256 c; c < 2; c++) {
+                Ack storage a = acks[r][uint8(c)];
+                if (!a.owed && a.acked < st.epoch) _request(r, c, Kind.RESUME, st.epoch, a.originTx, a.key);
+            }
+        }
     }
 
     function _deficit(uint256 r) internal view returns (uint256 def, uint256 defRel) {

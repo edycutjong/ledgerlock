@@ -1024,6 +1024,108 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         return _drain(recs);
     }
 
+    // ================================================================== a2a round 03 (arch) regressions
+
+    /// A pause leg that went GateUnreachable is asked again on the next mismatch (it used to stay open for good).
+    function test_a2a_failed_pause_leg_resent_on_next_mismatch() public {
+        gateU.setFailNext(true); // silent indebted gate
+        _mintTx(1, alice, 1e18);
+        vm.warp(block.timestamp + 31);
+        cron(CronTopics.CRON10);
+        vm.warp(block.timestamp + 31);
+        cron(CronTopics.CRON10); // GateUnreachable(U) + FAILSAFE
+        assertTrue(gateU.isOpen());
+        assertFalse(gateB.isOpen());
+        gateU.setFailNext(false);
+        CallbackResult[] memory r = _mintTx(2, bob, 1e18); // lands through the open gate; the guard asks U again
+        assertEq(r.length, 1);
+        assertEq(r[0].target, address(gateU));
+        assertFalse(gateU.isOpen());
+        assertEq(rsc.outstandingAcks(), 0);
+        assertFalse(rsc.cronOn());
+    }
+
+    /// A resume that went GateUnreachable left that gate shut; the owner's resolve() sends it again.
+    function test_a2a_failed_resume_resent_by_resolve() public {
+        feed(_M(3, alice, 1e18));
+        gateU.setFailNext(true);
+        feed(_L(3, alice, 1e18));
+        deliver(_fail(UNI, address(gateU), RESUME_SEL, 2));
+        runCallbacks();
+        deliver(_fail(UNI, address(gateU), RESUME_SEL, 2)); // GateUnreachable(U)
+        assertFalse(gateU.isOpen());
+        (bool paused,,,,,,) = rsc.routeState(R);
+        assertFalse(paused);
+        gateU.setFailNext(false);
+        rsc.resolve(R, 1, false);
+        runCallbacks();
+        assertTrue(gateU.isOpen());
+        assertTrue(gateB.isOpen());
+    }
+
+    /// Any reactive contract can make the proxy fail a callback to our gate; such failures never touch our retry budget.
+    function test_a2a_spoofed_callback_failure_ignored() public {
+        deliver(_M(1, alice, 1e18)); // plausible pause, epoch 1
+        sys.takeRequests();
+        bytes[3] memory spoofs = [
+            abi.encodeWithSelector(PAUSE_SEL, address(0xE11), R, uint64(1), bytes32(0), uint256(0)), // foreign requester
+            abi.encodeWithSelector(PAUSE_SEL, address(rsc), uint256(9), uint64(1), bytes32(0), uint256(0)), // other route
+            abi.encodeWithSelector(RESUME_SEL, address(rsc), R, uint64(1), bytes32(0), uint256(0)) // other op
+        ];
+        for (uint256 i; i < 3; i++) {
+            IReactive.LogRecord memory f = _fail(UNI, address(gateU), PAUSE_SEL, 1);
+            f.data = abi.encode(spoofs[i]);
+            deliver(f);
+            deliver(f); // same log again: deduped
+        }
+        assertEq(sys.takeRequests().length, 0);
+        (bool owed,,,,, bool failRetried,,,) = rsc.acks(R, 0);
+        assertTrue(owed);
+        assertFalse(failRetried);
+        (, bool incident,,,,,) = rsc.routeState(R);
+        assertFalse(incident);
+    }
+
+    /// A source key near uint256 max cannot make the plausibility check overflow (a reverting react() = no pause).
+    function test_a2a_plausibility_check_cannot_overflow() public {
+        deliver(_L(type(uint256).max, alice, 1e18));
+        deliver(_M(5, bob, 1e18)); // reverted before the fix
+        (bool paused,,,, uint32 pending,,) = rsc.routeState(R);
+        assertTrue(paused);
+        assertEq(pending, 1);
+    }
+
+    function test_a2a_duplicate_binding_reverts() public {
+        vm.expectRevert(LedgerlockReactive.BadRoute.selector);
+        rsc.addRoute(_routeA(address(box), address(minter), address(gateB), address(gateU), address(0)), _t0A());
+    }
+
+    function test_a2a_ack_naming_another_route_ignored() public {
+        deliver(_M(1, alice, 1e18));
+        sys.takeRequests();
+        IReactive.LogRecord memory a = _ack(UNI, address(gateU), 1);
+        a.topic1 = 7;
+        deliver(a);
+        (bool owed,,,,,,,,) = rsc.acks(R, 0);
+        assertTrue(owed);
+    }
+
+    function test_a2a_set_proxy_once() public {
+        vm.expectRevert(abi.encodeWithSelector(LedgerlockReactive.ProxySet.selector, BASE));
+        rsc.setProxy(BASE, address(0x1234));
+    }
+
+    /// A lock whose fields contradict the mint waiting on its key latches at once (it used to wait for OVERDUE).
+    function test_a2a_contradicting_lock_latches_now() public {
+        deliver(_M(4, alice, 1e18)); // plausible: pending, epoch 1
+        vm.expectEmit(address(rsc));
+        emit LedgerlockReactive.IncidentLatched(R, LedgerlockReactive.Cause.REPEAT, 1);
+        deliver(_L(4, alice, 2e18));
+        (bool paused, bool incident,,, uint32 pending,,) = rsc.routeState(R);
+        assertTrue(paused && incident);
+        assertEq(pending, 1);
+    }
+
     function _settle() internal {
         _drain(new IReactive.LogRecord[](0));
     }
