@@ -16,7 +16,7 @@ demo video was recorded. Seconds below = column `*_seen_ms` minus `mint_mined_ms
 | gate U `Paused` seen (Unichain) = both gates shut | 7.986 | 0xe452f91ef01f74e8d4849209d747ce5711dede5086a8f44a0773b50a282e2eec |
 | copycats fired / landed before the stop | 2 / 1 | stopping revert 0x30019ac10497358c51d99f3396ed7c2c81daa3e384a5afa87646ce4a9fbe5669 |
 | forged release on Base (carry-home) | reverted | 0x69e735fc72be66d45dddfa8dd4c725c5210889a0348fcbe2c6dca8ac731f22d6 |
-| recovery (seize + owner `resolve()` + both gates reopened) | 14.85 s | |
+| recovery (seize + owner `resolve()` + both gates reopened) | 14.85 s (`recovery_ms` 14850; the on-camera line, printed a moment earlier, reads 14.8 s) | |
 
 On-chain order (receipts): the forged mint is Unichain block 67756408 (tx index 1); gate U `Paused` is Unichain block
 67756410 (tx index 1); the stopping copycat reverted in the same block 67756410 at tx index 2, reason `GatePaused`
