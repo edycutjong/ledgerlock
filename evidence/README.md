@@ -13,7 +13,7 @@ one-shot forced-failure flag). Its bytecode is the contracts at commit `DEPLOYED
 | `react-gas.csv` | gas used per `react()` branch, from Lasna receipts, and how many `CallbackRequest` logs each tx carries |
 | `callback-failures.csv` | raw `CallbackFailure` logs on the Base Sepolia and Unichain Sepolia callback proxies for our gates (forced with `ProbeGate.setFailNext`) |
 | `skew-pairs.csv` | per lock/mint pair with the same key: origin and Lasna block timestamps, arrival order on Lasna (`order` labels the one pair whose mint was sent first on purpose) |
-| `hop-probe.csv` | the Lasna self-callback request, and the Cron subscribe/unsubscribe done from inside `react()` |
+| `hop-probe.csv` | the Lasna self-callback requests (`HopRequested`; no `HopSeen` row = **no delivery observed** after 2 requests, so the self-callback path is unproven), and the Cron subscribe/unsubscribe done from inside `react()` |
 | `spike-actions.csv` | every transaction the trigger script sent (chain, hash, local send time in ms) |
 
 Block timestamps are whole seconds on every chain, and chain clocks are not synchronised to each other: a Lasna
