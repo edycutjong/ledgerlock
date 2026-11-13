@@ -1,0 +1,7 @@
+step,chain_id,tx,detail
+warp_deploy_base,84532,0x7d9c530b5f764c5e0d8e06286c3a2e662d60a5a2d4718629802042b40bb8f7ad,HypNative router deployed by the Hyperlane CLI
+warp_deploy_uni,1301,0x96d772681c9348c042d39e6758c9e23a83a0a9326ad97bedefe4bd325ed1fbd4,HypSynthetic router; ISM = aggregation(default fallback routing + PausableIsm) 2-of-2 (first config)
+sent_transfer_remote,84532,0xcec245f34ab226a3bfb97ae869d3f6baf072e652b23009bbbbb9a6f42f8262c7,SentTransferRemote(1301 / recipient / 1000000000 wei) + Dispatch; dispatched at unix 1794576945
+public_relayer_wait,1301,,no delivery in 6 minutes by the public relayer (balanceOf stayed 0 from 1794576952 to 1794577306); the Base IGP has no gas oracle for domain 1301 so no gas could be paid
+set_ism_trusted_relayer,1301,0x1bf478e6b78319001d61284eb4bf6acb59d61347c9924283e93fca11e4259a53,ISM replaced by aggregation(TrustedRelayerIsm(deployer) + PausableIsm) 2-of-2
+process_by_us,1301,0x675fd65f196dba340900e23f253d38535e1350c0451cbfddba824deea6877518,Mailbox.process by us (labelled: our own delivery): ReceivedTransferRemote(84532 / recipient / 1000000000 wei) + synthetic mint
