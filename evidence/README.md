@@ -4,7 +4,7 @@ Raw rows from live runs on Reactive Lasna + Base Sepolia + Unichain Sepolia, reg
 typed by hand except the actions files (`core-dev-actions.csv`, `core-dev2-actions.csv`, `spike-actions.csv`), which the trigger scripts append as they send each transaction.
 
 Both instances below are **dev deployments**: their gates are `ProbeGate`s (a `Gate` plus a forced-failure flag the
-guardian can set). The deployment the final numbers cite comes later and will be listed in a `deployments/` folder (not created yet).
+guardian can set). The final numbers cite the later `frozen3` (route A) and `frozen` (route B) deployments, listed in `deployments/testnet.json`; their files are `frozen3-*` / `frozen-*`.
 
 ## Instance `core-dev` (core flow; `scripts/triples.ts`, `pnpm triples:core`)
 
@@ -66,7 +66,7 @@ off-chain by the observer; these rows prove the loop and its order, not fine-gra
 - `frozen-pause-audit.csv`: every `PauseRequested` the guard emitted, joined to the run that caused it (`scripts/pause-audit.ts`); the one `UNMATCHED` row is the pre-bench smoke attack.
 - `frozen-triples.csv` / `frozen-react-gas.csv`: origin tx → Lasna react → gate callback joins from chain logs (`scripts/triples.ts`). Route B rows are joined to its gates from `route-b-guard.txt` (`GATE_B2`/`GATE_U2`); every gate and ack match keys on the route id.
 - `frozen-heartbeat-runs.csv`: the 6-hourly liveness runs (`script/heartbeat.sh`).
-- `frozen2-addresses.txt` + `frozen2-bench-runs.csv`: route A redeployed from the a2a round-3/4 source (contract at 30604c4). Its bench was stopped after 21 strict legit runs (all `ok`, 0 false pauses) when loop QA found two defects in the new saturation path (a `resolve()` sum that could overflow; a saturated source total that hid a SUPPLY deficit). Superseded by `frozen3`; the rows stay as recorded.
+- `frozen2-addresses.txt` + `frozen2-bench-runs.csv`: route A redeployed from the later reviewed source (contract at 30604c4). Its bench was stopped after 21 strict legit runs (all `ok`, 0 false pauses) when loop QA found two defects in the new saturation path (a `resolve()` sum that could overflow; a saturated source total that hid a SUPPLY deficit). Superseded by `frozen3`; the rows stay as recorded.
 
 ## Route A final deployment `frozen3` (headline numbers)
 - `frozen3-addresses.txt`: route A (route id 1) redeployed from the final source (contract at e425c78, `src/Gate.sol:Gate`). Route B stays guarded by the `frozen` instance (its PausableIsms are owned by frozen's route B gates, and a Gate cannot hand ownership over), so each route has its own guard contract; `../deployments/testnet.json` lists both.
