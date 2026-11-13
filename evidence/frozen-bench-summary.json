@@ -242,7 +242,10 @@
       "min": 500
     },
     "carry_home_reverted": 20,
-    "carry_home_rows": 20
+    "carry_home_rows": 20,
+    "stopped_at_revert": 20,
+    "reached_cap": 0,
+    "copycat_cap": 30
   },
   "excluded_rows": [
     {
@@ -264,5 +267,34 @@
     "p95": 15.452,
     "max": 19.668,
     "min": 7.481
+  },
+  "recovery_failed": null,
+  "route_b": {
+    "source": "evidence/frozen-routeb-runs.csv",
+    "legit_rows": 10,
+    "false_latches": 0,
+    "drills": [
+      {
+        "run": "bd-01",
+        "outcome": "ok",
+        "pause_u_s": 4,
+        "pause_b_s": 2.3,
+        "resume_u_s": 6
+      },
+      {
+        "run": "bd-02",
+        "outcome": "ok",
+        "pause_u_s": 4,
+        "pause_b_s": 2.2,
+        "resume_u_s": 11
+      },
+      {
+        "run": "bd-03",
+        "outcome": "ok",
+        "pause_u_s": 5.3,
+        "pause_b_s": 2.8,
+        "resume_u_s": 5.8
+      }
+    ]
   }
 }
