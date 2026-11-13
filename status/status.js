@@ -73,15 +73,16 @@ function render(d, lv) {
   const reqB = !!(rs && (rs.paused || rs.incident));
   const rbr = d.routeBRuns;
   const routeBHtml = d.routeB && d.routeB.GATE_B2 ? track("Route B · Hyperlane warp route", "Hyperlane mailbox + PausableIsm code; we deployed the route and deliver with our own Mailbox.process (the public relayer did not deliver)", lv.gateB2, lv.gateU2, false,
-      { base: `native router ${short(d.routeB.ROUTE_B_COLLATERAL_BASE)}`, mid: rbr ? `${rbr.legit} legit transfers · ${rbr.legit_false_latch} false latches · ${rbr.drills.length} drills` : "SUPPLY mode", uni: `synthetic ${short(d.routeB.ROUTE_B_SYNTHETIC_UNI)}` }) : "";
+      { base: `native router ${short(d.routeB.ROUTE_B_COLLATERAL_BASE)}`, mid: rbr ? `${rbr.legit} legit transfers (self-delivered) · ${rbr.legit_false_latch} false latches · ${rbr.drills.length} drills` : "SUPPLY mode", uni: `synthetic ${short(d.routeB.ROUTE_B_SYNTHETIC_UNI)}` }) : "";
   $("routes").innerHTML =
     track("Route A · fixture bridge", "labelled fixture · we deployed both ends", lv.gateB, lv.gateU, reqB,
       { base: `LockBox ${short(a.LOCKBOX)}`, mid: rs ? `epoch ${rs.epoch} · ${rs.pending} pending${rs.incident ? " · INCIDENT LATCHED" : ""}` : "guard state: live read failed", uni: `Minter ${short(a.MINTER)}` }) +
     routeBHtml;
-  const bad = lv.balRc !== null && lv.balRc < 1;
+  const lowGate = [lv.balB, lv.balU].some((x) => x !== null && x < 0.0003);
+  const bad = (lv.balRc !== null && lv.balRc < 1) || lowGate;
   $("health").className = "health" + (bad ? " bad" : "");
   $("health").textContent = lv.balRc === null ? "health: live read failed (RPC unreachable); evidence below still renders" :
-    `${bad ? "UNHEALTHY: low reserve" : "HEALTHY"} · guard reserve ${fmt(lv.balRc, 2)} lREACT · gate U ${fmt(lv.balU, 4)} ETH · gate B ${fmt(lv.balB, 4)} ETH`;
+    `${bad ? "UNHEALTHY: low reserve or gate balance" : "HEALTHY"} · guard reserve ${fmt(lv.balRc, 2)} lREACT · gate U ${fmt(lv.balU, 4)} ETH · gate B ${fmt(lv.balB, 4)} ETH`;
 
   const inc = d.incident;
   $("incident").innerHTML = inc ? `<div class="cards">
@@ -92,7 +93,8 @@ function render(d, lv) {
     <p class="muted">Run ${esc(inc.id)} (${esc(inc.kind)}). ±${d.summary ? d.summary.poll_ms : 400} ms poll. ${inc.fired !== null ? `Copycats fired ${inc.fired} · landed before the pause ${inc.landed} · reverted GatePaused ${inc.fired - inc.landed}. Exposure ${inc.exposure_tusd} tUSD.` : "Single attacking mint, no copycats."}</p>
     <p class="note"><b>ACTION</b> after a pause: rotate the relayer key, seize the unbacked mints listed by the guard's Mismatch events, then owner calls resolve().</p>` : '<p class="empty">not measured yet</p>';
 
-  const att = d.runs.filter((r) => r.outcome === "ok" && /^(attack|burst)/.test(r.kind));
+  const ctrl = new Set(d.controlArmIds || []);
+  const att = d.runs.filter((r) => r.outcome === "ok" && /^(attack|burst)/.test(r.kind) && !ctrl.has(r.id));
   const legit = d.runs.filter((r) => r.kind === "legit_strict");
   const forced = d.runs.filter((r) => r.kind === "legit_forced");
   if (d.runs.length) {
@@ -101,32 +103,31 @@ function render(d, lv) {
     $("numbers").innerHTML =
       strip("Detection (mint → Lasna react seen)", col("detection_s"), "s", pct(col("detection_s"), 50), pct(col("detection_s"), 95)) +
       strip("Pause, Unichain gate (mint → gate U Paused)", col("pause_u_s"), "s", pct(col("pause_u_s"), 50), pct(col("pause_u_s"), 95)) +
-      strip("Freeze, Base gate (mint → gate B Paused)", col("pause_b_s"), "s", pct(col("pause_b_s"), 50), pct(col("pause_b_s"), 95)) +
-      `<div class="cards"><div class="stat"><div class="k">attack runs measured</div><div class="v">${att.length}</div></div>
-      <div class="stat"><div class="k">false pauses on strict legit transfers</div><div class="v">${legit.filter((r) => r.false_pause).length} of ${legit.length}</div></div>
-      <div class="stat"><div class="k">forced out-of-order: seconds paused p50 · p95</div><div class="v">${fmt(pct(forced.map((r) => r.pause_seconds), 50))} · ${fmt(pct(forced.map((r) => r.pause_seconds), 95))}</div><div class="k">n=${forced.length}, labelled "forced fill-before-deposit"</div></div></div>
+      strip("Pause, Base gate (mint → gate B Paused)", col("pause_b_s"), "s", pct(col("pause_b_s"), 50), pct(col("pause_b_s"), 95)) +
+      `<div class="cards"><div class="stat"><div class="k">attack runs measured (60 forged + 20 plausible + 20 burst)</div><div class="v">${att.length}</div><div class="k">${esc((d.summary?.excluded_rows || []).map((e) => e.run + " " + e.outcome).join(", ")) || "none excluded"}${(d.summary?.excluded_rows || []).length ? ": af-001 is a harness artifact (reused key, NonceUsed), replaced by af-061" : ""}</div></div>
+      <div class="stat"><div class="k">false pauses on strict legit transfers</div><div class="v">${legit.filter((r) => r.false_pause).length} of ${legit.length}</div><div class="k">cross-checked: every PauseRequested the guard emitted joins to a run (<a href="https://github.com/edycutjong/ledgerlock/blob/main/evidence/${esc(d.instance)}-pause-audit.csv">pause-audit.csv</a>)</div></div>
+      <div class="stat"><div class="k">forced out-of-order: seconds the Unichain gate stayed shut, p50 · max</div><div class="v">${fmt(pct(forced.map((r) => r.pause_seconds), 50))} · ${fmt(Math.max(...forced.map((r) => r.pause_seconds)))}</div><div class="k">n=${forced.length}, labelled "forced fill-before-deposit" (lock follows the mint by 2–20 s by design)</div></div></div>
       ${S ? "" : ""}`;
   }
 
-  // Window control: recorded legit data only. Lock-first skew pairs plus the forced runs' lock delays decide how many would latch.
-  const delays = d.runs.filter((r) => r.kind === "legit_forced").map((r) => r.pause_seconds).filter(Number.isFinite);
-  const skews = d.skew.map((s) => Math.max(0, s.mint_seen_first ? -s.skew_s : 0));
-  const all = skews.concat(delays);
-  if (all.length) {
-    $("wctl").innerHTML = `<div class="ctl"><label for="w">W = <b class="mono" id="wv">60</b> s</label><input id="w" type="range" min="10" max="300" step="5" value="60" aria-describedby="wout"></div>
-    <p id="wout" class="note"></p><p class="muted">Recorded data only (${all.length} legitimate arrivals: ${d.skew.length} strict skew pairs + ${delays.length} forced out-of-order runs). The control re-counts; it never simulates new runs. The deployed W is 60 s and was frozen before the bench.</p>`;
-    const upd = () => { const w = Number($("w").value); $("wv").textContent = w; const n = all.filter((s) => s > w).length;
-      $("wout").textContent = `At W = ${w} s, ${n} of the ${all.length} recorded legitimate arrivals would have latched an incident (pause past W with no matching lock).`; };
+  // Window control: the 20 forced out-of-order runs (lock follows the mint by a recorded 2-20 s). Recorded data only.
+  const delays = (d.lockDelays || []).filter(Number.isFinite);
+  const strictN = d.skew.length, strictFirst = d.skew.filter((x) => x.mint_seen_first).length;
+  if (delays.length) {
+    $("wctl").innerHTML = `<div class="ctl"><label for="w">W = <b class="mono" id="wv">60</b> s</label><input id="w" type="range" min="2" max="90" step="1" value="60" aria-describedby="wout"></div>
+    <p id="wout" class="note"></p><p class="muted">Recorded data only. The ${delays.length} forced runs are the only recorded arrivals where a mint preceded its lock, and their delays were set by us (2–20 s). The ${strictN} strict skew pairs from the P1a probe (a dev deployment) had the lock seen first ${strictN - strictFirst} times, so none of them could ever latch. This control re-counts those recordings; it does not simulate new runs, and it says nothing about delays beyond 20 s. The deployed W is 60 s, chosen from this evidence before the bench and never retuned.</p>`;
+    const upd = () => { const w = Number($("w").value); $("wv").textContent = w; const n = delays.filter((x) => x > w).length;
+      $("wout").textContent = `At W = ${w} s, ${n} of the ${delays.length} recorded forced out-of-order runs (lock delay ${Math.min(...delays)}–${Math.max(...delays)} s) would have been overdue and latched an incident.`; };
     $("w").addEventListener("input", upd); upd();
   }
 
-  const bu = d.runs.filter((r) => r.kind === "burst" && r.landed !== null && r.pause_u_s !== null);
+  const bu = d.runs.filter((r) => r.kind === "burst" && !ctrl.has(r.id) && r.landed !== null && r.pause_u_s !== null);
   if (bu.length) {
     const W = 1000, H = 220, mx = Math.max(...bu.map((r) => r.pause_u_s)) * 1.1 || 1, my = Math.max(...bu.map((r) => r.landed), 1) * 1.2;
-    const pts = bu.map((r) => `<circle cx="${(60 + (r.pause_u_s / mx) * (W - 90)).toFixed(1)}" cy="${(H - 30 - (r.landed / my) * (H - 50)).toFixed(1)}" r="5" fill="#F1DE9C" opacity=".85"><title>${esc(r.id)}: ${fmt(r.pause_u_s)} s, ${r.landed} copycats landed</title></circle>`).join("");
+    const pts = bu.map((r) => `<circle cx="${(60 + (r.pause_u_s / mx) * (W - 90)).toFixed(1)}" cy="${(H - 30 - (r.landed / my) * (H - 50) - ((Number(r.id.slice(3)) % 5) * 5)).toFixed(1)}" r="5" fill="#F1DE9C" opacity=".85"><title>${esc(r.id)}: ${fmt(r.pause_u_s)} s, ${r.landed} copycats landed</title></circle>`).join("");
     $("exposure").innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-height:260px" role="img" aria-label="Copycat mints that landed before the pause, against the mint-to-gate-U-pause latency, ${bu.length} burst runs"><line x1="60" x2="${W - 20}" y1="${H - 30}" y2="${H - 30}" stroke="#34402F"/><line x1="60" x2="60" y1="10" y2="${H - 30}" stroke="#34402F"/>${pts}
     <text x="60" y="${H - 8}" fill="#85907F" font-size="13" font-family="Chivo Mono,monospace">mint → gate U Paused, s (0 … ${fmt(mx)})</text><text x="68" y="22" fill="#85907F" font-size="13" font-family="Chivo Mono,monospace">copycats landed (0 … ${fmt(my, 0)})</text></svg>
-    <p class="note">Loss ≤ mints inside the pause window: in ${bu.length} measured bursts at most <b class="mono">${Math.max(...bu.map((r) => r.landed))}</b> copycat mints landed before the first GatePaused revert (p50 ${fmt(pct(bu.map((r) => r.landed), 50), 0)}, p95 ${fmt(pct(bu.map((r) => r.landed), 95), 0)}); each was 500 tUSD. Measured pairs only, no fitted line.</p>`;
+    <p class="note">Loss ≤ mints inside the pause window. In the ${bu.length} measured bursts (a forged mint, then one copycat per confirmed receipt) at most <b class="mono">${Math.max(...bu.map((r) => r.landed))}</b> copycat mints landed before the first GatePaused revert (median ${fmt(pct(bu.map((r) => r.landed), 50), 0)}); each was 500 tUSD; the max is a bound for these runs only. Dots are jittered vertically; gate B shut earlier than gate U in these runs, and the cause is not established here. Measured pairs only, no fitted line.</p>`;
   }
 
   $("register").innerHTML = d.triples.length ? `<table><thead><tr><th>time (UTC)</th><th>origin</th><th>Lasna tx</th><th>callback</th><th>note</th></tr></thead><tbody>${d.triples.map((t) =>
@@ -136,9 +137,9 @@ function render(d, lv) {
   const c = d.control;
   if (c) {
     const sum = (x) => x.reduce((a, b) => a + b, 0);
-    $("numbers").insertAdjacentHTML("afterbegin", `<h3 class="disp" style="font-size:30px;margin:10px 0">Paired control: same attack, with and without the guard</h3><div class="scroll"><table><thead><tr><th>arm</th><th>runs</th><th>unauthorized tUSD issued (all runs)</th><th>collateral released to the attacker (tUSD, all runs)</th><th>carry-home release</th></tr></thead><tbody>
-      <tr><td>A0 · CONTROL · UNGUARDED · FIXTURE</td><td>${c.a0.runs}</td><td>${sum(c.a0.issued_per_run)}</td><td>${sum(c.a0.released_per_run)}</td><td>${esc([...new Set(c.a0.carry_home)].join(", "))}</td></tr>
-      <tr><td>A · guarded by Ledgerlock · FIXTURE</td><td>${c.a.runs}</td><td>${sum(c.a.issued_per_run)}</td><td>${sum(c.a.released_per_run)}</td><td>${esc([...new Set(c.a.carry_home)].join(", "))}</td></tr></tbody></table></div><p class="muted">Both arms: one forged 500 tUSD mint, then copycat mints, then a forged 500 tUSD release on Base. A0 sends 6 copycats (nothing reverts); on A the loop sends one copycat per block until the first GatePaused revert.</p>`);
+    $("numbers").insertAdjacentHTML("afterbegin", `<h3 class="disp" style="font-size:30px;margin:10px 0">Paired control: with and without the guard</h3><div class="scroll"><table><thead><tr><th>arm</th><th>runs</th><th>unauthorized tUSD issued per run</th><th>collateral released to the attacker per run (tUSD)</th><th>carry-home release</th></tr></thead><tbody>
+      <tr><td>A0 · CONTROL · UNGUARDED · FIXTURE</td><td>${c.a0.runs}</td><td>${sum(c.a0.issued_per_run) / c.a0.runs}</td><td>${sum(c.a0.released_per_run) / c.a0.runs}</td><td>${esc([...new Set(c.a0.carry_home)].join(", "))}</td></tr>
+      <tr><td>A · guarded by Ledgerlock · FIXTURE</td><td>${c.a.runs}</td><td>${sum(c.a.issued_per_run) / c.a.runs}</td><td>${sum(c.a.released_per_run) / c.a.runs}</td><td>${esc([...new Set(c.a.carry_home)].join(", "))}</td></tr></tbody></table></div><p class="muted">Both arms: one forged 500 tUSD mint, then copycat mints, then a forged 500 tUSD release on Base. A0 sends a fixed 6 copycats (nothing ever reverts, so its issuance is set by that choice and is illustrative); on A the loop sends one copycat per confirmed receipt until the first GatePaused revert, so the guarded column is the measurement. Runs: bu-021..025 (A) and a0-001..005 (A0).</p>`);
   }
   if (d.routeBRuns && d.routeBRuns.drills.length) {
     const dr = d.routeBRuns.drills;

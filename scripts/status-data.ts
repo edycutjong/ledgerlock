@@ -10,7 +10,7 @@ const csv = (p: string) => {
   const c = parseCsvLine(h);
   return ls.map((l) => Object.fromEntries(parseCsvLine(l).map((v, i) => [c[i], v]))) as Record<string, string>[];
 };
-const kv = (p: string) => Object.fromEntries(readFileSync(p, "utf8").split("\n").filter((l) => /^[A-Z_]+=/.test(l)).map((l) => l.replace(/\s+#.*$/, "").split("=") as [string, string]));
+const kv = (p: string) => Object.fromEntries(readFileSync(p, "utf8").split("\n").filter((l) => /^[A-Z_0-9]+=/.test(l)).map((l) => l.replace(/\s+#.*$/, "").split("=") as [string, string]));
 const num = (v: string) => (v === "" || v === undefined ? null : Number(v));
 const runs = csv(`evidence/${instance}-bench-runs.csv`).map((r) => ({
   id: r.run_id, kind: r.kind, outcome: r.outcome, amount: num(r.amount_tusd),
@@ -21,7 +21,8 @@ const runs = csv(`evidence/${instance}-bench-runs.csv`).map((r) => ({
   false_pause: r.false_pause === "1", booked_s: r.kind === "legit_strict" && r.lasna_seen_ms ? (Number(r.lasna_seen_ms) - Number(r.mint_mined_ms)) / 1000 : null,
   mint_ms: num(r.mint_mined_ms), mint_tx: r.mint_tx, lasna_tx: r.lasna_tx, gate_u_tx: r.gate_u_tx, gate_b_tx: r.gate_b_tx, reverted_tx: r.reverted_tx, carry_home_tx: r.carry_home_tx, carry_home_status: r.carry_home_status,
 }));
-const incident = [...runs].reverse().find((r) => r.kind !== "legit_strict" && r.kind !== "legit_forced" && r.outcome === "ok" && r.gate_b_tx) ?? null;
+const isControlArm = (id: string) => /^bu-02[1-5]$/.test(id);
+const incident = [...runs].reverse().find((r) => r.kind !== "legit_strict" && r.kind !== "legit_forced" && r.outcome === "ok" && r.gate_b_tx && !isControlArm(r.id)) ?? null;
 const triples = csv(`evidence/${instance}-triples.csv`).slice(-50).reverse().map((t) => ({
   ts: t.trigger_ts, kind: t.trigger_kind, trigger_chain: t.trigger_chain, trigger_tx: t.trigger_tx, reactive_tx: t.reactive_tx, callback_chain: t.callback_chain, callback_tx: t.callback_tx, note: t.note,
 }));
@@ -43,7 +44,8 @@ const out = {
   routeBRuns, control,
   summary: existsSync(summaryPath) ? JSON.parse(readFileSync(summaryPath, "utf8")) : null,
   runs, incident, triples, skew,
-  forced: runs.filter((r) => r.kind === "legit_forced").map((r) => r.pause_seconds),
+  lockDelays: csv(`evidence/${instance}-bench-runs.csv`).filter((r) => r.kind === "legit_forced").map((r) => Number((/lock sent (\d+) ms/.exec(r.note) ?? [])[1]) / 1000),
+  controlArmIds: runs.filter((r) => isControlArm(r.id)).map((r) => r.id),
 };
 writeFileSync("status/data/status.json", JSON.stringify(out) + "\n");
 console.log(`status.json: ${runs.length} runs, ${triples.length} triples, summary ${out.summary ? "yes" : "no"}`);

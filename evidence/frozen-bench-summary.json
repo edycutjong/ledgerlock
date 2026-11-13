@@ -41,32 +41,32 @@
   "latency_from_mint_mined": {
     "all_attacks": {
       "detection_s": {
-        "n": 105,
-        "p50": 3.129,
+        "n": 100,
+        "p50": 3.109,
         "p95": 7.87,
         "max": 8.415,
         "min": 1.972
       },
       "pause_gate_u_s": {
-        "n": 105,
-        "p50": 5.712,
-        "p95": 8.074,
+        "n": 100,
+        "p50": 5.696,
+        "p95": 8.071,
         "max": 9.353,
-        "min": 3.725
+        "min": 4.288
       },
       "pause_gate_b_s": {
-        "n": 105,
+        "n": 100,
         "p50": 3.214,
         "p95": 7.367,
         "max": 7.428,
         "min": 1.989
       },
       "pause_both_s": {
-        "n": 105,
-        "p50": 6.111,
-        "p95": 8.074,
+        "n": 100,
+        "p50": 6.075,
+        "p95": 8.071,
         "max": 9.353,
-        "min": 3.725
+        "min": 4.288
       }
     },
     "forged": {
@@ -131,67 +131,67 @@
     },
     "burst": {
       "detection_s": {
-        "n": 25,
-        "p50": 3.129,
+        "n": 20,
+        "p50": 3.106,
         "p95": 7.562,
         "max": 8.233,
         "min": 2.336
       },
       "pause_gate_u_s": {
-        "n": 25,
-        "p50": 5.155,
-        "p95": 8.738,
+        "n": 20,
+        "p50": 4.777,
+        "p95": 7.317,
         "max": 9.353,
-        "min": 3.725
+        "min": 4.288
       },
       "pause_gate_b_s": {
-        "n": 25,
-        "p50": 3.159,
-        "p95": 5.096,
-        "max": 7.043,
+        "n": 20,
+        "p50": 3.154,
+        "p95": 4.634,
+        "max": 5.096,
         "min": 2.475
       },
       "pause_both_s": {
-        "n": 25,
-        "p50": 5.155,
-        "p95": 8.738,
+        "n": 20,
+        "p50": 5.096,
+        "p95": 7.317,
         "max": 9.353,
-        "min": 3.725
+        "min": 4.288
       }
     }
   },
   "latency_from_mint_sent": {
     "detection_s": {
-      "n": 105,
+      "n": 100,
       "p50": 4.789,
       "p95": 9.612,
       "max": 9.724,
       "min": 4.331
     },
     "pause_gate_u_s": {
-      "n": 105,
-      "p50": 7.422,
-      "p95": 9.832,
+      "n": 100,
+      "p50": 7.415,
+      "p95": 9.826,
       "max": 11.097,
-      "min": 4.978
+      "min": 5.883
     },
     "pause_gate_b_s": {
-      "n": 105,
-      "p50": 4.498,
+      "n": 100,
+      "p50": 4.505,
       "p95": 9.127,
       "max": 9.889,
       "min": 4.085
     },
     "pause_both_s": {
-      "n": 105,
-      "p50": 7.687,
-      "p95": 9.839,
+      "n": 100,
+      "p50": 7.45,
+      "p95": 9.832,
       "max": 11.097,
-      "min": 4.978
+      "min": 5.883
     }
   },
   "block_timestamp_pause_gate_u_s": {
-    "n": 105,
+    "n": 100,
     "p50": 2,
     "p95": 3,
     "max": 3,
@@ -218,37 +218,51 @@
     "min": 1.631
   },
   "exposure_burst": {
-    "runs": 25,
+    "runs": 20,
     "censored": 0,
     "copycats_landed": {
-      "n": 25,
+      "n": 20,
       "p50": 1,
       "p95": 1,
       "max": 1,
       "min": 0
     },
     "copycats_fired": {
-      "n": 25,
+      "n": 20,
       "p50": 2,
       "p95": 2,
       "max": 2,
       "min": 1
     },
     "exposure_tusd": {
-      "n": 25,
+      "n": 20,
       "p50": 1000,
       "p95": 1000,
       "max": 1000,
       "min": 500
     },
-    "carry_home_reverted": 25,
-    "carry_home_rows": 25
+    "carry_home_reverted": 20,
+    "carry_home_rows": 20
   },
+  "excluded_rows": [
+    {
+      "run": "af-001",
+      "outcome": "timeout",
+      "note": "harness artifact: the mint reverted NonceUsed because key 1001000 had been used by a smoke run (not a guard failure; no pause expected); replaced by af-061"
+    }
+  ],
+  "control_arm_bursts": [
+    "bu-021",
+    "bu-022",
+    "bu-023",
+    "bu-024",
+    "bu-025"
+  ],
   "recovery_s": {
-    "n": 106,
-    "p50": 14.59,
-    "p95": 15.622,
-    "max": 124.237,
+    "n": 100,
+    "p50": 14.579,
+    "p95": 15.452,
+    "max": 19.668,
     "min": 7.481
   }
 }

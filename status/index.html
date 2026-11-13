@@ -49,13 +49,13 @@ section>h2{font-size:clamp(32px,4vw,44px);margin-bottom:12px;color:var(--ink)}
 .stat .k{font-size:15px;color:var(--muted)}
 table{border-collapse:collapse;width:100%;font-size:14px}
 th{font-family:var(--font-data);font-weight:400;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule)}
-td{padding:6px 8px;border-bottom:1px solid var(--rule);font-family:var(--font-data);vertical-align:top;word-break:break-all}
-.scroll{overflow-x:auto}
+td{padding:6px 8px;border-bottom:1px solid var(--rule);font-family:var(--font-data);vertical-align:top;white-space:nowrap}.scroll table{min-width:640px}td.muted{white-space:normal}
+.scroll{overflow-x:auto}td:first-child{word-break:normal;min-width:11ch}
 .strip{margin:6px 0 18px}.strip svg{width:100%;height:56px;display:block}
 .strip .lab{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:15px}
 .strip .lab b{font-family:var(--font-data);font-weight:600}
 .ctl{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-input[type=range]{width:min(420px,100%);accent-color:var(--brass);min-height:32px}
+input[type=range]{width:min(420px,100%);accent-color:var(--brass);min-height:44px}
 .note{border-left:4px solid var(--brass);padding:6px 14px;margin:14px 0;color:var(--ink);max-width:70ch}
 .health{font-family:var(--font-data);font-size:14px;padding:10px 14px;border:1px solid var(--rule);display:inline-block;margin:4px 0}
 .health.bad{border-color:var(--brass);outline:1px solid var(--brass)}
