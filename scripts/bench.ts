@@ -94,7 +94,7 @@ const gatesOpen = async () => (await client(BASE).readContract({ address: A.GATE
   ((await client(UNI).readContract({ address: A.GATE_U, abi: gateAbi, functionName: "isOpen" })) as boolean);
 
 /** Bring a paused/latched route back: seize every holder in `holders`, wait for the guard to have booked everything, resolve(), wait for both gates to reopen. */
-async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>): Promise<{ resumeU: Hit | null; resumeB: Hit | null; ms: number; note: string; ok: boolean }> {
+async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>, minEpoch = 0n): Promise<{ resumeU: Hit | null; resumeB: Hit | null; ms: number; note: string; ok: boolean }> {
   const t0 = Date.now();
   let note = "";
   for (const hd of holders) {
@@ -115,8 +115,8 @@ async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>):
   }
   if (!resolveTx) return { resumeU: null, resumeB: null, ms: Date.now() - t0, note: note + "resolve failed", ok: false };
   const [ru, rb] = await Promise.all([
-    watch(UNI, A.GATE_U, E(gateAbi, "Resumed"), pre.uni, () => true, 120_000),
-    watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), pre.base, () => true, 120_000),
+    watch(UNI, A.GATE_U, E(gateAbi, "Resumed"), pre.uni + 1n, (l) => ((l.args?.epoch as bigint | undefined) ?? 0n) > minEpoch, 120_000),
+    watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), pre.base + 1n, (l) => ((l.args?.epoch as bigint | undefined) ?? 0n) > minEpoch, 120_000),
   ]);
   void from;
   return { resumeU: ru, resumeB: rb, ms: Date.now() - t0, note, ok: !!(ru && rb) };
@@ -148,6 +148,7 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
   if (st0.paused || st0.incident || !(await gatesOpen())) {
     const r = await recover([addrOf(`attacker-leftover`)], await heads());
     markRec(r.ok);
+    if (!r.ok) { emit({ run_id: runId, kind, seq: i, amount_tusd: "", outcome: "error", note: "route not clean at start; cleanup failed; " + r.note, recovery: "failed" }); continue; }
     note += `route was not clean at start (paused=${st0.paused} incident=${st0.incident}); cleared by resolve in ${r.ms} ms; `;
   }
   const amount = (kind.startsWith("legit") ? AMOUNTS[i % AMOUNTS.length] : 500n) * E18;
@@ -164,9 +165,9 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
       const mint = await send(UNI, A.MINTER, minterAbi, "mint", [nonce, user, amount]);
       Object.assign(row, { key: nonce, recipient: user, lock_tx: lk.tx, mint_tx: mint.tx, mint_sent_ms: mint.sentAt, mint_mined_ms: mint.minedAt });
       // the guard must book the mint (Observed MINT, side 1) and must not have paused
-      const seen = await watch(LASNA, A.RC, E(rcAbi, "Observed"), hd0.lasna, (l) => l.args?.originTx === mint.tx, 90_000);
+      const seen = await watch(LASNA, A.RC, E(rcAbi, "Observed"), hd0.lasna + 1n, (l) => l.args?.originTx === mint.tx, 90_000);
       // route B shares this reactive contract: count only PauseRequested for this route
-      const paused = (await getLogsChunked(LASNA, { address: A.RC, event: E(rcAbi, "PauseRequested"), fromBlock: hd0.lasna, args: { routeId: ROUTE } })).length > 0;
+      const paused = (await getLogsChunked(LASNA, { address: A.RC, event: E(rcAbi, "PauseRequested"), fromBlock: hd0.lasna + 1n, args: { routeId: ROUTE } })).length > 0;
       Object.assign(row, { lasna_seen_ms: seen?.at, lasna_tx: seen?.tx, false_pause: paused ? 1 : 0, outcome: seen ? (paused ? "false_pause" : "ok") : "timeout" });
       if (paused) {
         const r = await recover([], hd0);
@@ -176,30 +177,34 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
     } else if (kind === "legit_forced") {
       const nonce = BigInt(await client(BASE).readContract({ address: A.LOCKBOX, abi: lockboxAbi, functionName: "nonce" }) as bigint) + 1n;
       const delayMs = (2 + (i * 7) % 19) * 1000; // 2..20 s, deterministic from the run index
-      const wU = watch(UNI, A.GATE_U, E(gateAbi, "Paused"), hd0.uni, () => true, 90_000);
-      const wB = watch(BASE, A.GATE_B, E(gateAbi, "Paused"), hd0.base, () => true, 90_000);
-      const wL = watch(LASNA, A.RC, E(rcAbi, "PauseRequested"), hd0.lasna, () => true, 90_000);
+      const isKey = (l: { args?: Record<string, unknown> }) => l.args?.key === nonce; // events of this run only (the auto-resume carries the lock's key = nonce)
+      const wU = watch(UNI, A.GATE_U, E(gateAbi, "Paused"), hd0.uni + 1n, isKey, 90_000);
+      const wB = watch(BASE, A.GATE_B, E(gateAbi, "Paused"), hd0.base + 1n, isKey, 90_000);
+      const wL = watch(LASNA, A.RC, E(rcAbi, "PauseRequested"), hd0.lasna + 1n, isKey, 90_000);
       // the Resumed watchers start with the Paused ones, so a resume landing while a pause leg is still polled is not stamped late
-      const rU = watch(UNI, A.GATE_U, E(gateAbi, "Resumed"), hd0.uni, () => true, 150_000);
-      const rB = watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), hd0.base, () => true, 150_000);
+      const rU = watch(UNI, A.GATE_U, E(gateAbi, "Resumed"), hd0.uni + 1n, isKey, 150_000);
+      const rB = watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), hd0.base + 1n, isKey, 150_000);
       const mint = await send(UNI, A.MINTER, minterAbi, "mint", [nonce, user, amount]);
       await sleep(delayMs);
       const lk = await send(BASE, A.LOCKBOX, lockboxAbi, "lock", [user, amount]);
       const [pu, pb, pl, ru, rb] = await Promise.all([wU, wB, wL, rU, rB]);
       const all4 = !!(pu && pb && ru && rb);
+      // a resume observed before its pause on the same gate is poll jitter: no duration, never a negative one
+      const inverted = all4 && (ru!.at < pu!.at || rb!.at < pb!.at);
       Object.assign(row, { key: nonce, recipient: user, lock_tx: lk.tx, mint_tx: mint.tx, mint_sent_ms: mint.sentAt, mint_mined_ms: mint.minedAt,
         lasna_seen_ms: pl?.at, lasna_tx: pl?.tx, gate_u_seen_ms: pu?.at, gate_u_tx: pu?.tx, gate_b_seen_ms: pb?.at, gate_b_tx: pb?.tx,
-        resume_u_seen_ms: ru?.at, resume_b_seen_ms: rb?.at, pause_seconds: all4 ? (Math.max(ru!.at - pu!.at, rb!.at - pb!.at) / 1000).toFixed(1) : "",
+        resume_u_seen_ms: ru?.at, resume_b_seen_ms: rb?.at, pause_seconds: all4 && !inverted ? (Math.max(ru!.at - pu!.at, rb!.at - pb!.at) / 1000).toFixed(1) : "",
         false_pause: 1, note: `forced fill-before-deposit; lock sent ${delayMs} ms after the mint`, outcome: all4 ? "ok" : "timeout" });
       if (!all4) note += "forced run did not complete; ";
+      if (inverted) note += "observer order inverted; ";
     } else {
       // attack kinds: key forged (beyond highest lock + K) or plausible (just above the lock nonce)
       const lockNonce = BigInt(await client(BASE).readContract({ address: A.LOCKBOX, abi: lockboxAbi, functionName: "nonce" }) as bigint);
       const key = kind === "attack_plausible" ? lockNonce + 3n : 1_000_000n + BigInt(i) * 1000n + (kind === "burst" ? 500_000n : 0n);
       const watchers = () => [
-        watch(LASNA, A.RC, E(rcAbi, "PauseRequested"), hd0.lasna, (l) => l.args?.key === key, 120_000),
-        watch(UNI, A.GATE_U, E(gateAbi, "Paused"), hd0.uni, (l) => l.args?.key === key, 120_000),
-        watch(BASE, A.GATE_B, E(gateAbi, "Paused"), hd0.base, (l) => l.args?.key === key, 120_000),
+        watch(LASNA, A.RC, E(rcAbi, "PauseRequested"), hd0.lasna + 1n, (l) => l.args?.key === key, 120_000),
+        watch(UNI, A.GATE_U, E(gateAbi, "Paused"), hd0.uni + 1n, (l) => l.args?.key === key, 120_000),
+        watch(BASE, A.GATE_B, E(gateAbi, "Paused"), hd0.base + 1n, (l) => l.args?.key === key, 120_000),
       ];
       const ws = watchers();
       const mint = await send(UNI, A.MINTER, minterAbi, "mint", [key, attacker, amount]);
@@ -224,7 +229,7 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
         pause_epoch: pl?.args?.epoch, copycats_fired: kind === "burst" ? fired : "", copycats_landed: kind === "burst" ? landed : "", reverted_tx: reverted,
         carry_home_tx: carryTx, carry_home_status: carryStatus, exposure_tusd: kind === "burst" ? (1 + landed) * 500 : 500,
         outcome: burstErr ? "error" : pl && pu && pb ? (kind === "burst" && !reverted ? "censored" : "ok") : "timeout" });
-      const r = await recover([attacker], hd0);
+      const r = await recover([attacker], hd0, (pl?.args?.epoch as bigint | undefined) ?? 0n);
       markRec(r.ok);
       Object.assign(row, { resume_u_seen_ms: r.resumeU?.at, resume_b_seen_ms: r.resumeB?.at, recovery_ms: r.ms });
       note += r.note;

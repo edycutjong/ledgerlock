@@ -268,6 +268,14 @@
     "max": 19.668,
     "min": 7.481
   },
+  "recovery_attack_rows_left_out": 0,
+  "burst_verify": {
+    "source": "evidence/frozen-burst-verify.csv",
+    "rows": 20,
+    "after": 20,
+    "paused_event_ok": 20,
+    "reason_gatepaused": 20
+  },
   "recovery_failed": null,
   "route_b": {
     "source": "evidence/frozen-routeb-runs.csv",
@@ -279,21 +287,27 @@
         "outcome": "ok",
         "pause_u_s": 4,
         "pause_b_s": 2.3,
-        "resume_u_s": 6
+        "resume_u_s": 6,
+        "block_ts_u_s": 2,
+        "block_ts_b_s": 1
       },
       {
         "run": "bd-02",
         "outcome": "ok",
         "pause_u_s": 4,
         "pause_b_s": 2.2,
-        "resume_u_s": 11
+        "resume_u_s": 11,
+        "block_ts_u_s": 2,
+        "block_ts_b_s": 1
       },
       {
         "run": "bd-03",
         "outcome": "ok",
         "pause_u_s": 5.3,
         "pause_b_s": 2.8,
-        "resume_u_s": 5.8
+        "resume_u_s": 5.8,
+        "block_ts_u_s": 4,
+        "block_ts_b_s": 3
       }
     ]
   }

@@ -87,7 +87,9 @@ const gates: Record<number, D[]> = {
 const GB = existsSync("evidence/route-b-guard.txt")
   ? Object.fromEntries(readFileSync("evidence/route-b-guard.txt", "utf8").split("\n").filter((l) => /^[A-Z_0-9]+=/.test(l)).map((l) => l.replace(/\s+#.*$/, "").split("=") as [string, string]))
   : null;
-if (GB && A.INSTANCE === "frozen") {
+const ROUTE_B_INSTANCE = process.env.ROUTE_B_INSTANCE ?? "frozen"; // route B lives on this reactive contract only; a redeployed route A instance does not carry it
+if (GB && INSTANCE !== ROUTE_B_INSTANCE) console.error(`route-b-guard.txt present but skipped: instance ${INSTANCE} is not the route B instance (${ROUTE_B_INSTANCE})`);
+if (GB && INSTANCE === ROUTE_B_INSTANCE) {
   gates[BASE].push(...dec(gateAbi, await allLogs(BASE, GB.GATE_B2 as Hex, BigInt(GB.BASE_FROM_B) - 50n), "gate_b2"));
   gates[UNI].push(...dec(gateAbi, await allLogs(UNI, GB.GATE_U2 as Hex, BigInt(GB.UNI_FROM_B) - 50n), "gate_u2"));
 }

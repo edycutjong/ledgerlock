@@ -8,6 +8,7 @@ import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs
 import { createWalletClient, decodeAbiParameters, defineChain, http, parseAbi, type Hex, type Log } from "viem";
 import { nonceManager, privateKeyToAccount } from "viem/accounts";
 import { CHAINS, client } from "../packages/reactive-kit/ts/chains.ts";
+import { getLogsChunked } from "../packages/reactive-kit/ts/triples.ts";
 
 const [mode, countArg] = process.argv.slice(2);
 const N = Number(countArg ?? 1), LASNA = 5318007, BASE = 84532, UNI = 1301;
@@ -78,7 +79,7 @@ for (let i = 1; i <= N; i++) {
       const [s, r] = await Promise.all([
         watch(LASNA, F.RC, ev(rc, "Observed"), h0.l, (l) => l.args?.originTx === t.tx && l.args?.routeId === ROUTE, 90_000),
         watch(LASNA, F.RC, ev(rc, "Observed"), h0.l, (l) => l.args?.originTx === p.tx && l.args?.routeId === ROUTE, 90_000)]);
-      const latched = (await client(LASNA).getLogs({ address: F.RC, event: ev(rc, "IncidentLatched"), fromBlock: h0.l, toBlock: "latest" })).some((l) => (l as unknown as { args: { routeId: bigint } }).args.routeId === ROUTE);
+      const latched = (await getLogsChunked(LASNA, { address: F.RC, event: ev(rc, "IncidentLatched"), fromBlock: h0.l, args: { routeId: ROUTE } })).length > 0;
       // lasna_order = on-chain order of the two Lasna Observed logs (block, then logIndex), not which poll returned first
       Object.assign(row, { send_tx: t.tx, dispatch_mined_ms: t.at, process_tx: p.tx, process_mined_ms: p.at, delay_s: ((p.at - t.at) / 1000).toFixed(1), lasna_sent_seen_ms: s?.at, lasna_recv_seen_ms: r?.at,
         lasna_order: s && r ? ((s.block !== r.block ? s.block < r.block : s.logIndex < r.logIndex) ? "sent_first" : "received_first") : "", false_latch: latched ? 1 : 0, note: "delivery by our own Mailbox.process right after the dispatch mined (public relayer did not deliver)", outcome: p.status === "success" && s && r ? "ok" : "check" });
@@ -91,7 +92,10 @@ for (let i = 1; i <= N; i++) {
           clear = st[5] === 0n && st[6] === 0n;
           if (!clear) await sleep(3000);
         }
-        if (clear) { await send(LASNA, F.RC, rc, "resolve", [ROUTE, 1, false], 0n, 3_000_000n); row.note += "; FALSE LATCH resolved (deficit returned to 0)"; }
+        if (clear) {
+          const rs = await send(LASNA, F.RC, rc, "resolve", [ROUTE, 1, false], 0n, 3_000_000n);
+          row.note += rs.status === "success" ? "; FALSE LATCH resolved (deficit returned to 0)" : `; resolve receipt ${rs.status}: FALSE LATCH NOT resolved`;
+        }
         else row.note += "; deficit persisted: not a reorder; route left latched";
       }
     } else {
