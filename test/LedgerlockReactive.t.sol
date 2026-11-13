@@ -1037,12 +1037,44 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         assertTrue(gateU.isOpen());
         assertFalse(gateB.isOpen());
         gateU.setFailNext(false);
-        CallbackResult[] memory r = _mintTx(2, bob, 1e18); // lands through the open gate; the guard asks U again
-        assertEq(r.length, 1);
-        assertEq(r[0].target, address(gateU));
+        CallbackResult[] memory r = _mintTx(2, bob, 1e18); // lands through the open gate; a new pause epoch to both
+        assertEq(r.length, 2);
+        assertAllSucceeded(r);
+        assertEq(rsc.getState(R).epoch, 2);
         assertFalse(gateU.isOpen());
         assertEq(rsc.outstandingAcks(), 0);
         assertFalse(rsc.cronOn());
+    }
+
+    /// A late failure of an exhausted cycle (older epoch) never spends the re-armed cycle's retry budget (a2a round 4).
+    function test_a2a_stale_failure_of_exhausted_cycle_ignored() public {
+        deliver(_M(1, alice, 1e18)); // plausible pause, epoch 1
+        sys.takeRequests();
+        deliver(_fail(UNI, address(gateU), PAUSE_SEL, 1)); // retry
+        sys.takeRequests();
+        deliver(_fail(UNI, address(gateU), PAUSE_SEL, 1)); // GateUnreachable(U)
+        deliver(_M(2, bob, 1e18)); // new mismatch: new epoch 2 to both gates
+        assertEq(sys.takeRequests().length, 2);
+        deliver(_fail(UNI, address(gateU), PAUSE_SEL, 1)); // late failure of the exhausted epoch-1 cycle
+        (bool owed,, uint64 e,,, bool failRetried,,,) = rsc.acks(R, 0);
+        assertTrue(owed);
+        assertEq(e, 2);
+        assertFalse(failRetried);
+        assertEq(sys.takeRequests().length, 0);
+    }
+
+    /// Amounts that do not fit never revert react() before the pause (a revert = no pause) (a2a round 4).
+    function test_a2a_accumulator_overflow_pauses_instead_of_reverting() public {
+        deliver(_M(1_000_000, thief, type(uint256).max)); // forged: pause + REPEAT
+        deliver(_M(1_000_001, thief, 1)); // unbacked would overflow: reverted before the fix
+        (bool paused, bool incident,,,,,) = rsc.routeState(R);
+        assertTrue(paused && incident);
+        (uint256 r2, address col,) = _addSupplyRoute();
+        deliver(_log(BASE, col, SENT_T0, UNI, uint160(bob), abi.encode(type(uint256).max)));
+        deliver(_log(BASE, col, SENT_T0, UNI, uint160(bob), abi.encode(uint256(1)))); // lockedTotal would overflow
+        (paused, incident,,,,,) = rsc.routeState(r2);
+        assertTrue(paused && incident);
+        assertEq(uint8(rsc.getState(r2).cause), uint8(LedgerlockReactive.Cause.SUPPLY));
     }
 
     /// Normal path: with both gates acked, a copycat and a resolve() on a healthy route send nothing extra.

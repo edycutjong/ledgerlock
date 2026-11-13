@@ -369,12 +369,7 @@ contract LedgerlockReactive is AbstractReactive {
         }
         uint256 hs = highestSrc[r][dir];
         bool implausible = (key > hs && key - hs > routes[r].keySlack) || s.consumed || s.pendSince != 0 || s.srcSeen;
-        if (dir == FWD) {
-            st.unbacked += amt;
-            unbackedOf[r][deficitEra[r]][to] += amt;
-        } else {
-            st.unbackedRel += amt;
-        }
+        if (_addUnbacked(r, dir, to, amt)) implausible = true; // an amount that does not fit latches
         _pauseBoth(r, originTx, key); // two callbacks in THIS react() (no-op if already paused)
         emit Mismatch(r, side, key, amt, to, originTx, st.epoch);
         if (implausible) _latch(r, Cause.REPEAT);
@@ -390,6 +385,19 @@ contract LedgerlockReactive is AbstractReactive {
             st.pendingCount++;
         } else {
             _latch(r, Cause.FLOOD);
+        }
+    }
+
+    function _addUnbacked(uint256 r, uint8 dir, address to, uint256 amt) internal returns (bool ov) {
+        State storage st = states[r];
+        if (dir == FWD) {
+            bool ovH;
+            mapping(address => uint256) storage held = unbackedOf[r][deficitEra[r]];
+            (st.unbacked, ov) = _sadd(st.unbacked, amt);
+            (held[to], ovH) = _sadd(held[to], amt);
+            ov = ov || ovH;
+        } else {
+            (st.unbackedRel, ov) = _sadd(st.unbackedRel, amt);
         }
     }
 
@@ -416,17 +424,17 @@ contract LedgerlockReactive is AbstractReactive {
 
     function _onSupply(uint256 r, Side side, uint256 amt, address to, bytes32 originTx) internal {
         State storage st = states[r];
-        bool bad;
+        bool bad; // a total that does not fit is itself a violation (a saturated total would blind the invariant)
         if (side == Side.LOCK) {
-            st.lockedTotal += amt;
+            (st.lockedTotal, bad) = _sadd(st.lockedTotal, amt);
         } else if (side == Side.MINT) {
-            st.mintedTotal += amt;
-            bad = st.mintedTotal > st.lockedTotal;
+            (st.mintedTotal, bad) = _sadd(st.mintedTotal, amt);
+            bad = bad || st.mintedTotal > st.lockedTotal;
         } else if (side == Side.BURN) {
-            st.burnedTotal += amt;
+            (st.burnedTotal, bad) = _sadd(st.burnedTotal, amt);
         } else {
-            st.releasedTotal += amt;
-            bad = st.releasedTotal > st.burnedTotal;
+            (st.releasedTotal, bad) = _sadd(st.releasedTotal, amt);
+            bad = bad || st.releasedTotal > st.burnedTotal;
         }
         if (!bad) return;
         _pauseBoth(r, originTx, 0);
@@ -455,18 +463,9 @@ contract LedgerlockReactive is AbstractReactive {
 
     function _pauseBoth(uint256 r, bytes32 originTx, uint256 key) internal {
         State storage st = states[r];
-        if (st.paused) {
-            // Copycats never re-bill a pause still in flight (the watchdog owns that). A gate whose pause for this epoch
-            // was never confirmed and is no longer owed (GateUnreachable) is asked again on every new mismatch.
-            for (uint256 c; c < 2; c++) {
-                Ack storage a = acks[r][uint8(c)];
-                if (!a.owed && a.acked < st.epoch) {
-                    _request(r, c, Kind.PAUSE, st.epoch, originTx, key);
-                    emit Retried(r, _chainOf(r, c), st.epoch);
-                }
-            }
-            return;
-        }
+        if (st.paused && !_exhausted(r)) return; // copycats never re-bill a pause that is confirmed or still in flight
+        // First pause, or a pause leg that went GateUnreachable: a NEW epoch to both gates, so a late failure of the
+        // exhausted cycle (older epoch) can never spend the new cycle's retry budget.
         st.paused = true;
         uint64 e = ++st.epoch;
         emit PauseRequested(r, e, originTx, key);
@@ -586,8 +585,8 @@ contract LedgerlockReactive is AbstractReactive {
 
     /// @dev Ack watchdog: one re-request after `ackDeadline`, then GateUnreachable (+ FAILSAFE latch for a PAUSE; a
     ///      stuck RESUME leaves that gate shut and does not latch). Budget per request: at most two re-sends, one on the
-    ///      watchdog deadline and one on a matching CallbackFailure, then GateUnreachable. After that a PAUSE is re-sent on
-    ///      the next mismatch (`_pauseBoth`) and a RESUME on the owner's next `resolve()`.
+    ///      watchdog deadline and one on a matching CallbackFailure, then GateUnreachable. After that the next mismatch
+    ///      (`_pauseBoth`) or the owner's next `resolve()` opens a new epoch to both gates.
     function _ackDeadline(uint256 r) internal {
         for (uint256 c; c < 2; c++) {
             Ack storage a = acks[r][uint8(c)];
@@ -660,19 +659,29 @@ contract LedgerlockReactive is AbstractReactive {
             if (st.mintedTotal > st.lockedTotal) st.lockedTotal = st.mintedTotal;
             if (st.releasedTotal > st.burnedTotal) st.burnedTotal = st.releasedTotal;
         }
-        emit Resolved(r, reason, def, defRel, acceptDeficit, st.paused ? st.epoch + 1 : st.epoch);
-        if (st.paused) {
-            _resumeBoth(r, bytes32(0), 0);
-        } else {
-            // a RESUME that went GateUnreachable left that gate shut: re-send the same epoch to it
-            for (uint256 c; c < 2; c++) {
-                Ack storage a = acks[r][uint8(c)];
-                if (!a.owed && a.acked < st.epoch) {
-                    _request(r, c, Kind.RESUME, st.epoch, a.originTx, a.key);
-                    emit Retried(r, _chainOf(r, c), st.epoch);
-                }
-            }
+        // paused → reopen; already reopened but a RESUME went GateUnreachable (that gate is still shut) → a new resume epoch
+        bool reopen = st.paused || _exhausted(r);
+        emit Resolved(r, reason, def, defRel, acceptDeficit, reopen ? st.epoch + 1 : st.epoch);
+        if (reopen) _resumeBoth(r, bytes32(0), 0);
+    }
+
+    /// @dev A gate whose request for the current epoch was never confirmed and is no longer owed (GateUnreachable).
+    function _exhausted(uint256 r) internal view returns (bool) {
+        uint64 e = states[r].epoch;
+        for (uint256 c; c < 2; c++) {
+            Ack storage a = acks[r][uint8(c)];
+            if (!a.owed && a.acked < e) return true;
         }
+        return false;
+    }
+
+    /// @dev Saturating add: an amount that does not fit must not revert react() before the pause (a revert = no pause).
+    function _sadd(uint256 a, uint256 b) internal pure returns (uint256 sum, bool ov) {
+        unchecked {
+            sum = a + b;
+        }
+        ov = sum < a;
+        if (ov) sum = type(uint256).max;
     }
 
     function _deficit(uint256 r) internal view returns (uint256 def, uint256 defRel) {
