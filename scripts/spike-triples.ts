@@ -5,7 +5,7 @@
 //   evidence/hop-probe.csv    self-callback to Lasna (probe 2) + Cron subscribe/unsubscribe from react() (probe 2)
 // Usage: tsx scripts/spike-triples.ts [evidence/spike-addresses.txt]
 import { readFileSync, writeFileSync } from "node:fs";
-import { decodeEventLog, parseAbi, type Log } from "viem";
+import { decodeEventLog, keccak256, parseAbi, toHex, type Log } from "viem";
 import { client } from "../packages/reactive-kit/ts/chains.ts";
 import { buildTriple, toCsvLine, txInfo, TRIPLE_COLUMNS, type Hex, type TripleRow } from "../packages/reactive-kit/ts/triples.ts";
 
@@ -41,14 +41,21 @@ const SYSTEM = "0x8888888888888888888888888888888888888888";
 const SIDE = ["LOCK", "MINT", "ACK_PAUSED", "ACK_RESUMED"];
 
 type D = { name: string; args: Record<string, unknown>; log: Log };
-function dec(abi: typeof rcAbi | typeof gateAbi, logs: Log[]): D[] {
+// Events our contracts emit that the joiner does not use; anything else that fails to decode is reported, never dropped silently.
+const IGNORED_T0 = new Set(["GuardianSet(address)", "StaleEpoch(uint64,uint64)", "HeldByGuardian(uint256,uint64)"].map((sig) => keccak256(toHex(sig))));
+function dec(abi: typeof rcAbi | typeof gateAbi, logs: Log[], label: string): D[] {
   const out: D[] = [];
+  const unknown = new Map<string, number>();
   for (const l of logs) {
     try {
       const d = decodeEventLog({ abi, data: l.data, topics: l.topics as never });
       out.push({ name: d.eventName, args: d.args as Record<string, unknown>, log: l });
-    } catch { /* not ours */ }
+    } catch {
+      const t0 = String(l.topics[0]) as Hex;
+      if (!IGNORED_T0.has(t0)) unknown.set(t0, (unknown.get(t0) ?? 0) + 1);
+    }
   }
+  for (const [t0, n] of unknown) console.warn(`WARN ${label}: ${n} log(s) with undecodable topic0 ${t0}`);
   return out;
 }
 
@@ -67,16 +74,23 @@ async function allLogs(chainId: number, address: Hex, from: bigint, filter?: { e
   return out;
 }
 
-const rc = dec(rcAbi, await allLogs(LASNA, A.RC as Hex, BigInt(A.LASNA_FROM) - 50n));
+const rc = dec(rcAbi, await allLogs(LASNA, A.RC as Hex, BigInt(A.LASNA_FROM) - 50n), "rc");
 const gates: Record<number, D[]> = {
-  [BASE]: dec(gateAbi, await allLogs(BASE, A.GATE_B as Hex, BigInt(A.BASE_FROM) - 50n)),
-  [UNI]: dec(gateAbi, await allLogs(UNI, A.GATE_U as Hex, BigInt(A.UNI_FROM) - 50n)),
+  [BASE]: dec(gateAbi, await allLogs(BASE, A.GATE_B as Hex, BigInt(A.BASE_FROM) - 50n), "gate_b"),
+  [UNI]: dec(gateAbi, await allLogs(UNI, A.GATE_U as Hex, BigInt(A.UNI_FROM) - 50n), "gate_u"),
 };
 const byTx = new Map<string, D[]>();
 for (const d of rc) byTx.set(d.log.transactionHash!, [...(byTx.get(d.log.transactionHash!) ?? []), d]);
 
 const keyed: { k: [bigint, number, number]; row: TripleRow }[] = []; // (lasna block, log index, callback leg) -> stable order
 const gasRows: string[] = ["reactive_tx,lasna_block,branch,gas_used,callbacks_requested,instance"];
+// A gate event joins a request only on (operation, epoch, origin tx, key); more than one match is a join error.
+function gateEvent(chainId: number, paused: boolean, epoch: bigint, originTx: Hex, key: bigint): D | undefined {
+  const m = gates[chainId].filter((d) => d.name === (paused ? "Paused" : "Resumed") && d.args.epoch === epoch &&
+    d.args.originTx === originTx && d.args.key === key);
+  if (m.length > 1) throw new Error(`join: ${m.length} gate events on ${chainId} for epoch ${epoch}`);
+  return m[0];
+}
 const ackFor = (chainId: number, paused: boolean, epoch: bigint) =>
   rc.find((d) => d.name === "AckSeen" && BigInt(d.args.chainId as bigint) === BigInt(chainId) && d.args.pausedAck === paused && d.args.epoch === epoch);
 
@@ -106,7 +120,7 @@ for (const [tx, ds] of byTx) {
   const paused = req.name === "PauseRequested";
   const epoch = req.args.epoch as bigint;
   for (const cbChain of [UNI, BASE]) {
-    const g = gates[cbChain].find((d) => d.name === (paused ? "Paused" : "Resumed") && d.args.epoch === epoch);
+    const g = gateEvent(cbChain, paused, epoch, req.args.originTx as Hex, req.args.key as bigint);
     const ack = ackFor(cbChain, paused, epoch);
     keyed.push({ k: [lasnaR.blockNumber, req.log.logIndex!, cbChain === UNI ? 1 : 2], row: await buildTriple({
       stage: "SPIKE", seq: 0, triggerKind: "origin_log", triggerChain: trigChain, triggerTx: originTx, reactiveChain: LASNA, reactiveTx: tx as Hex,
@@ -121,7 +135,7 @@ for (const [tx, ds] of byTx) {
 for (const d of rc.filter((x) => x.name === "ResumeRequested" && !byTx.get(x.log.transactionHash!)!.some((y) => y.name === "Observed"))) {
   const epoch = d.args.epoch as bigint;
   for (const cbChain of [UNI, BASE]) {
-    const g = gates[cbChain].find((x) => x.name === "Resumed" && x.args.epoch === epoch);
+    const g = gateEvent(cbChain, false, epoch, d.args.originTx as Hex, d.args.key as bigint);
     const ack = ackFor(cbChain, false, epoch);
     keyed.push({ k: [d.log.blockNumber!, d.log.logIndex!, cbChain === UNI ? 1 : 2], row: await buildTriple({
       stage: "SPIKE", seq: 0, triggerKind: "origin_log", triggerChain: LASNA, triggerTx: d.log.transactionHash!, reactiveChain: LASNA, reactiveTx: d.log.transactionHash!,
@@ -162,18 +176,28 @@ for (const d of rc.filter((x) => ["HopRequested", "HopSeen", "CronProbe"].includ
 writeFileSync("evidence/hop-probe.csv", hopRows.join("\n") + "\n");
 
 // probe 4 (shrunk): arrival order on Lasna of each lock/mint pair with the same key (skew sign; whole-second block timestamps)
-const skewRows = ["key,lock_origin_tx,lock_origin_ts,mint_origin_tx,mint_origin_ts,lock_lasna_block,mint_lasna_block,lock_lasna_ts,mint_lasna_ts,skew_s,mint_seen_first,order,instance"];
+const skewRows = ["key,lock_origin_tx,lock_origin_ts,mint_origin_tx,mint_origin_ts,lock_lasna_block,mint_lasna_block,lock_lasna_ts,mint_lasna_ts,skew_s,mint_seen_first,order_by_send_time,instance"];
 const obsAll = rc.filter((d) => d.name === "Observed");
+// send order comes from the trigger script's own log (local clock, one machine), not from two chains' block clocks
+const sentAt = new Map<string, number>();
+for (const line of readFileSync("evidence/spike-actions.csv", "utf8").split("\n").slice(1).filter(Boolean)) {
+  const [, , tx, ms] = line.split(",");
+  sentAt.set(tx.toLowerCase(), Number(ms));
+}
 for (const m of obsAll.filter((d) => SIDE[Number(d.args.side)] === "MINT")) {
-  const l = obsAll.find((d) => SIDE[Number(d.args.side)] === "LOCK" && d.args.key === m.args.key);
+  const ls = obsAll.filter((d) => SIDE[Number(d.args.side)] === "LOCK" && d.args.key === m.args.key);
+  if (ls.length > 1) throw new Error(`skew join: ${ls.length} locks share key ${m.args.key}`);
+  const l = ls[0];
   if (!l) continue;
+  const lSent = sentAt.get(String(l.args.originTx).toLowerCase()), mSent = sentAt.get(String(m.args.originTx).toLowerCase());
+  const order = lSent === undefined || mSent === undefined ? "unknown_send_order" : mSent < lSent ? "forced_mint_first" : "strict_lock_first";
   const [lo, mo, ll, ml] = await Promise.all([
     txInfo(BASE, l.args.originTx as Hex), txInfo(UNI, m.args.originTx as Hex),
     txInfo(LASNA, l.log.transactionHash!), txInfo(LASNA, m.log.transactionHash!),
   ]);
   skewRows.push([m.args.key, l.args.originTx, lo.ts, m.args.originTx, mo.ts, l.log.blockNumber, m.log.blockNumber, ll.ts, ml.ts,
     ml.ts - ll.ts, m.log.blockNumber! < l.log.blockNumber!,
-    mo.ts < lo.ts ? "forced_mint_first" : "strict_lock_first", INSTANCE].join(","));
+    order, INSTANCE].join(","));
 }
 writeFileSync("evidence/skew-pairs.csv", skewRows.join("\n") + "\n");
 console.log(`skew pairs ${skewRows.length - 1}`);

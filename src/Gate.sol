@@ -8,8 +8,9 @@ import {IPayable} from "reactive-lib-omni/interfaces/IPayable.sol";
 /// @notice The pause switch Ledgerlock flips on one chain of a route (same bytecode on Base and Unichain Sepolia).
 ///         Only the Reactive callback proxy may call `pause`/`resume`, and only with the authorised reactive contract
 ///         as the injected first argument. The origin tx hash travels in every callback and every gate event.
-/// @dev Epoch rule: an older epoch never undoes a newer one (`StaleEpoch`); the same epoch + same operation re-emits
-///      the ack without a state change, so a lost ack log can be regenerated. A guardian pause cannot be lifted by
+/// @dev Epoch rule: an older epoch never undoes a newer one (`StaleEpoch`). A repeated callback with the same epoch
+///      re-emits its ack, so a lost ack log can be regenerated; the RSC bumps the epoch on every pause/resume flip, so
+///      one epoch never carries both operations (strict same-op idempotence arrives with the core flow). A guardian pause cannot be lifted by
 ///      an automated resume (`HeldByGuardian`); only `guardianResume()` clears it.
 contract Gate is AbstractCallback {
     bool public paused;

@@ -170,6 +170,10 @@ contract LedgerlockReactive is AbstractReactive {
             pendingTo[key] = to;
             pendingSince[key] = block.timestamp;
             pendingCount++;
+        } else {
+            // a second mint on a key that is already pending: over-issuance, so the entry can no longer equal one
+            // lock's amount (no auto-resume) and `resolve` clears the whole amount
+            pendingAmt[key] += amt;
         }
         if (!paused) _pauseBoth(originTx, key);
     }
@@ -208,7 +212,8 @@ contract LedgerlockReactive is AbstractReactive {
 
     // ------------------------------------------------------------------ owner
 
-    /// @notice Clear the listed pending mints and reopen both gates (a plain external method requesting callbacks).
+    /// @notice Clear the listed pending mints; when nothing is left pending, reopen both gates (a plain external method
+    ///         requesting callbacks). A partial resolve keeps the gates shut and requests nothing.
     function resolve(uint256[] calldata keys) external onlyOwner {
         uint256 cleared;
         for (uint256 i; i < keys.length; i++) {
@@ -222,8 +227,9 @@ contract LedgerlockReactive is AbstractReactive {
                 cleared++;
             }
         }
-        emit Resolved(ROUTE_ID, cleared, unbacked, epoch + 1);
-        _resumeBoth(bytes32(0), 0);
+        bool reopen = pendingCount == 0 && paused;
+        emit Resolved(ROUTE_ID, cleared, unbacked, reopen ? epoch + 1 : epoch);
+        if (reopen) _resumeBoth(bytes32(0), 0);
     }
 
     // ------------------------------------------------------------------ probes

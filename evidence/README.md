@@ -4,7 +4,8 @@ Raw rows from live runs, regenerated from chain logs by `pnpm triples` (`scripts
 typed by hand except `spike-actions.csv`, which the trigger script appends as it sends each transaction.
 
 Instance `spike-dev` is a **dev deployment** (addresses in `spike-addresses.txt`; gates are `ProbeGate`s with a
-one-shot forced-failure flag). The deployment the final numbers cite comes later and is listed in `deployments/`.
+one-shot forced-failure flag). Its bytecode is the contracts at commit `DEPLOYED_FROM_COMMIT`; later fixes to
+`src/` (for example `resolve()` reopening only when nothing is pending) are not in that deployment. The deployment the final numbers cite comes later and is listed in `deployments/`.
 
 | File | Rows |
 |---|---|

@@ -255,6 +255,51 @@ contract LedgerlockReactiveTest is OmniReactiveTest {
         assertEq(r[0].target, address(rsc));
     }
 
+    function test_second_mint_on_pending_key_counts_and_blocks_auto_resume() public {
+        _mint(1, alice, 100e18); // pending, paused
+        deliver(_mintedLog(1, alice, 100e18, 501)); // same key minted again (log-level: the Minter dedupes live)
+        runCallbacks();
+        assertEq(rsc.unbacked(), 200e18);
+        assertEq(rsc.pendingAmt(1), 200e18);
+        assertCallbacks(_lock(alice, 100e18), 0); // one lock cannot back two mints
+        assertTrue(gateU.paused());
+        uint256[] memory keys = new uint256[](1);
+        keys[0] = 1;
+        rsc.resolve(keys);
+        runCallbacks();
+        assertEq(rsc.unbacked(), 0);
+        assertEq(rsc.pendingCount(), 0);
+        assertFalse(gateU.paused());
+    }
+
+    function test_partial_resolve_keeps_gates_shut_and_requests_nothing() public {
+        _mint(1000, mallory, 1e18);
+        deliver(_mintedLog(1001, mallory, 1e18, 502));
+        runCallbacks();
+        uint256[] memory keys = new uint256[](1);
+        keys[0] = 1000;
+        uint64 e = rsc.epoch();
+        rsc.resolve(keys);
+        (CallbackResult[] memory r,) = runCallbacks();
+        assertEq(r.length, 0);
+        assertTrue(rsc.paused());
+        assertTrue(gateU.paused());
+        assertEq(rsc.epoch(), e);
+        assertEq(rsc.pendingCount(), 1);
+        keys[0] = 1001;
+        rsc.resolve(keys);
+        (r,) = runCallbacks();
+        assertEq(r.length, 2);
+        assertFalse(gateU.paused());
+    }
+
+    function test_resolve_when_not_paused_requests_nothing() public {
+        uint256[] memory keys = new uint256[](0);
+        rsc.resolve(keys);
+        (CallbackResult[] memory r,) = runCallbacks();
+        assertEq(r.length, 0);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     function _mintedLog(uint64 n, address to, uint256 amt, uint256 txh) internal view returns (IReactive.LogRecord memory) {
