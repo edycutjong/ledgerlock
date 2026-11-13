@@ -45,25 +45,25 @@ a{color:var(--before)}
 .slide.on{display:flex}
 .slide::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 59px,color-mix(in srgb,var(--rule) 45%,transparent) 59px 60px),repeating-linear-gradient(90deg,transparent 0 59px,color-mix(in srgb,var(--rule) 22%,transparent) 59px 60px);-webkit-mask-image:radial-gradient(90% 90% at 30% 20%,black,transparent);mask-image:radial-gradient(90% 90% at 30% 20%,black,transparent)}
 .slide>*{position:relative}
-.foot{position:absolute;left:110px;right:110px;bottom:34px;display:flex;gap:24px;font:400 18px/1 var(--font-data);color:var(--muted);letter-spacing:.08em}
+.foot{position:absolute;left:110px;right:110px;bottom:34px;display:flex;gap:24px;font:400 18px/1 var(--font-body);color:var(--muted);letter-spacing:.08em}
 .foot .ver{margin-left:auto}
 .disp{font-family:var(--font-display);font-weight:400;text-transform:uppercase;line-height:.92;margin:0;letter-spacing:.01em}
 .mono{font-family:var(--font-data)}
 .muted{color:var(--muted)}
-.label{font:600 20px/1.3 var(--font-data);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 22px}
+.label{font:700 20px/1.3 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 22px}
 h2.disp{font-size:132px;margin-bottom:34px}
 em{font-style:normal;color:var(--before)}
 .body{font-size:42px;max-width:34ch;margin:0;color:color-mix(in srgb,var(--ink) 88%,var(--bg))}
 .speaker-notes{display:none}
 /* cover */
-.cover{display:grid;grid-template-columns:1.1fr 1fr;gap:70px;align-items:center;height:100%}
+.cover{display:grid;grid-template-columns:1.45fr .9fr;gap:60px;align-items:center;height:100%}
 .brand{display:flex;align-items:center;gap:18px;font:400 44px/1 var(--font-display);letter-spacing:.06em;margin-bottom:40px}
 .brand img{width:64px;height:64px}
-.cover h1{font-size:172px;margin:0 0 44px}
+.cover h1{font-size:132px;margin:0 0 44px}
 .cover h1 em{text-shadow:0 0 40px color-mix(in srgb,var(--before) 35%,transparent)}
-.badge{display:inline-block;white-space:nowrap;border:2px solid var(--rule);padding:14px 22px;font:600 20px/1.3 var(--font-data);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.badge{display:inline-block;white-space:nowrap;border:2px solid var(--rule);padding:14px 22px;font:700 20px/1.3 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .term{border:2px solid var(--rule);background:var(--deep);border-radius:8px;padding:34px 38px;font:400 27px/1.8 var(--font-data);white-space:pre;color:var(--ink)}
-.term .c{color:var(--muted)}.term .k{color:var(--before)}.term .r{color:var(--after)}
+.term .c{color:var(--muted)}.term .k{color:var(--before)}.term .r{color:var(--ink)}
 .pulse{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--after);vertical-align:-2px;margin-right:12px;box-shadow:0 0 22px color-mix(in srgb,var(--after) 70%,transparent);animation:pulse 1.4s ease-in-out 3}
 @keyframes pulse{50%{opacity:.35;box-shadow:none}}
 /* track board */
@@ -92,25 +92,30 @@ em{font-style:normal;color:var(--before)}
 .frame img{display:block;width:100%;height:auto}
 .split{display:grid;grid-template-columns:.85fr 1.15fr;gap:70px;align-items:center;flex:1}
 .callouts{position:relative}
-.co{position:absolute;width:52px;height:52px;border-radius:50%;background:var(--brass);color:var(--bg);font:600 26px/52px var(--font-data);text-align:center;box-shadow:0 0 0 6px color-mix(in srgb,var(--brass) 30%,transparent)}
+.co{position:absolute;width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--bg);font:700 28px/56px var(--font-body);text-align:center;transform:translate(-50%,-50%);box-shadow:0 0 0 7px color-mix(in srgb,var(--ink) 25%,transparent)}
 .legend{list-style:none;margin:0;padding:0}
+.legend.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:40px}
+.legend.row4 li{margin:0;font-size:32px}
+.caveat{font-size:30px;color:var(--muted);margin:26px 0 auto}
+.capline{font-size:34px;margin:22px 0 auto;color:color-mix(in srgb,var(--ink) 88%,var(--bg))}
+.capline b{font-family:var(--font-data);font-weight:600}
 .legend li{display:grid;grid-template-columns:66px 1fr;gap:16px;align-items:center;margin:0 0 34px;font-size:36px}
-.legend li span{width:48px;height:48px;border-radius:50%;background:var(--brass);color:var(--bg);font:600 24px/48px var(--font-data);text-align:center}
+.legend li span{width:48px;height:48px;border-radius:50%;background:var(--ink);color:var(--bg);font:700 24px/48px var(--font-body);text-align:center}
 /* diagram */
-svg.flow{width:100%;height:auto;margin-top:auto}
+svg.flow{width:100%;height:auto;margin:auto 0}
 svg.flow text{font-family:var(--font-display);text-transform:uppercase;fill:var(--ink)}
 svg.flow .m{font-family:var(--font-data);text-transform:none;fill:var(--muted)}
 /* numbers */
-.dots{width:100%;height:auto;display:block;margin-top:10px}
+.dots{width:100%;height:auto;display:block;margin:auto 0 0}
 .dots .axis line{stroke:var(--muted);stroke-width:1.2}
 .dots .axis text{font:400 13px var(--font-data);fill:var(--muted);text-anchor:middle}
-.dots .pct line{stroke:var(--brass);stroke-width:1.6;stroke-dasharray:4 4}
-.dots .pct text{font:600 15px var(--font-data);fill:var(--brass)}
+.dots .pct line{stroke:var(--ink);stroke-width:1.6;stroke-dasharray:4 4}
+.dots .pct text{font:600 15px var(--font-data);fill:var(--ink)}
 .dots .pts circle{fill:var(--before)}
 .stats{display:flex;gap:70px;margin-top:auto;font:400 30px/1.3 var(--font-data);color:var(--muted)}
 .stats b{display:block;font:400 92px/1 var(--font-display);color:var(--ink);margin-bottom:6px}
 /* control */
-.arms{display:grid;grid-template-columns:1fr 1fr;gap:44px;margin-top:auto}
+.arms{display:grid;grid-template-columns:1fr 1fr;gap:44px;margin:auto 0 0}
 .arm{border:2px solid var(--rule);background:var(--panel);padding:48px 52px;border-radius:4px}
 .arm h3{font:400 96px/1 var(--font-display);text-transform:uppercase;margin:0 0 34px}
 .row{display:grid;grid-template-columns:8ch 1fr 6ch;gap:24px;align-items:center;margin:30px 0;font-size:36px}
@@ -121,7 +126,7 @@ svg.flow .m{font-family:var(--font-data);text-transform:none;fill:var(--muted)}
 /* limits */
 .limits{list-style:none;margin:auto 0 0;padding:0;border-top:3px solid var(--rule)}
 .limits li{display:grid;grid-template-columns:150px 1fr;padding:44px 0;border-bottom:2px solid var(--rule);font-size:54px;line-height:1.25;align-items:center}
-.limits li span{font:400 90px/1 var(--font-display);color:var(--brass)}
+.limits li span{font:400 90px/1 var(--font-display);color:var(--muted)}
 /* ask */
 .ask{display:grid;grid-template-columns:1fr 420px;gap:90px;align-items:center;flex:1}
 .links{font:400 38px/1.9 var(--font-data);margin:0}
@@ -150,6 +155,7 @@ body.overview .chrome{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
+<noscript><style>html,body{overflow:auto;height:auto}.stage{position:static;transform:none;width:auto;height:auto}.slide{display:flex;position:relative;width:1920px;height:1080px;zoom:.5}</style></noscript>
 </head>
 <body>
 <div class="stage" id="stage">
@@ -158,7 +164,7 @@ body.overview .chrome{display:none}
   <div class="cover">
     <div>
       <div class="brand"><img src="../assets/icon.svg" alt="" width="64" height="64">LEDGERLOCK</div>
-      <h1 class="disp">When the books disagree, the line <em>blocks itself.</em></h1>
+      <h1 class="disp">When the books<br> disagree, the line<br> <em>blocks itself.</em></h1>
       <span class="badge">Reactive Omni · Every Second Counts · <span class="ver">v0.1.0</span></span>
     </div>
 <div class="term"><span class="k">+0.000 s</span>  mint
@@ -173,7 +179,7 @@ body.overview .chrome{display:none}
 
 <section class="slide" aria-label="2 of 10, the frozen moment">
   <p class="label">bu-015 · fixture · testnet</p>
-  <p class="quote">Minted on Unichain, never locked on Base. <em>Both gates shut.</em></p>
+  <p class="quote">Minted, never locked. <em>Both gates shut.</em></p>
   <div class="board">
     <div class="box"><h3>Base</h3><p>gate B Paused <b>+4.651 s</b></p></div>
     <div class="box mid"><h3>Lasna</h3><p class="blocked">Line blocked</p><p>one react() · <b>2 callbacks</b></p></div>
@@ -212,94 +218,85 @@ body.overview .chrome{display:none}
 <section class="slide" aria-label="5 of 10, how it works">
   <p class="label">The interlock, step by step</p>
   <h2 class="disp">Pause first, <em>match later</em></h2>
-  <svg class="flow" viewBox="0 0 1700 520" role="img" aria-label="Base Sepolia emits Locked and Unichain Sepolia emits Minted to the Lasna reactive contract, which sends a pause callback to a gate on each chain">
-    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10z" fill="#B8914A"/></marker><marker id="ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10z" fill="#EAE3CC"/></marker></defs>
-    <rect x="10" y="40" width="430" height="440" rx="6" fill="none" stroke="#34402F" stroke-width="3"/>
-    <rect x="1260" y="40" width="430" height="440" rx="6" fill="none" stroke="#34402F" stroke-width="3"/>
-    <rect x="620" y="150" width="460" height="220" rx="6" fill="#182019" stroke="#B8914A" stroke-width="3"/>
-    <text x="40" y="100" font-size="52">Base Sepolia</text>
-    <text x="1290" y="100" font-size="52">Unichain Sepolia</text>
-    <text x="650" y="215" font-size="52">Lasna</text>
-    <text class="m" x="650" y="265" font-size="26">LedgerlockReactive</text>
-    <text class="m" x="650" y="305" font-size="26">react()</text>
-    <rect x="40" y="150" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="64" y="208" font-size="40">LockBox</text>
-    <rect x="40" y="340" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="64" y="398" font-size="40">Gate B</text>
-    <rect x="1290" y="150" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="1314" y="208" font-size="40">Minter</text>
-    <rect x="1290" y="340" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="1314" y="398" font-size="40">Gate U</text>
-    <path d="M410 195 L612 220" stroke="#EAE3CC" stroke-width="3" fill="none" marker-end="url(#ai)"/><text class="m" x="440" y="180" font-size="24">Locked</text>
-    <path d="M1290 195 L1088 220" stroke="#EAE3CC" stroke-width="3" fill="none" marker-end="url(#ai)"/><text class="m" x="1130" y="180" font-size="24">Minted</text>
-    <path d="M620 320 L418 385" stroke="#B8914A" stroke-width="4" fill="none" stroke-dasharray="10 8" marker-end="url(#ar)"/><text class="m" x="450" y="430" font-size="24">pause</text>
-    <path d="M1080 320 L1282 385" stroke="#B8914A" stroke-width="4" fill="none" stroke-dasharray="10 8" marker-end="url(#ar)"/><text class="m" x="1150" y="430" font-size="24">pause</text>
+  <svg class="flow" viewBox="0 0 1700 500" role="img" aria-label="Run bu-015: a forged Minted on Unichain Sepolia reaches the Lasna reactive contract, which sees no Locked on Base Sepolia and sends a pause callback to gate B and gate U">
+    <defs><marker id="ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10z" fill="#EAE3CC"/></marker><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10z" fill="#E4412A"/></marker></defs>
+    <rect x="10" y="20" width="430" height="460" rx="6" fill="none" stroke="#34402F" stroke-width="3"/>
+    <rect x="1260" y="20" width="430" height="460" rx="6" fill="none" stroke="#34402F" stroke-width="3"/>
+    <rect x="620" y="150" width="460" height="200" rx="6" fill="#182019" stroke="#EAE3CC" stroke-width="3"/>
+    <text x="40" y="80" font-size="52">Base Sepolia</text>
+    <text x="1290" y="80" font-size="52">Unichain Sepolia</text>
+    <text x="650" y="222" font-size="60">Lasna</text>
+    <text class="m" x="650" y="292" font-size="34">react() +4.249 s</text>
+    <rect x="40" y="130" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="64" y="190" font-size="40">LockBox</text>
+    <rect x="40" y="350" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="64" y="410" font-size="40">Gate B</text>
+    <rect x="1290" y="130" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="1314" y="190" font-size="40">Minter</text>
+    <rect x="1290" y="350" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="1314" y="410" font-size="40">Gate U</text>
+    <path d="M410 175 L612 205" stroke="#85907F" stroke-width="3" fill="none" stroke-dasharray="6 8"/><text class="m" x="452" y="160" font-size="28">no Locked</text>
+    <path d="M1290 175 L1088 205" stroke="#EAE3CC" stroke-width="4" fill="none" marker-end="url(#ai)"/><text class="m" x="1110" y="160" font-size="28">Minted</text>
+    <path d="M620 320 L418 392" stroke="#E4412A" stroke-width="5" fill="none" marker-end="url(#ar)"/><text class="m" x="440" y="470" font-size="30">pause +4.651 s</text>
+    <path d="M1080 320 L1282 392" stroke="#E4412A" stroke-width="5" fill="none" marker-end="url(#ar)"/><text class="m" x="975" y="470" font-size="30">pause +5.341 s</text>
   </svg>
-  <aside class="speaker-notes" data-note="An unmatched Minted pauses both gates from the same react(). A matching Locked inside W, 60 seconds on our routes, reopens them. Matched traffic sends no callback."></aside>
+  <aside class="speaker-notes" data-note="Run bu-015. The forged Minted reaches Lasna, there is no Locked, so one react() sends both pauses. A matching lock inside W, 60 seconds, would reopen them."></aside>
   <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="6 of 10, live demo">
-  <div class="split" style="grid-template-columns:1.5fr .6fr;gap:60px">
-    <div class="callouts">
-      <div class="frame"><img src="../assets/status-inc.png" loading="lazy" decoding="async" width="2356" height="750" alt="Status page, last attack run: mint at 0 s, Lasna react seen +3.5 s, gate U Paused +8.2 s, gate B Paused +7.1 s, each with a transaction link"></div>
-      <span class="co" style="left:-20px;top:-26px">1</span><span class="co" style="left:31%;top:-26px">2</span><span class="co" style="left:57%;top:-26px">3</span><span class="co" style="left:96%;top:44%">4</span>
-    </div>
-    <div>
-      <p class="label">Live demo · status page</p>
-      <ul class="legend">
-        <li><span>1</span>forged mint mined</li>
-        <li><span>2</span>Lasna react() seen</li>
-        <li><span>3</span>gate U Paused</li>
-        <li><span>4</span>every hash opens an explorer</li>
-      </ul>
-    </div>
+  <p class="label">Status page · last non-control attack run</p>
+  <h2 class="disp" style="font-size:112px;margin-bottom:28px">Four timestamps, <em>four hashes</em></h2>
+  <div class="callouts">
+    <div class="frame"><img src="../assets/status-inc.png" width="2356" height="750" alt="Status page, last attack run ap-020: mint at 0 s, Lasna react seen +3.5 s, gate U Paused +8.2 s, gate B Paused +7.1 s, each with a transaction link"></div>
+    <span class="co" style="left:15%;top:36%">1</span><span class="co" style="left:40.5%;top:36%">2</span><span class="co" style="left:66%;top:36%">3</span><span class="co" style="left:91.5%;top:36%">4</span>
   </div>
-  <aside class="speaker-notes" data-note="The status page reads public RPCs, no wallet. This capture shows run ap-020, a plausible-key forgery. Click any hash to check it."></aside>
+  <ul class="legend row4">
+    <li><span>1</span>mint mined</li>
+    <li><span>2</span>react() seen</li>
+    <li><span>3</span>gate U Paused</li>
+    <li><span>4</span>gate B Paused</li>
+  </ul>
+  <aside class="speaker-notes" data-note="The status page reads public RPCs, no wallet. This capture is run ap-020, a plausible-key forgery. Each hash under a timestamp opens an explorer."></aside>
   <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="7 of 10, the numbers">
   <p class="label">100 attack runs · final contract</p>
-  <h2 class="disp" style="font-size:112px;margin-bottom:10px">Both gates shut, <em>every run</em></h2>
+  <h2 class="disp" style="font-size:112px;margin-bottom:0">Both gates shut, <em>every run</em></h2>
   <svg class="dots" viewBox="0 0 1100 254" role="img" aria-labelledby="dots-t"><title id="dots-t">100 attack runs: seconds from the forged mint to both gates shut. p50 5.92 s, p95 8.245 s, max 10.97 s.</title>
 <g class="axis"><line x1="40" y1="216.0" x2="1060" y2="216.0"/><line x1="40.0" y1="216.0" x2="40.0" y2="222.0"/><text x="40.0" y="238.0">0 s</text><line x1="210.0" y1="216.0" x2="210.0" y2="222.0"/><text x="210.0" y="238.0">2 s</text><line x1="380.0" y1="216.0" x2="380.0" y2="222.0"/><text x="380.0" y="238.0">4 s</text><line x1="550.0" y1="216.0" x2="550.0" y2="222.0"/><text x="550.0" y="238.0">6 s</text><line x1="720.0" y1="216.0" x2="720.0" y2="222.0"/><text x="720.0" y="238.0">8 s</text><line x1="890.0" y1="216.0" x2="890.0" y2="222.0"/><text x="890.0" y="238.0">10 s</text><line x1="1060.0" y1="216.0" x2="1060.0" y2="222.0"/><text x="1060.0" y="238.0">12 s</text></g>
 <g class="pct"><line x1="543.2" y1="10" x2="543.2" y2="216.0"/><text x="549.2" y="20">p50 5.92 s</text><line x1="740.8" y1="10" x2="740.8" y2="216.0"/><text x="746.8" y="20">p95 8.245 s</text></g>
 <g class="pts"><circle cx="369.0" cy="208.0" r="3.2"></circle><circle cx="425.0" cy="208.0" r="3.2"></circle><circle cx="439.0" cy="208.0" r="3.2"></circle><circle cx="446.0" cy="208.0" r="3.2"></circle><circle cx="453.0" cy="208.0" r="3.2"></circle><circle cx="460.0" cy="208.0" r="3.2"></circle><circle cx="460.0" cy="200.8" r="3.2"></circle><circle cx="460.0" cy="193.6" r="3.2"></circle><circle cx="460.0" cy="186.4" r="3.2"></circle><circle cx="460.0" cy="179.2" r="3.2"></circle><circle cx="460.0" cy="172.0" r="3.2"></circle><circle cx="460.0" cy="164.8" r="3.2"></circle><circle cx="460.0" cy="157.6" r="3.2"></circle><circle cx="467.0" cy="208.0" r="3.2"></circle><circle cx="467.0" cy="200.8" r="3.2"></circle><circle cx="467.0" cy="193.6" r="3.2"></circle><circle cx="481.0" cy="208.0" r="3.2"></circle><circle cx="495.0" cy="208.0" r="3.2"></circle><circle cx="495.0" cy="200.8" r="3.2"></circle><circle cx="495.0" cy="193.6" r="3.2"></circle><circle cx="509.0" cy="208.0" r="3.2"></circle><circle cx="509.0" cy="200.8" r="3.2"></circle><circle cx="516.0" cy="208.0" r="3.2"></circle><circle cx="530.0" cy="208.0" r="3.2"></circle><circle cx="530.0" cy="200.8" r="3.2"></circle><circle cx="537.0" cy="208.0" r="3.2"></circle><circle cx="537.0" cy="200.8" r="3.2"></circle><circle cx="537.0" cy="193.6" r="3.2"></circle><circle cx="537.0" cy="186.4" r="3.2"></circle><circle cx="537.0" cy="179.2" r="3.2"></circle><circle cx="537.0" cy="172.0" r="3.2"></circle><circle cx="544.0" cy="208.0" r="3.2"></circle><circle cx="544.0" cy="200.8" r="3.2"></circle><circle cx="544.0" cy="193.6" r="3.2"></circle><circle cx="544.0" cy="186.4" r="3.2"></circle><circle cx="544.0" cy="179.2" r="3.2"></circle><circle cx="544.0" cy="172.0" r="3.2"></circle><circle cx="544.0" cy="164.8" r="3.2"></circle><circle cx="544.0" cy="157.6" r="3.2"></circle><circle cx="544.0" cy="150.4" r="3.2"></circle><circle cx="544.0" cy="143.2" r="3.2"></circle><circle cx="544.0" cy="136.0" r="3.2"></circle><circle cx="544.0" cy="128.8" r="3.2"></circle><circle cx="544.0" cy="121.6" r="3.2"></circle><circle cx="544.0" cy="114.4" r="3.2"></circle><circle cx="544.0" cy="107.2" r="3.2"></circle><circle cx="544.0" cy="100.0" r="3.2"></circle><circle cx="544.0" cy="92.8" r="3.2"></circle><circle cx="544.0" cy="85.6" r="3.2"></circle><circle cx="544.0" cy="78.4" r="3.2"></circle><circle cx="544.0" cy="71.2" r="3.2"></circle><circle cx="544.0" cy="64.0" r="3.2"></circle><circle cx="544.0" cy="56.8" r="3.2"></circle><circle cx="544.0" cy="49.6" r="3.2"></circle><circle cx="544.0" cy="42.4" r="3.2"></circle><circle cx="544.0" cy="35.2" r="3.2"></circle><circle cx="572.0" cy="208.0" r="3.2"></circle><circle cx="572.0" cy="200.8" r="3.2"></circle><circle cx="572.0" cy="193.6" r="3.2"></circle><circle cx="572.0" cy="186.4" r="3.2"></circle><circle cx="572.0" cy="179.2" r="3.2"></circle><circle cx="572.0" cy="172.0" r="3.2"></circle><circle cx="572.0" cy="164.8" r="3.2"></circle><circle cx="572.0" cy="157.6" r="3.2"></circle><circle cx="572.0" cy="150.4" r="3.2"></circle><circle cx="572.0" cy="143.2" r="3.2"></circle><circle cx="579.0" cy="208.0" r="3.2"></circle><circle cx="579.0" cy="200.8" r="3.2"></circle><circle cx="579.0" cy="193.6" r="3.2"></circle><circle cx="579.0" cy="186.4" r="3.2"></circle><circle cx="579.0" cy="179.2" r="3.2"></circle><circle cx="579.0" cy="172.0" r="3.2"></circle><circle cx="579.0" cy="164.8" r="3.2"></circle><circle cx="579.0" cy="157.6" r="3.2"></circle><circle cx="621.0" cy="208.0" r="3.2"></circle><circle cx="677.0" cy="208.0" r="3.2"></circle><circle cx="705.0" cy="208.0" r="3.2"></circle><circle cx="719.0" cy="208.0" r="3.2"></circle><circle cx="719.0" cy="200.8" r="3.2"></circle><circle cx="726.0" cy="208.0" r="3.2"></circle><circle cx="740.0" cy="208.0" r="3.2"></circle><circle cx="740.0" cy="200.8" r="3.2"></circle><circle cx="740.0" cy="193.6" r="3.2"></circle><circle cx="740.0" cy="186.4" r="3.2"></circle><circle cx="740.0" cy="179.2" r="3.2"></circle><circle cx="740.0" cy="172.0" r="3.2"></circle><circle cx="740.0" cy="164.8" r="3.2"></circle><circle cx="740.0" cy="157.6" r="3.2"></circle><circle cx="740.0" cy="150.4" r="3.2"></circle><circle cx="740.0" cy="143.2" r="3.2"></circle><circle cx="740.0" cy="136.0" r="3.2"></circle><circle cx="740.0" cy="128.8" r="3.2"></circle><circle cx="740.0" cy="121.6" r="3.2"></circle><circle cx="740.0" cy="114.4" r="3.2"></circle><circle cx="740.0" cy="107.2" r="3.2"></circle><circle cx="740.0" cy="100.0" r="3.2"></circle><circle cx="740.0" cy="92.8" r="3.2"></circle><circle cx="740.0" cy="85.6" r="3.2"></circle><circle cx="887.0" cy="208.0" r="3.2"></circle><circle cx="971.0" cy="208.0" r="3.2"></circle></g></svg>
-  <div class="stats">
-    <div><b>3.873 s</b>seen on Lasna, p50</div>
-    <div><b>8.245 s</b>both shut, p95</div>
-    <div><b>0 / 80</b>legit transfers paused</div>
-  </div>
+  <p class="capline">Lasna saw the forged mint at <b>3.873 s</b> (p50). In-order legit transfers paused: <b>0 of 80</b>.</p>
   <aside class="speaker-notes" data-note="One dot per attack run. Observer clock, 400 ms polling; the Unichain block-timestamp check is p50 2 s, p95 3 s."></aside>
   <div class="foot"><span>LEDGERLOCK</span><span>evidence/frozen3-bench-summary.md</span><span class="ver">v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="8 of 10, paired control">
-  <p class="label">Paired control · 5 runs per arm</p>
-  <h2 class="disp">Same attack, <em>with and without</em></h2>
+  <p class="label">Control · 5 runs per arm</p>
+  <h2 class="disp">Same forged mint, <em>with and without</em></h2>
   <div class="arms">
     <div class="arm"><h3>Unguarded</h3>
       <div class="row"><span>copycats</span><div class="bar"><i style="width:100%"></i></div><b>6</b></div>
-      <div class="row"><span>issued</span><div class="bar"><i style="width:100%"></i></div><b>3,500</b></div>
       <div class="row"><span>released</span><div class="bar"><i style="width:100%"></i></div><b>500</b></div>
     </div>
     <div class="arm g"><h3>Ledgerlock</h3>
       <div class="row"><span>copycats</span><div class="bar"><i style="width:16.7%"></i></div><b>1</b></div>
-      <div class="row"><span>issued</span><div class="bar"><i style="width:28.6%"></i></div><b>1,000</b></div>
       <div class="row"><span>released</span><div class="bar"><i style="width:0"></i></div><b>0</b></div>
     </div>
   </div>
+  <p class="caveat">Fixed 6 copycats vs up to 30: illustration, not rate.</p>
   <aside class="speaker-notes" data-note="Collateral released to the attacker is in tUSD. The unguarded arm fires a fixed six copycats, so treat issuance as an illustration, not a rate."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span>evidence/a0-control-runs.csv · bu-021..025</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span>evidence/a0-control-runs.csv</span><span class="ver">v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="9 of 10, honest limits">
-  <p class="label">Honest by design</p>
+  <p class="label">Honest by design · README</p>
   <h2 class="disp">What it <em>does not</em> do</h2>
   <ol class="limits">
-    <li><span>02</span>The first forged mint always lands.</li>
-    <li><span>05</span>Route A is our own fixture bridge.</li>
+    <li><span>02</span>Mints before the pause are lost, the first always.</li>
+    <li><span>05</span>Route A is our fixture; route B our own warp route.</li>
     <li><span>06</span>Reorgs: Test Lib simulation only.</li>
   </ol>
   <aside class="speaker-notes" data-note="Our claim is narrow: loss is at most the mints inside the measured pause window. All nine limits are in the README."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span>README · Honest limits</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="10 of 10, the ask">
@@ -308,7 +305,7 @@ body.overview .chrome{display:none}
     <div>
       <h2 class="disp">Judge us on <em>the seconds</em></h2>
       <p class="links"><b>repo</b> github.com/edycutjong/ledgerlock<br><b>live</b> edycutjong.github.io/ledgerlock</p>
-      <p class="closer">Every number links to a transaction.</p>
+      <p class="closer">Every number comes from a committed row.</p>
     </div>
     <svg class="qr" role="img" aria-label="QR code for edycutjong.github.io/ledgerlock" xmlns="http://www.w3.org/2000/svg" width="330" height="330"><g transform="scale(10)"><path fill="#eae3cc" d="M0 0h33v33h-33z"/><path class="qrline" stroke="#182019" d="M2 2.5h7m1 0h1m1 0h1m1 0h2m2 0h5m1 0h7m-29 1h1m5 0h1m1 0h1m1 0h4m3 0h1m2 0h1m1 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m6 0h2m4 0h2m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h4m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m7 0h6m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m9 0h1m1 0h3m1 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h5m2 0h1m1 0h2m1 0h1m-21 1h1m1 0h2m1 0h3m3 0h1m2 0h1m2 0h2m3 0h1m2 0h1m1 0h2m-29 1h4m1 0h1m5 0h3m2 0h1m1 0h3m1 0h3m3 0h1m-29 1h2m1 0h4m2 0h1m1 0h1m1 0h2m1 0h1m4 0h1m2 0h1m1 0h2m-26 1h1m5 0h2m1 0h1m1 0h2m5 0h3m5 0h1m-29 1h11m2 0h1m1 0h1m1 0h2m6 0h2m-26 1h2m1 0h1m4 0h2m1 0h5m2 0h1m1 0h2m3 0h3m-28 1h3m2 0h1m1 0h1m2 0h1m2 0h1m2 0h3m1 0h3m2 0h3m-29 1h2m1 0h2m3 0h1m1 0h3m1 0h1m1 0h1m1 0h4m5 0h1m-26 1h2m1 0h4m1 0h2m2 0h1m3 0h4m2 0h2m1 0h1m-27 1h1m6 0h1m1 0h1m2 0h1m1 0h1m1 0h1m5 0h1m1 0h3m-28 1h1m2 0h1m2 0h1m1 0h1m1 0h3m2 0h1m2 0h1m1 0h3m1 0h1m1 0h1m-22 1h1m1 0h5m2 0h1m1 0h4m2 0h1m3 0h1m-26 1h2m1 0h3m1 0h1m1 0h1m2 0h1m2 0h11m-19 1h1m2 0h3m2 0h3m1 0h1m3 0h5m-29 1h7m1 0h1m2 0h3m2 0h1m1 0h3m1 0h1m1 0h2m1 0h1m-28 1h1m5 0h1m1 0h3m1 0h1m5 0h1m1 0h1m3 0h2m2 0h1m-29 1h1m1 0h3m1 0h1m4 0h1m2 0h2m1 0h2m1 0h5m1 0h3m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h4m4 0h1m1 0h3m2 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h4m2 0h3m1 0h1m2 0h1m2 0h1m1 0h1m-29 1h1m5 0h1m3 0h2m1 0h1m1 0h2m3 0h1m1 0h4m1 0h1m-28 1h7m1 0h2m3 0h1m1 0h1m2 0h5m4 0h1"/></g></svg>
   </div>

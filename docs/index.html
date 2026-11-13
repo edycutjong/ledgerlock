@@ -48,12 +48,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--font
 ::selection{background:var(--before);color:var(--bg)}
 a{color:var(--before);text-decoration-thickness:1px;text-underline-offset:3px}
 a:hover{color:var(--ink)}
-:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:2px}
+:focus-visible{outline:2px solid var(--before);outline-offset:3px;border-radius:2px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 clamp(18px,4vw,48px)}
 .disp{font-family:var(--font-display);font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95;margin:0}
 .mono{font-family:var(--font-data)}
+code{font-family:var(--font-data);font-size:.9em}
 .muted{color:var(--muted)}
-.label{font:600 12px/1.4 var(--font-data);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.label{font:700 12px/1.4 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .skip{position:absolute;left:-999px;top:8px;background:var(--before);color:var(--bg);padding:8px 12px;z-index:9}
 .skip:focus{left:8px}
 /* nav */
@@ -73,7 +74,7 @@ header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg
 .btn.primary:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .nav .btn{padding:8px 14px}
 /* hero */
-.hero{position:relative;padding:44px 0 56px;overflow:hidden;border-bottom:1px solid var(--rule)}
+.hero{position:relative;padding:26px 0 48px;overflow:hidden;border-bottom:1px solid var(--rule)}
 .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
   background:
    radial-gradient(60% 50% at 78% 70%,color-mix(in srgb,var(--before) 9%,transparent),transparent 70%),
@@ -81,38 +82,38 @@ header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg
    repeating-linear-gradient(90deg,transparent 0 47px,color-mix(in srgb,var(--rule) 30%,transparent) 47px 48px);
   -webkit-mask-image:linear-gradient(180deg,black,transparent 92%);mask-image:linear-gradient(180deg,black,transparent 92%)}
 .hero .wrap{position:relative}
-.hero h1{font-size:clamp(54px,7.4vw,110px);margin:16px 0 22px}
+.hero h1{font-size:clamp(52px,7vw,100px);margin:12px 0 16px}
 .hero h1 em{font-style:normal;color:var(--before);text-shadow:0 0 28px color-mix(in srgb,var(--before) 35%,transparent)}
-.lede{max-width:62ch;font-size:19px;color:color-mix(in srgb,var(--ink) 86%,var(--bg));margin:0 0 26px}
+.lede{max-width:82ch;font-size:18px;color:color-mix(in srgb,var(--ink) 86%,var(--bg));margin:0 0 18px}
 .lede b{color:var(--ink)}
-.ctas{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
-.proof{font:400 13px/1.6 var(--font-data);color:var(--muted);margin:0}
+.ctas{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.proof{font:400 14px/1.6 var(--font-body);color:var(--muted);margin:0}
 .proof span+span::before{content:" · "}
 .rise{animation:rise .8s var(--ease) both}
 .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.28s}.d4{animation-delay:.4s}.d5{animation-delay:.55s}
 @keyframes rise{from{transform:translateY(14px);opacity:.01}to{transform:none;opacity:1}}
 /* the board (signature: the track lamp) */
-.board{margin:46px 0 0;border:1px solid var(--rule);background:var(--deep);border-radius:4px;padding:18px clamp(14px,2.4vw,26px) 16px}
-.board-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-bottom:16px}
+.board{margin:24px 0 0;border:1px solid var(--rule);background:var(--deep);border-radius:4px;padding:18px clamp(14px,2.4vw,26px) 16px}
+.board-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-bottom:10px}
 .board-head .label{margin-right:auto}
 .clock{font:600 22px/1 var(--font-data);color:var(--ink);min-width:9ch;text-align:right}
 .btn.small{padding:7px 12px;font-size:13px}
 .boxes{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px}
-.box{border:1px solid var(--rule);background:var(--panel);padding:14px 16px 12px;border-radius:3px;min-height:206px;display:flex;flex-direction:column}
+.box{border:1px solid var(--rule);background:var(--panel);padding:12px 16px 10px;border-radius:3px;min-height:0;display:flex;flex-direction:column}
 .box .bt{font:400 26px/1 var(--font-display);text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px}
 .box .sub{font-size:13px;color:var(--muted);margin:0 0 6px}
-.dial{width:176px;height:99px;display:block;margin:2px 0 4px}
+.dial{width:150px;height:84px;display:block;margin:0 0 2px}
 .dial .arc{fill:none;stroke:var(--rule);stroke-width:6}
 .dial .tick{stroke:var(--muted);stroke-width:2}
 .dial text{font:400 10px/1 var(--font-display);letter-spacing:.06em;fill:var(--muted)}
 .dial .needle{transform-origin:75px 76px;transform:rotate(var(--a,-60deg));transition:transform .55s var(--ease)}
 .dial .needle line{stroke:var(--ink);stroke-width:3;stroke-linecap:round}
-.dial .hub{fill:var(--brass)}
+.dial .hub{fill:var(--ink)}
 .dial.blocked .needle line{stroke:var(--after)}
 .dial.blocked text.t-blk{fill:var(--after)}
 .book{font:400 13px/1.45 var(--font-data);color:var(--muted);margin:4px 0 0}
 .book b{color:var(--ink);font-weight:600}
-.stamp{font:400 13px/1.45 var(--font-data);color:var(--ink);margin:auto 0 0;padding-top:8px;transition:opacity .3s}
+.stamp{font:400 13px/1.45 var(--font-data);color:var(--ink);margin:auto 0 0;padding-top:4px;transition:opacity .3s}
 .stamp[hidden]{display:block;visibility:hidden;opacity:0}
 .mid{align-items:center;text-align:center}
 .verdict{font:400 clamp(30px,3.4vw,44px)/1 var(--font-display);text-transform:uppercase;letter-spacing:.02em;margin:12px 0 6px;color:var(--before);transition:color .3s}
@@ -126,7 +127,7 @@ header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg
 .lamp{position:relative;width:22px;height:22px;border-radius:50%;background:var(--before);border:3px solid var(--deep);box-shadow:0 0 0 1px var(--rule),0 0 18px color-mix(in srgb,var(--before) 55%,transparent);transition:background .3s,box-shadow .3s}
 .lamp.off{background:var(--rule);box-shadow:0 0 0 1px var(--rule)}
 .lamp.red{background:var(--after);box-shadow:0 0 0 1px var(--rule),0 0 26px color-mix(in srgb,var(--after) 70%,transparent)}
-.copycat{margin:30px 0 0;font:400 13px/1.5 var(--font-data);color:var(--muted);transition:opacity .4s}
+.copycat{margin:24px 0 0;font:400 13px/1.5 var(--font-data);color:var(--muted);transition:opacity .4s}
 .copycat b{color:var(--ink);font-weight:600}
 .board figcaption{font-size:13.5px;color:var(--muted);margin-top:10px;max-width:90ch}
 /* receipts */
@@ -154,7 +155,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .term{border:1px solid var(--rule);border-radius:5px;background:var(--deep);overflow:hidden}
 .term pre{margin:0;padding:16px 18px;font:400 12px/1.65 var(--font-data);color:var(--ink);white-space:pre-wrap;word-break:break-word;min-height:440px}
 .term .c{color:var(--muted)}
-.term .p{color:var(--brass)}
+.term .p{color:var(--muted)}
 .term .k{color:var(--before)}
 .cursor{display:inline-block;width:.6em;height:1.1em;background:var(--before);vertical-align:-.2em;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
@@ -170,8 +171,8 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .dots{width:100%;height:auto;display:block}
 .dots .axis line{stroke:var(--muted);stroke-width:1}
 .dots .axis text{font:400 12px var(--font-data);fill:var(--muted);text-anchor:middle}
-.dots .pct line{stroke:var(--brass);stroke-width:1.5;stroke-dasharray:4 4}
-.dots .pct text{font:600 13px var(--font-data);fill:var(--brass)}
+.dots .pct line{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 4}
+.dots .pct text{font:600 13px var(--font-data);fill:var(--ink)}
 .dots .pts circle{fill:var(--before);opacity:.9}
 .dots-cap{display:flex;flex-wrap:wrap;gap:6px 22px;font:400 13px/1.5 var(--font-data);color:var(--muted);margin:10px 0 0}
 .control{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:64px}
@@ -193,7 +194,8 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .card svg .b{stroke:var(--brass)}
 .card h3{font:400 30px/1 var(--font-display);text-transform:uppercase;letter-spacing:.02em;margin:0}
 .card p{margin:0;font-size:15.5px;color:color-mix(in srgb,var(--ink) 86%,var(--bg))}
-.chip{align-self:flex-start;margin-top:auto;font:400 12px/1 var(--font-data);color:var(--brass);border:1px solid color-mix(in srgb,var(--brass) 45%,transparent);padding:6px 9px;border-radius:2px}
+.chip.w{color:var(--brass);border-color:color-mix(in srgb,var(--brass) 55%,transparent)}
+.chip{align-self:flex-start;margin-top:auto;font:400 12px/1 var(--font-data);color:var(--ink);border:1px solid var(--rule);padding:6px 9px;border-radius:2px}
 .c1{grid-column:span 4}.c2{grid-column:span 2}.c3{grid-column:span 2}.c4{grid-column:span 2}.c5{grid-column:span 2}
 .c1 p{font-size:18px;max-width:52ch}
 .arch{margin:44px 0 0}
@@ -203,7 +205,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .honest{background:var(--deep)}
 .limits{list-style:none;margin:0;padding:0;border-top:2px solid var(--rule)}
 .limits li{display:grid;grid-template-columns:5ch 1fr;gap:18px;padding:22px 0;border-bottom:1px solid var(--rule)}
-.limits .no{font:400 40px/1 var(--font-display);color:var(--brass)}
+.limits .no{font:400 40px/1 var(--font-display);color:var(--muted)}
 .limits blockquote{margin:0;font-size:clamp(18px,2vw,22px);line-height:1.45}
 .limits cite{display:block;margin-top:8px;font:400 12px/1.4 var(--font-data);font-style:normal;color:var(--muted);letter-spacing:.06em}
 /* faq */
@@ -211,7 +213,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .faq details{border-bottom:1px solid var(--rule)}
 .faq summary{cursor:pointer;list-style:none;padding:20px 40px 20px 0;position:relative;font:400 28px/1.05 var(--font-display);text-transform:uppercase;letter-spacing:.02em;transition:color .2s}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"+";position:absolute;right:4px;top:18px;font:400 30px/1 var(--font-data);color:var(--brass);transition:transform .25s var(--ease)}
+.faq summary::after{content:"+";position:absolute;right:4px;top:18px;font:400 30px/1 var(--font-body);color:var(--muted);transition:transform .25s var(--ease)}
 .faq details[open] summary::after{transform:rotate(45deg)}
 .faq summary:hover{color:var(--before)}
 .faq details p{margin:0 0 22px;max-width:70ch;color:color-mix(in srgb,var(--ink) 86%,var(--bg))}
@@ -279,13 +281,13 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
   <div class="wrap">
     <p class="label rise d1">DoraHacks · Reactive Omni Buildathon · Track: Every Second Counts</p>
     <h1 id="h1" class="disp rise d2">When the books disagree,<br> the line <em>blocks itself.</em></h1>
-    <p class="lede rise d3">Maya runs a lock-and-mint bridge from Base to Unichain. If someone steals her relayer key and mints tokens with nothing locked behind them, one Reactive contract on Lasna sees the mint with no lock and shuts both ends: seen in <b>3.873 s</b> (p50), both gates shut by <b>8.245 s</b> (p95) over <b>100</b> attack runs, and <b>0 of 80</b> legitimate transfers paused.</p>
+    <p class="lede rise d3">Maya runs a lock-and-mint bridge from Base to Unichain, and neither chain can see the other's book. One Reactive contract on Lasna reads both; when a mint has no lock behind it, it shuts both ends. On our labelled fixture bridge: seen in <b>3.873 s</b> (p50), both gates shut by <b>8.245 s</b> (p95) over <b>100</b> attack runs, and <b>0 of 80</b> in-order transfers paused.</p>
     <div class="ctas rise d4">
       <a class="btn primary" href="https://github.com/edycutjong/ledgerlock">GitHub repo</a>
       <a class="btn" href="pitch/">Pitch deck</a>
       <a class="btn" href="status/">Live status page</a>
     </div>
-    <p class="proof rise d4"><span>testnet only</span><span>no wallet needed to verify</span><span>846 origin → react() rows committed</span><span>83 Foundry tests</span></p>
+    <p class="proof rise d4"><span>testnet</span><span>labelled fixture bridge</span><span>no wallet needed to verify</span><span>846 triple rows committed</span><span>83 Foundry tests</span></p>
 
     <figure class="board rise d5" id="board" aria-labelledby="board-cap">
       <div class="board-head">
@@ -297,21 +299,21 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
         <div class="box">
           <div class="bt">Base Sepolia</div>
           <p class="sub">LockBox and gate B</p>
-          <svg class="dial blocked" id="dial-b" viewBox="0 0 150 84" role="img" aria-label="Gate B block instrument"><path class="arc" d="M17 76 A58 58 0 0 1 133 76"/><line class="tick" x1="25" y1="47" x2="31" y2="51"/><line class="tick" x1="75" y1="12" x2="75" y2="20"/><line class="tick" x1="125" y1="47" x2="119" y2="51"/><text x="2" y="36">LINE CLEAR</text><text x="48" y="8">TRAIN ON LINE</text><text class="t-blk" x="104" y="36">BLOCKED</text><g class="needle" style="--a:60deg"><line x1="75" y1="76" x2="75" y2="26"/></g><circle class="hub" cx="75" cy="76" r="6"/></svg>
+          <svg class="dial blocked" id="dial-b" viewBox="0 0 150 84" role="img" data-name="Gate B" aria-label="Gate B: line blocked"><path class="arc" d="M17 76 A58 58 0 0 1 133 76"/><line class="tick" x1="25" y1="47" x2="31" y2="51"/><line class="tick" x1="75" y1="12" x2="75" y2="20"/><line class="tick" x1="125" y1="47" x2="119" y2="51"/><text x="2" y="36">LINE CLEAR</text><text x="48" y="8">TRAIN ON LINE</text><text class="t-blk" x="104" y="36">BLOCKED</text><g class="needle" style="--a:60deg"><line x1="75" y1="76" x2="75" y2="26"/></g><circle class="hub" cx="75" cy="76" r="6"/></svg>
           <p class="book">book of locks · key 1515000: <b>no lock</b></p>
           <p class="stamp" id="stamp-b">gate B Paused <b>+4.651 s</b> · <a href="https://sepolia.basescan.org/tx/0x9994a1d3b8cf7d0a84a5c4d5b2c2e8af6097e5cba5c0886cf5cddacb166e3f38">0x9994…3f38</a></p>
         </div>
         <div class="box mid">
           <div class="bt">Lasna</div>
           <p class="sub">LedgerlockReactive · one react()</p>
-          <p class="verdict blocked" id="verdict" aria-live="polite">Line blocked</p>
+          <p class="verdict blocked" id="verdict" aria-live="off">Line blocked</p>
           <div class="ledger"><span>Locked (Base)</span><b id="lk">none</b><span>Minted (Unichain)</span><b id="mt">500 tUSD</b></div>
           <p class="stamp" id="stamp-l">react() seen <b>+4.249 s</b> · 2 callbacks · <a href="https://lasna.reactscan.net/tx/0xca7e91bbc3c234ed3670d70032c4a89cae8b9160ad81fffcb0c9a4422e8428d0">0xca7e…28d0</a></p>
         </div>
         <div class="box">
           <div class="bt">Unichain Sepolia</div>
           <p class="sub">Minter and gate U</p>
-          <svg class="dial blocked" id="dial-u" viewBox="0 0 150 84" role="img" aria-label="Gate U block instrument"><path class="arc" d="M17 76 A58 58 0 0 1 133 76"/><line class="tick" x1="25" y1="47" x2="31" y2="51"/><line class="tick" x1="75" y1="12" x2="75" y2="20"/><line class="tick" x1="125" y1="47" x2="119" y2="51"/><text x="2" y="36">LINE CLEAR</text><text x="48" y="8">TRAIN ON LINE</text><text class="t-blk" x="104" y="36">BLOCKED</text><g class="needle" style="--a:60deg"><line x1="75" y1="76" x2="75" y2="26"/></g><circle class="hub" cx="75" cy="76" r="6"/></svg>
+          <svg class="dial blocked" id="dial-u" viewBox="0 0 150 84" role="img" data-name="Gate U" aria-label="Gate U: line blocked"><path class="arc" d="M17 76 A58 58 0 0 1 133 76"/><line class="tick" x1="25" y1="47" x2="31" y2="51"/><line class="tick" x1="75" y1="12" x2="75" y2="20"/><line class="tick" x1="125" y1="47" x2="119" y2="51"/><text x="2" y="36">LINE CLEAR</text><text x="48" y="8">TRAIN ON LINE</text><text class="t-blk" x="104" y="36">BLOCKED</text><g class="needle" style="--a:60deg"><line x1="75" y1="76" x2="75" y2="26"/></g><circle class="hub" cx="75" cy="76" r="6"/></svg>
           <p class="book" id="book-u">forged mint · key 1515000: <b>500 tUSD</b> · <a href="https://sepolia.uniscan.xyz/tx/0x3a2896eb4aba8ed9dd07b64183db84ce9486942254847fc71aa4411df176372d">0x3a28…372d</a></p>
           <p class="stamp" id="stamp-u">gate U Paused <b>+5.341 s</b> · <a href="https://sepolia.uniscan.xyz/tx/0x1c2f589a87f09d5d050073082a1fc452b8aaf7d4bb801f3ff0dc030e9039087f">0x1c2f…087f</a></p>
         </div>
@@ -321,7 +323,7 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
         <div class="sec"><i class="lamp red" id="lamp-r"></i><small>section Lasna ↔ Unichain</small></div>
       </div>
       <p class="copycat" id="copycat">Next copycat mint <a href="https://sepolia.uniscan.xyz/tx/0x0e0cdcb9191c5fa274ac7f2cdc4ae7bd313a01044852f669468740a1d59da6d4">0x0e0c…a6d4</a>: <b>reverted GatePaused</b>, in the same Unichain block as the pause, one position after it.</p>
-      <figcaption id="board-cap">Observer clock, polling every 400 ms. Block timestamps agree: gate B one second after the mint, gate U two.</figcaption>
+      <figcaption id="board-cap">Observer clock, polling every 400 ms. Block timestamps agree: gate B one second after the mint, gate U two (different chains' clocks).</figcaption>
     </figure>
   </div>
 </section>
@@ -329,9 +331,9 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
 <section class="receipts" aria-label="Measured results">
   <div class="wrap">
     <div class="rc"><div class="n"><span data-count="8.245" data-dec="3">8.245</span><small>s</small></div><p>both gates shut, p95 of 100 attack runs</p><code>evidence/frozen3-bench-summary.md</code></div>
-    <div class="rc"><div class="n"><span data-count="0" data-dec="0">0</span><small>of 80</small></div><p>legitimate transfers paused by mistake</p><code>evidence/frozen3-bench-summary.md</code></div>
-    <div class="rc"><div class="n">≤ <span data-count="1" data-dec="0">1</span></div><p>copycat mint landed before the gate shut, in each of 20 burst runs</p><code>evidence/frozen3-bench-runs.csv</code></div>
-    <div class="rc"><div class="n"><span data-count="846" data-dec="0">846</span></div><p>origin → react() rows joined from chain logs, 500 with a gate callback</p><code>evidence/frozen3-triples.csv</code></div>
+    <div class="rc"><div class="n"><span>0</span><small>of 80</small></div><p>in-order legitimate transfers paused</p><code>evidence/frozen3-bench-summary.md</code></div>
+    <div class="rc"><div class="n">≤ 1</div><p>copycat mint landed before the gate shut, in each of 20 burst runs</p><code>evidence/frozen3-bench-runs.csv</code></div>
+    <div class="rc"><div class="n"><span data-count="846" data-dec="0">846</span></div><p>triple rows joined from chain logs: 636 origin, 210 owner resolve(); 500 with a gate callback</p><code>evidence/frozen3-triples.csv</code></div>
   </div>
 </section>
 
@@ -347,7 +349,7 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
           <img src="assets/status-routes.png" width="2356" height="1396" alt="Status page: route A fixture bridge and route B Hyperlane warp route, both LINE CLEAR, every gate open, guard reserve in lREACT and gate balances in ETH" loading="lazy">
           <img src="assets/status-inc.png" width="2356" height="750" alt="Status page, last attack run ap-020: mint at 0 s, Lasna react seen at +3.5 s, gate U Paused at +8.2 s, gate B Paused at +7.1 s, each with its transaction hash" loading="lazy">
         </div>
-        <p class="shot-cap">The status page on live testnet RPCs, 14 Nov 2026. Its last attack run is ap-020; the replay is bu-015.</p>
+        <p class="shot-cap">The status page on live testnet RPCs, captured 13 Nov 2026 21:08 UTC. Its last non-control attack run is ap-020; the replay is bu-015.</p>
       </div>
       <div class="term" id="term">
 <pre><span class="c"># bu-015 · evidence/frozen3-bench-runs.csv · observer clock</span>
@@ -357,7 +359,7 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
 <span class="k">+5.341 s</span>  Paused   unichain  0x1c2f…087f  gate U
           copycat  unichain  0x0e0c…a6d4  reverted GatePaused
           release  base      0x58c2…e3f9  carry-home reverted
-          exposure 500 tUSD · recovery 13.592 s
+          exposure 500 tUSD · owner recovery (seize + resolve) 13.592 s
 
 <span class="p">$</span> pnpm bench:summary
 {"attacks":100,"detection":{"n":100,"p50":3.873,"p95":4.391,"max":6.545,"min":2.036},"pause_both":{"n":100,"p50":5.92,"p95":8.245,"max":10.97,"min":3.851},"strict_false":0}
@@ -366,7 +368,7 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
 Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pre>
       </div>
     </div>
-    <div class="reg-scroll">
+    <div class="reg-scroll" tabindex="0" role="region" aria-label="Train register for run bu-015">
     <table class="register">
       <caption>Train register · bu-015</caption>
       <thead><tr><th>Observer</th><th>Chain</th><th>Movement</th><th>Transaction</th></tr></thead>
@@ -410,7 +412,7 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
         <div class="row"><span>collateral released</span><div class="bar"><i style="transform:scaleX(0)"></i></div><span class="v">0</span></div>
       </div>
     </div>
-    <p class="ctrl-note">Same attack in both arms. The unguarded arm fires a fixed 6 copycats, the guarded one up to 30, so issuance is an illustration, not a rate. Rows: <code>evidence/a0-control-runs.csv</code>.</p>
+    <p class="ctrl-note">Same forged mint in both arms, different copycat schedules: the unguarded arm fires a fixed 6 copycats, the guarded one up to 30, so issuance is an illustration, not a rate. Rows: <code>evidence/a0-control-runs.csv</code>, <code>evidence/frozen3-bench-runs.csv</code>.</p>
   </div>
 </section>
 
@@ -423,8 +425,8 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
       <article class="card c1">
         <svg viewBox="0 0 44 30" aria-hidden="true"><path d="M4 26h36"/><path d="M22 26V8"/><path class="b" d="M22 8l10-5"/><circle cx="22" cy="26" r="3"/></svg>
         <h3>Pause first, match later</h3>
-        <p>A <code>Minted</code> with no matching <code>Locked</code> pauses both gates from the same <code>react()</code>. A matching lock inside W (60 s on our routes) reopens them. Matched traffic sends no callback.</p>
-        <span class="chip">requestCallbackV_1_0 × 2</span>
+        <p>A <code>Minted</code> with no matching <code>Locked</code> pauses both gates from the same <code>react()</code>. A matching lock inside W reopens them. Matched traffic sends no callback.</p>
+        <span class="chip">requestCallbackV_1_0 × 2</span> <span class="chip w">W = 60 s on our routes</span>
       </article>
       <article class="card c2">
         <svg viewBox="0 0 44 30" aria-hidden="true"><path d="M3 5h16v20H3z"/><path d="M25 5h16v20H25z"/><path class="b" d="M7 11h8M7 16h8M29 11h8M29 16h8"/></svg>
@@ -518,7 +520,8 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
   // The board: replay of run bu-015 at 1x, from its committed row. Default markup = the final (blocked) state.
   const S = { b: $("dial-b"), u: $("dial-u"), verdict: $("verdict"), clock: $("clock"), lampL: $("lamp-l"), lampR: $("lamp-r"),
     stampB: $("stamp-b"), stampU: $("stamp-u"), stampL: $("stamp-l"), mt: $("mt"), bookU: $("book-u"), copycat: $("copycat") };
-  const needle = (dial, deg, blocked) => { dial.querySelector(".needle").style.setProperty("--a", deg + "deg"); dial.classList.toggle("blocked", !!blocked); };
+  const needle = (dial, deg, blocked) => { dial.querySelector(".needle").style.setProperty("--a", deg + "deg"); dial.classList.toggle("blocked", !!blocked);
+    dial.setAttribute("aria-label", dial.dataset.name + ": " + (blocked ? "line blocked" : deg === 0 ? "train on line" : "line clear")); };
   let timers = [], raf = 0;
   const reset = () => {
     timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(raf);
@@ -541,9 +544,9 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
     at(700 + 5341, () => { S.stampU.hidden = false; needle(S.u, 60, true); S.lampR.className = "lamp red"; S.verdict.textContent = "Line blocked"; S.verdict.classList.add("blocked"); });
     at(700 + 6300, () => { S.copycat.style.opacity = 1; });
   };
-  $("replay").addEventListener("click", play);
+  $("replay").addEventListener("click", () => { S.verdict.setAttribute("aria-live", "polite"); play(); });
   if (!reduce) {
-    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting) { io.disconnect(); play(); } }, { threshold: .35 });
+    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting) { io.disconnect(); timers.push(setTimeout(play, 1600)); } }, { threshold: .35 });
     io.observe($("board"));
   }
 
