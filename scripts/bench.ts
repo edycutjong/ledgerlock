@@ -174,7 +174,7 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
       Object.assign(row, { key: nonce, recipient: user, lock_tx: lk.tx, mint_tx: mint.tx, mint_sent_ms: mint.sentAt, mint_mined_ms: mint.minedAt });
       // the guard must book the mint (Observed MINT, side 1) and must not have paused
       const seen = await watch(LASNA, A.RC, E(rcAbi, "Observed"), hd0.lasna + 1n, (l) => l.args?.originTx === mint.tx, 90_000);
-      // route B shares this reactive contract: count only PauseRequested for this route
+      // count only PauseRequested for route A (a guard contract can carry more than one route; route B has its own guard today)
       const paused = (await getLogsChunked(LASNA, { address: A.RC, event: E(rcAbi, "PauseRequested"), fromBlock: hd0.lasna + 1n, args: { routeId: ROUTE } })).length > 0;
       Object.assign(row, { lasna_seen_ms: seen?.at, lasna_tx: seen?.tx, false_pause: paused ? 1 : 0, outcome: seen ? (paused ? "false_pause" : "ok") : "timeout" });
       if (paused) {

@@ -36,7 +36,7 @@ shown on screen are in `evidence/video-live-runs.md` and `evidence/video-live-on
 | Both gates shut | p50 5.92 s · p95 8.245 s |
 | Block-timestamp cross-check (Unichain, whole seconds) | p50 2 s · p95 3 s · max 3 s |
 | False pauses, 80 strict legitimate transfers | 0 |
-| Forced fill-before-deposit pauses (n=19; `lf-019` has no duration, named in the summary) | p50 15.2 s · p95 23.1 s |
+| Forced fill-before-deposit pauses (lock sent 2–20 s after the mint, by design; n=19; `lf-019` has no duration, named in the summary) | p50 15.2 s · p95 23.1 s |
 | Recovery (seize + resolve + both gates reopened) | p50 14.593 s · p95 15.345 s |
 | Bursts (20) | all stopped at the first reverted copycat; copycats landed p50 1 · max 1; burst-verify 20 of 20 |
 | Pause audit | 125 `PauseRequested` joined to runs, 0 unmatched |

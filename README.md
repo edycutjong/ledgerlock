@@ -88,7 +88,7 @@ Every pause is a triple: origin transaction → Lasna `react()` → gate callbac
 | Pause, Base gate | p50 3.378 s · p95 7.079 s (n=100) | same |
 | Both gates shut | p50 5.92 s · p95 8.245 s · max 10.97 s | same |
 | False pauses, strict legitimate transfers | 0 of 80 | same |
-| Forced fill-before-deposit pauses | n=19, p50 15.2 s, p95 23.1 s (1 of 20 left out, no duration) | same |
+| Forced fill-before-deposit pauses (lock sent 2–20 s after the mint, by design) | n=19, p50 15.2 s, p95 23.1 s (1 of 20 left out, no duration) | same |
 | Recovery (seize + resolve + both gates reopened) | p50 14.593 s · p95 15.345 s (n=100) | same |
 | Burst runs | 20 of 20 stopped at the first reverted copycat; at most 1 copycat landed | same; `evidence/frozen3-burst-verify.csv` |
 | Paired control (5 runs per arm) | unguarded: 6 copycats landed, 3,500 tUSD issued, 500 tUSD of collateral released; guarded: 1 copycat landed, 1,000 tUSD issued, release reverted | `evidence/a0-control-runs.csv`, `evidence/frozen3-bench-runs.csv` (`bu-021`..`bu-025`) |
