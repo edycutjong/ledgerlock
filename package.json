@@ -8,10 +8,10 @@
     "test:ts": "tsx --test packages/reactive-kit/ts/*.test.ts",
     "triples": "tsx scripts/spike-triples.ts",
     "triples:core": "tsx scripts/triples.ts",
-    "bench": "script/bench-all.sh frozen",
+    "bench": "script/bench-all.sh frozen3",
     "bench:summary": "tsx scripts/bench-summary.ts",
     "burst:verify": "tsx scripts/burst-verify.ts",
-    "status:data": "tsx scripts/status-data.ts frozen",
+    "status:data": "tsx scripts/status-data.ts frozen3",
     "control": "tsx scripts/control.ts 5",
     "routeb": "tsx scripts/routeb.ts"
   },

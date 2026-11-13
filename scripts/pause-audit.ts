@@ -6,7 +6,7 @@ import { parseAbi, type Hex } from "viem";
 import { client } from "../packages/reactive-kit/ts/chains.ts";
 import { parseCsvLine } from "../packages/reactive-kit/ts/triples.ts";
 
-const inst = process.argv[2] ?? "frozen";
+const inst = process.argv[2] ?? "frozen3";
 const A = Object.fromEntries(readFileSync(`evidence/${inst}-addresses.txt`, "utf8").split("\n").filter((l) => l.includes("=")).map((l) => l.split("=") as [string, string])) as Record<string, Hex>;
 const csv = (p: string) => { if (!existsSync(p)) return []; const [h, ...ls] = readFileSync(p, "utf8").split("\n").filter(Boolean); const c = parseCsvLine(h); return ls.map((l) => Object.fromEntries(parseCsvLine(l).map((v, i) => [c[i], v]))) as Record<string, string>[]; };
 const byTx = new Map<string, string>();

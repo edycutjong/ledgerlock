@@ -1,36 +1,70 @@
 {
   "network": "testnet",
-  "note": "Reactive Lasna 5318007 + Base Sepolia 84532 + Unichain Sepolia 1301. Fixtures are labelled; route B warp route is Hyperlane code deployed by us, delivered by our own Mailbox.process.",
-  "guard": {
-    "chain": 5318007,
-    "LedgerlockReactive": "0x2BFd7CEf953DB7DA6E0eE8a14E548Fc9Ec8E3CA5",
-    "bytecode_commit": "388bd2c",
-    "W_seconds": 60,
-    "keySlack": 16
-  },
+  "note": "Reactive Lasna 5318007 + Base Sepolia 84532 + Unichain Sepolia 1301. Each route is guarded by its own LedgerlockReactive instance (route A was redeployed from the final source; route B stays on the frozen instance, whose route B gates own the PausableIsms and cannot hand them over). Fixtures are labelled; route B warp route is Hyperlane code deployed by us, delivered by our own Mailbox.process.",
   "routeA": {
     "routeId": 1,
-    "gate_base": "0xb7ccAEDdEA790dcb4D5E4aDfE4B2Ba170D46bC58",
-    "gate_unichain": "0xe4B83A75B9Ada48270C1d4c3f61a9e0424466060",
-    "lockbox_base": "0xFc9097cFE5EF77EAA4022776BCb3C596cE53DDBb",
-    "minter_unichain": "0x15862621740f67E6228e8aa941EF4C417b3072e7",
-    "addRoute_tx": "0x6ae144c529876e280fb08b79e9fcc6c29c3eeb0818c833ed80057ec46c0b5586"
+    "mode": "NONCE",
+    "instance": "frozen3",
+    "guard": {
+      "chain": 5318007,
+      "LedgerlockReactive": "0x1484bdBF890f3097069C95Dc55EB6C6BF9039Ff9",
+      "contract_commit": "e425c78",
+      "W_seconds": 60,
+      "keySlack": 16
+    },
+    "gate_base": "0xE77A8068882d157bE15bcd6CfbD6D93703E7634d",
+    "gate_unichain": "0x6533d804Ef6D70765b981931083Fd332D4F78ef1",
+    "lockbox_base": "0x871b6da60da6Cf44482a055EE24031220021873F",
+    "minter_unichain": "0x7be8C4bf9De88Cc037F61203C8692E3514ec4e90",
+    "addRoute_tx": "0x3f0a9236da7f587f0f92957d83bcf6571c718112639815dcbdaa329246eb1eae",
+    "evidence": "evidence/frozen3-addresses.txt"
   },
   "routeB": {
     "routeId": 2,
     "mode": "SUPPLY",
+    "instance": "frozen",
+    "guard": {
+      "chain": 5318007,
+      "LedgerlockReactive": "0x2BFd7CEf953DB7DA6E0eE8a14E548Fc9Ec8E3CA5",
+      "contract_commit": "388bd2c",
+      "W_seconds": 60,
+      "keySlack": 16
+    },
     "collateral_base": "0x17Af8B1AAfaCe9436fD7051cf3C22F50B2863EF2",
     "synthetic_unichain": "0x52150fd6b818112e9881699b193c93fBdc747B38",
     "gate_base": "0x3bC1BBbfa676b74C9f3428d8c46d0f72cD367F2D",
     "gate_unichain": "0x1d45e314f4106E1A0280A97a3151D9e0d8454167",
     "drill_beacon": "0x14486f875b0B683c2564BC2A1c046a7B064d2a84",
     "pausable_ism_base": "0xe8812588c7bEa5E5c29004aebB04AC02abA2381F",
-    "pausable_ism_unichain": "0x0B82DF1fF8c0CF22D151145Eb0a7A174D8F68925"
+    "pausable_ism_unichain": "0x0B82DF1fF8c0CF22D151145Eb0a7A174D8F68925",
+    "evidence": "evidence/route-b-addresses.txt + evidence/route-b-guard.txt"
   },
   "control_A0_unguarded": {
     "gate_base": "0xa4C9F10f44059121aa54F1125bd53D2Cbe1b81Ea",
     "gate_unichain": "0x3cC737c7842dD61199857291246293a7ED406EaB",
     "lockbox_base": "0xdaa2201c386Ba1d58543928f814CbAD49AfB44f0",
     "minter_unichain": "0xfC82FecB5b2Df5EC50b0E3D5Be2c0C8B852Cc3fE"
+  },
+  "superseded_routeA_instances": {
+    "frozen": {
+      "LedgerlockReactive": "0x2BFd7CEf953DB7DA6E0eE8a14E548Fc9Ec8E3CA5",
+      "contract_commit": "388bd2c",
+      "gate_base": "0xb7ccAEDdEA790dcb4D5E4aDfE4B2Ba170D46bC58",
+      "gate_unichain": "0xe4B83A75B9Ada48270C1d4c3f61a9e0424466060",
+      "lockbox_base": "0xFc9097cFE5EF77EAA4022776BCb3C596cE53DDBb",
+      "minter_unichain": "0x15862621740f67E6228e8aa941EF4C417b3072e7",
+      "addRoute_tx": "0x6ae144c529876e280fb08b79e9fcc6c29c3eeb0818c833ed80057ec46c0b5586",
+      "evidence": "evidence/frozen-addresses.txt + evidence/frozen-bench-runs.csv"
+    },
+    "frozen2": {
+      "LedgerlockReactive": "0x59D6cff9F1867B498A656f9d90ccA0f733065De6",
+      "contract_commit": "30604c4",
+      "gate_base": "0x898D87a8921777DB7eB51040c7d071eCC9308DD9",
+      "gate_unichain": "0xD94eE4eF93e3C2e6fbE59F4990297a2f23853AC3",
+      "lockbox_base": "0x1B7B53f311E5a60eDEb299AdC3bf81d699FcE5C8",
+      "minter_unichain": "0xee37CfcB0ae33b75CBcF13bf3B2EB21AD51ba606",
+      "addRoute_tx": "0x98aa5899fbb5bca885e157f64218ca2fe3b8f6e8c9fea16250342e65fb414106",
+      "evidence": "evidence/frozen2-addresses.txt + evidence/frozen2-bench-runs.csv (stopped after 21 strict legit runs)"
+    }
   }
 }

@@ -3,7 +3,7 @@
 //  paused_event_ok the gate U receipt contains the gate's Paused event for this run's key
 //  reason         GatePaused when an eth_call of the copycat's original input at its block returns revert data with selector 0x726461f5
 //                 (GatePaused()); "unavailable" when the node refuses that historical state or returns no revert data
-// Usage: tsx scripts/burst-verify.ts [evidence/frozen-bench-runs.csv]   -> evidence/<instance>-burst-verify.csv
+// Usage: tsx scripts/burst-verify.ts [evidence/frozen3-bench-runs.csv]   -> evidence/<instance>-burst-verify.csv
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseEventLogs, parseAbi } from "viem";
 import { client } from "../packages/reactive-kit/ts/chains.ts";
@@ -12,7 +12,7 @@ import { parseCsvLine, type Hex } from "../packages/reactive-kit/ts/triples.ts";
 const UNI = 1301;
 const GATE_PAUSED = "0x726461f5"; // GatePaused()
 const pausedAbi = parseAbi(["event Paused(uint256 indexed routeId, uint64 epoch, bytes32 indexed originTx, uint256 key)"]);
-const path = process.argv[2] ?? "evidence/frozen-bench-runs.csv";
+const path = process.argv[2] ?? "evidence/frozen3-bench-runs.csv";
 const base = path.replace(/-bench-runs\.csv$/, "");
 const GATE_U = (readFileSync(`${base}-addresses.txt`, "utf8").split("\n").find((l) => l.startsWith("GATE_U="))?.split("=")[1] ?? "").trim().toLowerCase();
 const [head, ...lines] = readFileSync(path, "utf8").split("\n").filter(Boolean);

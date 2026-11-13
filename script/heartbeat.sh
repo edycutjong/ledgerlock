@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$HOME/.foundry/bin:$PATH"
 set -a; source "${LEDGERLOCK_ENV:-$HOME/.config/reactive/testnet-deployer.env}"; set +a
-INSTANCE=${INSTANCE:-frozen}
+INSTANCE=${INSTANCE:-frozen3}
 source "evidence/$INSTANCE-addresses.txt"
 RES=$(cast balance "$RC" --rpc-url "$LASNA_RPC" -e | cut -d. -f1)
 if [ "${RES:-0}" -lt 2 ]; then echo "$(date -u +%FT%TZ) skip: guard reserve ${RES} lREACT < 2" >> "evidence/$INSTANCE-heartbeat.log"; exit 0; fi

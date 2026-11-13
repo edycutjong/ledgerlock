@@ -1,0 +1,311 @@
+{
+  "source": "evidence/frozen3-bench-runs.csv",
+  "runs": {
+    "legit_strict": {
+      "rows": 80,
+      "ok": 80,
+      "timeout": 0,
+      "error": 0,
+      "other": 0
+    },
+    "legit_forced": {
+      "rows": 20,
+      "ok": 20,
+      "timeout": 0,
+      "error": 0,
+      "other": 0
+    },
+    "attack_forged": {
+      "rows": 60,
+      "ok": 60,
+      "timeout": 0,
+      "error": 0,
+      "other": 0
+    },
+    "attack_plausible": {
+      "rows": 20,
+      "ok": 20,
+      "timeout": 0,
+      "error": 0,
+      "other": 0
+    },
+    "burst": {
+      "rows": 25,
+      "ok": 25,
+      "timeout": 0,
+      "error": 0,
+      "other": 0
+    }
+  },
+  "poll_ms": 400,
+  "latency_from_mint_mined": {
+    "all_attacks": {
+      "detection_s": {
+        "n": 100,
+        "p50": 3.873,
+        "p95": 4.391,
+        "max": 6.545,
+        "min": 2.036
+      },
+      "pause_gate_u_s": {
+        "n": 100,
+        "p50": 5.917,
+        "p95": 8.245,
+        "max": 10.97,
+        "min": 3.851
+      },
+      "pause_gate_b_s": {
+        "n": 100,
+        "p50": 3.378,
+        "p95": 7.079,
+        "max": 7.132,
+        "min": 2.122
+      },
+      "pause_both_s": {
+        "n": 100,
+        "p50": 5.92,
+        "p95": 8.245,
+        "max": 10.97,
+        "min": 3.851
+      }
+    },
+    "forged": {
+      "detection_s": {
+        "n": 60,
+        "p50": 3.915,
+        "p95": 4.363,
+        "max": 4.413,
+        "min": 2.606
+      },
+      "pause_gate_u_s": {
+        "n": 60,
+        "p50": 5.908,
+        "p95": 6.31,
+        "max": 10.97,
+        "min": 4.989
+      },
+      "pause_gate_b_s": {
+        "n": 60,
+        "p50": 3.381,
+        "p95": 4.757,
+        "max": 6.847,
+        "min": 2.157
+      },
+      "pause_both_s": {
+        "n": 60,
+        "p50": 5.909,
+        "p95": 6.319,
+        "max": 10.97,
+        "min": 4.989
+      }
+    },
+    "plausible": {
+      "detection_s": {
+        "n": 20,
+        "p50": 3.447,
+        "p95": 3.779,
+        "max": 6.545,
+        "min": 2.036
+      },
+      "pause_gate_u_s": {
+        "n": 20,
+        "p50": 8.234,
+        "p95": 8.246,
+        "max": 8.253,
+        "min": 5.075
+      },
+      "pause_gate_b_s": {
+        "n": 20,
+        "p50": 2.468,
+        "p95": 7.119,
+        "max": 7.132,
+        "min": 2.418
+      },
+      "pause_both_s": {
+        "n": 20,
+        "p50": 8.234,
+        "p95": 8.246,
+        "max": 8.253,
+        "min": 5.623
+      }
+    },
+    "burst": {
+      "detection_s": {
+        "n": 20,
+        "p50": 3.873,
+        "p95": 4.393,
+        "max": 4.418,
+        "min": 2.674
+      },
+      "pause_gate_u_s": {
+        "n": 20,
+        "p50": 4.937,
+        "p95": 8.06,
+        "max": 9.978,
+        "min": 3.851
+      },
+      "pause_gate_b_s": {
+        "n": 20,
+        "p50": 3.368,
+        "p95": 4.722,
+        "max": 6.767,
+        "min": 2.122
+      },
+      "pause_both_s": {
+        "n": 20,
+        "p50": 4.937,
+        "p95": 8.06,
+        "max": 9.978,
+        "min": 3.851
+      }
+    }
+  },
+  "latency_from_mint_sent": {
+    "detection_s": {
+      "n": 100,
+      "p50": 5.192,
+      "p95": 5.658,
+      "max": 8.283,
+      "min": 5.049
+    },
+    "pause_gate_u_s": {
+      "n": 100,
+      "p50": 7.541,
+      "p95": 10.005,
+      "max": 12.236,
+      "min": 5.141
+    },
+    "pause_gate_b_s": {
+      "n": 100,
+      "p50": 4.644,
+      "p95": 8.852,
+      "max": 9.27,
+      "min": 4.162
+    },
+    "pause_both_s": {
+      "n": 100,
+      "p50": 7.541,
+      "p95": 10.005,
+      "max": 12.236,
+      "min": 5.141
+    }
+  },
+  "block_timestamp_pause_gate_u_s": {
+    "n": 100,
+    "p50": 2,
+    "p95": 3,
+    "max": 3,
+    "min": 2
+  },
+  "false_positives": {
+    "legit_strict_runs": 80,
+    "legit_strict_false_pauses": 0,
+    "forced_runs": 20,
+    "forced_pause_seconds": {
+      "n": 19,
+      "p50": 15.2,
+      "p95": 23.1,
+      "max": 23.1,
+      "min": 5.1
+    },
+    "forced_not_completed": 0,
+    "forced_no_duration": [
+      "lf-019"
+    ]
+  },
+  "strict_lasna_booking_s": {
+    "n": 80,
+    "p50": 6.57,
+    "p95": 6.77,
+    "max": 9.38,
+    "min": 1.499
+  },
+  "exposure_burst": {
+    "runs": 20,
+    "censored": 0,
+    "copycats_landed": {
+      "n": 20,
+      "p50": 1,
+      "p95": 1,
+      "max": 1,
+      "min": 0
+    },
+    "copycats_fired": {
+      "n": 20,
+      "p50": 2,
+      "p95": 2,
+      "max": 2,
+      "min": 1
+    },
+    "exposure_tusd": {
+      "n": 20,
+      "p50": 1000,
+      "p95": 1000,
+      "max": 1000,
+      "min": 500
+    },
+    "carry_home_reverted": 20,
+    "carry_home_rows": 20,
+    "stopped_at_revert": 20,
+    "reached_cap": 0,
+    "copycat_cap": 30
+  },
+  "excluded_rows": [],
+  "control_arm_bursts": [
+    "bu-021",
+    "bu-022",
+    "bu-023",
+    "bu-024",
+    "bu-025"
+  ],
+  "recovery_s": {
+    "n": 100,
+    "p50": 14.593,
+    "p95": 15.345,
+    "max": 21.321,
+    "min": 7.703
+  },
+  "recovery_attack_rows_left_out": 0,
+  "burst_verify": {
+    "source": "evidence/frozen3-burst-verify.csv",
+    "rows": 20,
+    "after": 20,
+    "paused_event_ok": 20,
+    "reason_gatepaused": 20
+  },
+  "recovery_failed": [],
+  "route_b": {
+    "source": "evidence/frozen-routeb-runs.csv",
+    "legit_rows": 10,
+    "false_latches": 0,
+    "drills": [
+      {
+        "run": "bd-01",
+        "outcome": "ok",
+        "pause_u_s": 4,
+        "pause_b_s": 2.3,
+        "resume_u_s": 6,
+        "block_ts_u_s": 2,
+        "block_ts_b_s": 1
+      },
+      {
+        "run": "bd-02",
+        "outcome": "ok",
+        "pause_u_s": 4,
+        "pause_b_s": 2.2,
+        "resume_u_s": 11,
+        "block_ts_u_s": 2,
+        "block_ts_b_s": 1
+      },
+      {
+        "run": "bd-03",
+        "outcome": "ok",
+        "pause_u_s": 5.3,
+        "pause_b_s": 2.8,
+        "resume_u_s": 5.8,
+        "block_ts_u_s": 4,
+        "block_ts_b_s": 3
+      }
+    ]
+  }
+}

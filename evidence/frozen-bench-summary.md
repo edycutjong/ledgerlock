@@ -16,6 +16,7 @@
 
 ## Route B (operator drill (DrillBeacon), self-delivered Hyperlane route (our own Mailbox.process))
 
+- source: evidence/frozen-routeb-runs.csv (route B is guarded by the `frozen` reactive contract)
 - legit transfers: 10 rows, 0 false latches
 - drill bd-01 (ok): observer wall-clock pause latency Unichain gate 4 s, Base gate 2.3 s (DrillBeacon.fire() receipt seen -> the poll that saw the gate Paused event); block-timestamp delta (fire tx block on Base -> gate Paused tx block): Unichain 2 s, Base 1 s; resume (Unichain) 6 s after resolve()
 - drill bd-02 (ok): observer wall-clock pause latency Unichain gate 4 s, Base gate 2.2 s (DrillBeacon.fire() receipt seen -> the poll that saw the gate Paused event); block-timestamp delta (fire tx block on Base -> gate Paused tx block): Unichain 2 s, Base 1 s; resume (Unichain) 11 s after resolve()

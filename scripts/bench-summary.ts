@@ -1,5 +1,5 @@
 // Recomputes every published bench number from the committed rows. Nothing here is typed in by hand.
-// Usage: tsx scripts/bench-summary.ts [evidence/frozen-bench-runs.csv]   -> evidence/<instance>-bench-summary.{json,md}
+// Usage: tsx scripts/bench-summary.ts [evidence/frozen3-bench-runs.csv]   -> evidence/<instance>-bench-summary.{json,md}
 // Percentiles are nearest-rank (every reported value was observed). Latencies are the off-chain observer's wall clock from
 // "attack mint mined" (the observer saw the receipt) to the first poll that saw the log; each is this machine's Date.now() when a
 // poll returned (poll interval poll_ms plus RPC latency), with whole-second block-timestamp deltas beside it as the cross-check.
@@ -7,7 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { parseCsvLine } from "../packages/reactive-kit/ts/triples.ts";
 import { percentile } from "../packages/reactive-kit/ts/latency.ts";
 
-const path = process.argv[2] ?? "evidence/frozen-bench-runs.csv";
+const path = process.argv[2] ?? "evidence/frozen3-bench-runs.csv";
 const [head, ...lines] = readFileSync(path, "utf8").split("\n").filter(Boolean);
 const cols = parseCsvLine(head);
 const rows = lines.map((l) => Object.fromEntries(parseCsvLine(l).map((v, i) => [cols[i], v]))) as Record<string, string>[];
@@ -35,14 +35,18 @@ const strict = of("legit_strict"), forced = of("legit_forced");
 const hasRecovery = cols.includes("recovery");
 const recoveryFailed = hasRecovery ? rows.filter((r) => r.recovery === "failed").map((r) => r.run_id) : null;
 // Route B drills: block-timestamp cross-check (scripts/routeb-blockts.ts), whole seconds, fire() tx block on Base -> gate Paused tx block
-const btPath = path.replace(/-bench-runs\.csv$/, "-routeb-blockts.csv");
+// Route B is guarded by one reactive contract only (ROUTE_B_INSTANCE, default `frozen`; see scripts/triples.ts): a redeployed route A
+// instance does not carry it, so its rows are read from that instance's files and labelled as such.
+const ROUTE_B_INSTANCE = process.env.ROUTE_B_INSTANCE ?? "frozen";
+const evDir = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "";
+const btPath = `${evDir}${ROUTE_B_INSTANCE}-routeb-blockts.csv`;
 const bt: Record<string, { u: number; b: number }> = {};
 if (existsSync(btPath)) {
   const [h, ...ls] = readFileSync(btPath, "utf8").split("\n").filter(Boolean), hc = parseCsvLine(h);
   for (const l of ls) { const o = Object.fromEntries(parseCsvLine(l).map((v, i) => [hc[i], v])); bt[o.run_id] = { u: n(o.pause_u_block_ts) - n(o.fire_block_ts), b: n(o.pause_b_block_ts) - n(o.fire_block_ts) }; }
 }
 // Route B (Hyperlane warp route, same guard contract): operator drills + legit transfers, from evidence/frozen-routeb-runs.csv
-const rbPath = path.replace(/-bench-runs\.csv$/, "-routeb-runs.csv");
+const rbPath = `${evDir}${ROUTE_B_INSTANCE}-routeb-runs.csv`;
 const rb = existsSync(rbPath) ? (() => {
   const [h, ...ls] = readFileSync(rbPath, "utf8").split("\n").filter(Boolean), hc = parseCsvLine(h);
   const rs = ls.map((l) => Object.fromEntries(parseCsvLine(l).map((v, i) => [hc[i], v]))) as Record<string, string>[];
@@ -72,6 +76,7 @@ const summary = {
     legit_strict_runs: strict.length, legit_strict_false_pauses: strict.filter((r) => r.false_pause === "1").length,
     forced_runs: forced.length, forced_pause_seconds: q(forced.map((r) => n(r.pause_seconds))),
     forced_not_completed: forced.filter((r) => r.outcome !== "ok").length,
+    forced_no_duration: forced.filter((r) => r.pause_seconds === "").map((r) => r.run_id), // e.g. `observer order inverted` (resume seen before pause)
   },
   strict_lasna_booking_s: q(ms(strict.map((r) => sec(r, "lasna_seen_ms", "mint_mined_ms")))),
   exposure_burst: {
@@ -103,13 +108,14 @@ writeFileSync(`${base}-bench-summary.md`, [
   `- pause, Base gate: ${f(L.pause_gate_b_s)}`,
   `- both gates shut: ${f(L.pause_both_s)}`,
   `- false pauses on strict legit: ${summary.false_positives.legit_strict_false_pauses} of ${strict.length}`,
-  `- forced fill-before-deposit pause seconds: ${f(summary.false_positives.forced_pause_seconds)}`,
+  `- forced fill-before-deposit pause seconds: ${f(summary.false_positives.forced_pause_seconds)}${summary.false_positives.forced_no_duration.length ? ` (${summary.false_positives.forced_no_duration.length} of ${forced.length} left out, no duration: ${summary.false_positives.forced_no_duration.join(", ")}; see the row note)` : ""}`,
   `- same-chain check, whole-second Unichain block timestamps (mint block → gate U Paused block): ${f(summary.block_timestamp_pause_gate_u_s)}`,
   `- recovery (seize + resolve + both gates reopened): ${f(summary.recovery_s)} (successful recoveries only; ${recLeftOut} of ${okAttacks.length} attack rows left out: ${hasRecovery ? "recovery not ok" : "a gate resume was not observed"})${recoveryFailed ? `; recovery failures: ${recoveryFailed.length}${recoveryFailed.length ? " (" + recoveryFailed.join(", ") + ")" : ""}` : ""}`,
   `- burst exposure: ${eb.runs} runs: ${eb.reached_cap === 0 ? "every run" : eb.stopped_at_revert + " of them"} stopped before the ${eb.copycat_cap}-copycat cap (${eb.reached_cap} reached the cap)${bv ? `; ${bv.after}/${bv.rows} stopped at the first reverted copycat mined after the gate U Paused tx (burst-verify: ${bv.after}/${bv.rows}; gate U receipt holds this run's Paused event ${bv.paused_event_ok}/${bv.rows})${bv.reason_gatepaused > 0 ? `; replaying the stopping copycat at its block reverts GatePaused ${bv.reason_gatepaused}/${bv.rows}` : "; revert reason not confirmed (historical eth_call unavailable)"}` : ""}; copycats landed p50 ${eb.copycats_landed.p50} · p95 ${eb.copycats_landed.p95} · max ${eb.copycats_landed.max}`,
   `- burst carry-home release on Base: reverted ${eb.carry_home_reverted} of ${eb.carry_home_rows} rows`,
   `- paired control (bu-021..025 guarded vs scripts/control.ts unguarded): the unguarded arm fires a fixed 6 copycats, the guarded burst fires up to ${eb.copycat_cap} and stops at the first revert, so issuance is an illustration, not a like-for-like rate`,
   ...(rb ? ["", "## Route B (operator drill (DrillBeacon), self-delivered Hyperlane route (our own Mailbox.process))", "",
+    `- source: ${rb.source} (route B is guarded by the \`${ROUTE_B_INSTANCE}\` reactive contract)`,
     `- legit transfers: ${rb.legit_rows} rows, ${rb.false_latches} false latches`,
     ...rb.drills.map((d) => `- drill ${d.run} (${d.outcome}): observer wall-clock pause latency Unichain gate ${d.pause_u_s} s, Base gate ${d.pause_b_s} s (DrillBeacon.fire() receipt seen -> the poll that saw the gate Paused event)${d.block_ts_u_s !== undefined ? `; block-timestamp delta (fire tx block on Base -> gate Paused tx block): Unichain ${d.block_ts_u_s} s, Base ${d.block_ts_b_s} s` : ""}; resume (Unichain) ${d.resume_u_s} s after resolve()`)] : []),
   "",

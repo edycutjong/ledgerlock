@@ -208,7 +208,8 @@
       "max": 21.7,
       "min": 3.9
     },
-    "forced_not_completed": 0
+    "forced_not_completed": 0,
+    "forced_no_duration": []
   },
   "strict_lasna_booking_s": {
     "n": 80,

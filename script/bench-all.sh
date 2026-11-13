@@ -4,7 +4,7 @@
 set -euo pipefail
 set -a; source "${LEDGERLOCK_ENV:-$HOME/.config/reactive/testnet-deployer.env}"; set +a
 cd "$(dirname "$0")/.."
-I=${1:-frozen}
+I=${1:-frozen3}
 npx tsx scripts/bench.ts "$I" legit_strict 80
 npx tsx scripts/bench.ts "$I" legit_forced 20
 npx tsx scripts/bench.ts "$I" attack_forged 60

@@ -72,7 +72,7 @@ function render(d, lv) {
   const a = d.addresses, rs = lv.rs;
   const reqB = !!(rs && (rs.paused || rs.incident));
   const rbr = d.routeBRuns;
-  const routeBHtml = d.routeB && d.routeB.GATE_B2 ? track("Route B · Hyperlane warp route", "Hyperlane mailbox + PausableIsm code; we deployed the route and deliver with our own Mailbox.process (the public relayer did not deliver)", lv.gateB2, lv.gateU2, false,
+  const routeBHtml = d.routeB && d.routeB.GATE_B2 ? track("Route B · Hyperlane warp route", "Hyperlane mailbox + PausableIsm code; we deployed the route and deliver with our own Mailbox.process (the public relayer did not deliver)" + (d.routeBGuardRC ? ` · guarded by its own Lasna contract ${short(d.routeBGuardRC)}` : ""), lv.gateB2, lv.gateU2, false,
       { base: `native router ${short(d.routeB.ROUTE_B_COLLATERAL_BASE)}`, mid: rbr ? `${rbr.legit} legit transfers (self-delivered) · ${rbr.legit_false_latch} false latches · ${rbr.drills.length} drills` : "SUPPLY mode", uni: `synthetic ${short(d.routeB.ROUTE_B_SYNTHETIC_UNI)}` }) : "";
   $("routes").innerHTML =
     track("Route A · fixture bridge", "labelled fixture · we deployed both ends", lv.gateB, lv.gateU, reqB,
