@@ -4,7 +4,7 @@
   Keys: → / Space / PageDown next · ← / PageUp previous · Home / End · Esc slide overview (click a slide) ·
         P presenter mode (speaker notes panel, chrome dimmed, cursor hides after 2 s) · C contrast debug (outlines every text box).
   Print: Cmd/Ctrl+P → Save as PDF → one slide per 16in × 9in page, backgrounds on.
-  Images (relative to build/docs/pitch/): ../assets/status-routes.png, ../assets/status-inc.png (status page captures, 2026-11-14),
+  Images (relative to build/docs/pitch/): ../assets/status-routes.png, ../assets/status-inc.png (status page captures, 2026-11-13 21:08 UTC),
   ../assets/icon.svg. Fonts: ../status/fonts/ (OFL; the second src path is a fallback location). Numbers: build/evidence/frozen3-bench-summary.md,
   evidence/frozen3-bench-runs.csv (bu-015), evidence/a0-control-runs.csv.
 -->
@@ -39,7 +39,7 @@
 html,body{margin:0;height:100%;background:var(--deep);color:var(--ink);font:400 30px/1.45 var(--font-body);overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 ::selection{background:var(--before);color:var(--bg)}
 a{color:var(--before)}
-:focus-visible{outline:3px solid var(--brass);outline-offset:4px}
+:focus-visible{outline:3px solid var(--before);outline-offset:4px}
 .stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
 .slide{position:absolute;inset:0;background:var(--bg);padding:92px 110px 84px;display:none;flex-direction:column;overflow:hidden}
 .slide.on{display:flex}
@@ -70,7 +70,8 @@ em{font-style:normal;color:var(--before)}
 .board{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:28px;margin-top:auto}
 .box{border:2px solid var(--rule);background:var(--panel);padding:40px 40px;border-radius:4px;min-height:330px;display:flex;flex-direction:column;justify-content:center}
 .box h3{font:400 76px/1 var(--font-display);text-transform:uppercase;margin:0 0 18px}
-.box p{margin:0;font:400 32px/1.5 var(--font-data);color:var(--muted)}
+.box p{margin:0;font:400 32px/1.5 var(--font-body);color:var(--muted)}
+.box p b{font-family:var(--font-data)}
 .box p b{color:var(--ink);font-weight:600}
 .box.mid{text-align:center}
 .box p.blocked{font:400 104px/1 var(--font-display);text-transform:uppercase;color:var(--after);text-shadow:0 0 30px color-mix(in srgb,var(--after) 45%,transparent);margin:6px 0 8px}
@@ -85,7 +86,7 @@ em{font-style:normal;color:var(--before)}
 .books div{padding:56px 48px 0 0}
 .books div+div{padding-left:56px;border-left:3px solid var(--rule)}
 .books h3{font:400 128px/1 var(--font-display);text-transform:uppercase;margin:0 0 22px}
-.books p{margin:0;font:400 40px/1.5 var(--font-data);color:var(--muted)}
+.books p{margin:0;font:400 40px/1.5 var(--font-body);color:var(--muted)}
 .books p b{color:var(--ink)}
 /* frames */
 .frame{border:2px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--deep)}
@@ -96,7 +97,7 @@ em{font-style:normal;color:var(--before)}
 .legend{list-style:none;margin:0;padding:0}
 .legend.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:40px}
 .legend.row4 li{margin:0;font-size:32px}
-.caveat{font-size:30px;color:var(--muted);margin:26px 0 auto}
+.caveat{font-size:34px;color:var(--ink);margin:26px 0 auto}
 .capline{font-size:34px;margin:22px 0 auto;color:color-mix(in srgb,var(--ink) 88%,var(--bg))}
 .capline b{font-family:var(--font-data);font-weight:600}
 .legend li{display:grid;grid-template-columns:66px 1fr;gap:16px;align-items:center;margin:0 0 34px;font-size:36px}
@@ -104,7 +105,7 @@ em{font-style:normal;color:var(--before)}
 /* diagram */
 svg.flow{width:100%;height:auto;margin:auto 0}
 svg.flow text{font-family:var(--font-display);text-transform:uppercase;fill:var(--ink)}
-svg.flow .m{font-family:var(--font-data);text-transform:none;fill:var(--muted)}
+svg.flow .m{font-family:var(--font-body);text-transform:none;fill:var(--muted)}
 /* numbers */
 .dots{width:100%;height:auto;display:block;margin:auto 0 0}
 .dots .axis line{stroke:var(--muted);stroke-width:1.2}
@@ -130,11 +131,11 @@ svg.flow .m{font-family:var(--font-data);text-transform:none;fill:var(--muted)}
 /* ask */
 .ask{display:grid;grid-template-columns:1fr 420px;gap:90px;align-items:center;flex:1}
 .links{font:400 38px/1.9 var(--font-data);margin:0}
-.links b{color:var(--muted);font-weight:400;display:inline-block;width:6ch}
+.links b{color:var(--muted);font-weight:400;display:inline-block;width:6ch;font-family:var(--font-body)}
 .qr{width:420px;height:420px;display:block;border-radius:6px}
 .closer{font:400 64px/1 var(--font-display);text-transform:uppercase;color:var(--before);margin:40px 0 0}
 /* chrome */
-.chrome{position:fixed;right:22px;bottom:16px;font:400 14px/1 var(--font-data);color:var(--muted);letter-spacing:.1em;z-index:3}
+.chrome{position:fixed;right:22px;top:14px;font:400 14px/1 var(--font-data);color:var(--muted);letter-spacing:.1em;z-index:3}
 .notes-panel{display:none;position:fixed;left:0;right:0;bottom:0;height:20vh;background:var(--deep);border-top:2px solid var(--brass);padding:18px 28px;font:400 20px/1.5 var(--font-body);color:var(--ink);overflow:auto;z-index:4}
 body.presenter .notes-panel{display:block}
 body.presenter .chrome{opacity:.35}
@@ -193,13 +194,13 @@ body.overview .chrome{display:none}
 <section class="slide" aria-label="3 of 10, the problem">
   <p class="label">Two boxes, no interlock</p>
   <h2 class="disp">Each chain keeps <em>half the book</em></h2>
-  <p class="body">Nomad: about $190M lost to copycat replays in roughly 2.5 hours.</p>
+  <p class="body" style="margin:auto 0;font-size:52px">Nomad: about $190M lost to copycat replays in roughly 2.5 hours.</p>
   <div class="books">
     <div><h3>Base sees</h3><p><b>Locked</b> · collateral in</p></div>
     <div><h3>Unichain sees</h3><p><b>Minted</b> · tokens out</p></div>
   </div>
-  <aside class="speaker-notes" data-note="Lock-and-mint bridges fail by minting value that was never locked. Figures from Rekt and Immunefi. A guard on either chain sees only one side."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span>Sources: Rekt, Immunefi</span><span class="ver">v0.1.0</span></div>
+  <aside class="speaker-notes" data-note="Lock-and-mint bridges fail by minting value that was never locked. Figures from Rekt. A guard on either chain sees only one side."></aside>
+  <div class="foot"><span>LEDGERLOCK</span><span>Source: Rekt</span><span class="ver">v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="4 of 10, the solution">
@@ -211,7 +212,7 @@ body.overview .chrome{display:none}
     </div>
     <div class="frame"><img src="../assets/status-routes.png" loading="lazy" decoding="async" width="2356" height="1396" alt="Status page: two guarded routes, both LINE CLEAR"></div>
   </div>
-  <aside class="speaker-notes" data-note="No server and no keeper key: the decision and both pause callbacks come from one react(). This is our status page reading live testnet."></aside>
+  <aside class="speaker-notes" data-note="No off-chain watcher: the decision and both pause callbacks come from one react(). This is our status page reading live testnet."></aside>
   <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
 </section>
 
@@ -233,7 +234,7 @@ body.overview .chrome{display:none}
     <rect x="1290" y="350" width="370" height="90" rx="4" fill="none" stroke="#EAE3CC" stroke-width="2"/><text x="1314" y="410" font-size="40">Gate U</text>
     <path d="M410 175 L612 205" stroke="#85907F" stroke-width="3" fill="none" stroke-dasharray="6 8"/><text class="m" x="452" y="160" font-size="28">no Locked</text>
     <path d="M1290 175 L1088 205" stroke="#EAE3CC" stroke-width="4" fill="none" marker-end="url(#ai)"/><text class="m" x="1110" y="160" font-size="28">Minted</text>
-    <path d="M620 320 L418 392" stroke="#E4412A" stroke-width="5" fill="none" marker-end="url(#ar)"/><text class="m" x="440" y="470" font-size="30">pause +4.651 s</text>
+    <path d="M620 320 L418 392" stroke="#E4412A" stroke-width="5" fill="none" marker-end="url(#ar)"/><text class="m" x="460" y="470" font-size="30">pause +4.651 s</text>
     <path d="M1080 320 L1282 392" stroke="#E4412A" stroke-width="5" fill="none" marker-end="url(#ar)"/><text class="m" x="975" y="470" font-size="30">pause +5.341 s</text>
   </svg>
   <aside class="speaker-notes" data-note="Run bu-015. The forged Minted reaches Lasna, there is no Locked, so one react() sends both pauses. A matching lock inside W, 60 seconds, would reopen them."></aside>
@@ -244,7 +245,7 @@ body.overview .chrome{display:none}
   <p class="label">Status page · last non-control attack run</p>
   <h2 class="disp" style="font-size:112px;margin-bottom:28px">Four timestamps, <em>four hashes</em></h2>
   <div class="callouts">
-    <div class="frame"><img src="../assets/status-inc.png" width="2356" height="750" alt="Status page, last attack run ap-020: mint at 0 s, Lasna react seen +3.5 s, gate U Paused +8.2 s, gate B Paused +7.1 s, each with a transaction link"></div>
+    <div class="frame"><img src="../assets/status-inc.png" width="2356" height="750" alt="Status page, last non-control attack run ap-020: mint at 0 s, Lasna react seen +3.5 s, gate U Paused +8.2 s, gate B Paused +7.1 s, each with a transaction link"></div>
     <span class="co" style="left:15%;top:36%">1</span><span class="co" style="left:40.5%;top:36%">2</span><span class="co" style="left:66%;top:36%">3</span><span class="co" style="left:91.5%;top:36%">4</span>
   </div>
   <ul class="legend row4">
@@ -271,7 +272,7 @@ body.overview .chrome{display:none}
 
 <section class="slide" aria-label="8 of 10, paired control">
   <p class="label">Control · 5 runs per arm</p>
-  <h2 class="disp">Same forged mint, <em>with and without</em></h2>
+  <h2 class="disp">Same attack script, <em>with and without</em></h2>
   <div class="arms">
     <div class="arm"><h3>Unguarded</h3>
       <div class="row"><span>copycats</span><div class="bar"><i style="width:100%"></i></div><b>6</b></div>
@@ -305,11 +306,11 @@ body.overview .chrome{display:none}
     <div>
       <h2 class="disp">Judge us on <em>the seconds</em></h2>
       <p class="links"><b>repo</b> github.com/edycutjong/ledgerlock<br><b>live</b> edycutjong.github.io/ledgerlock</p>
-      <p class="closer">Every number comes from a committed row.</p>
+      <p class="closer">Every measured number comes from a committed row.</p>
     </div>
     <svg class="qr" role="img" aria-label="QR code for edycutjong.github.io/ledgerlock" xmlns="http://www.w3.org/2000/svg" width="330" height="330"><g transform="scale(10)"><path fill="#eae3cc" d="M0 0h33v33h-33z"/><path class="qrline" stroke="#182019" d="M2 2.5h7m1 0h1m1 0h1m1 0h2m2 0h5m1 0h7m-29 1h1m5 0h1m1 0h1m1 0h4m3 0h1m2 0h1m1 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m6 0h2m4 0h2m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h4m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m7 0h6m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m9 0h1m1 0h3m1 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h5m2 0h1m1 0h2m1 0h1m-21 1h1m1 0h2m1 0h3m3 0h1m2 0h1m2 0h2m3 0h1m2 0h1m1 0h2m-29 1h4m1 0h1m5 0h3m2 0h1m1 0h3m1 0h3m3 0h1m-29 1h2m1 0h4m2 0h1m1 0h1m1 0h2m1 0h1m4 0h1m2 0h1m1 0h2m-26 1h1m5 0h2m1 0h1m1 0h2m5 0h3m5 0h1m-29 1h11m2 0h1m1 0h1m1 0h2m6 0h2m-26 1h2m1 0h1m4 0h2m1 0h5m2 0h1m1 0h2m3 0h3m-28 1h3m2 0h1m1 0h1m2 0h1m2 0h1m2 0h3m1 0h3m2 0h3m-29 1h2m1 0h2m3 0h1m1 0h3m1 0h1m1 0h1m1 0h4m5 0h1m-26 1h2m1 0h4m1 0h2m2 0h1m3 0h4m2 0h2m1 0h1m-27 1h1m6 0h1m1 0h1m2 0h1m1 0h1m1 0h1m5 0h1m1 0h3m-28 1h1m2 0h1m2 0h1m1 0h1m1 0h3m2 0h1m2 0h1m1 0h3m1 0h1m1 0h1m-22 1h1m1 0h5m2 0h1m1 0h4m2 0h1m3 0h1m-26 1h2m1 0h3m1 0h1m1 0h1m2 0h1m2 0h11m-19 1h1m2 0h3m2 0h3m1 0h1m3 0h5m-29 1h7m1 0h1m2 0h3m2 0h1m1 0h3m1 0h1m1 0h2m1 0h1m-28 1h1m5 0h1m1 0h3m1 0h1m5 0h1m1 0h1m3 0h2m2 0h1m-29 1h1m1 0h3m1 0h1m4 0h1m2 0h2m1 0h2m1 0h5m1 0h3m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h4m4 0h1m1 0h3m2 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h4m2 0h3m1 0h1m2 0h1m2 0h1m1 0h1m-29 1h1m5 0h1m3 0h2m1 0h1m1 0h2m3 0h1m1 0h4m1 0h1m-28 1h7m1 0h2m3 0h1m1 0h1m2 0h5m4 0h1"/></g></svg>
   </div>
-  <aside class="speaker-notes" data-note="Open the register, click any hash, and rerun pnpm bench:summary. Every number on these slides comes from committed rows."></aside>
+  <aside class="speaker-notes" data-note="Open the register, click any hash, and rerun pnpm bench:summary. Every measured number here comes from committed rows; the Nomad figure is from Rekt."></aside>
   <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
 </section>
 

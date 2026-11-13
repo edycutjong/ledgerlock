@@ -111,23 +111,25 @@ header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg
 .dial .hub{fill:var(--ink)}
 .dial.blocked .needle line{stroke:var(--after)}
 .dial.blocked text.t-blk{fill:var(--after)}
-.book{font:400 13px/1.45 var(--font-data);color:var(--muted);margin:4px 0 0}
+.book{font:400 13.5px/1.45 var(--font-body);color:var(--muted);margin:4px 0 0}
 .book b{color:var(--ink);font-weight:600}
-.stamp{font:400 13px/1.45 var(--font-data);color:var(--ink);margin:auto 0 0;padding-top:4px;transition:opacity .3s}
+.book a,.stamp a,.copycat a,.register td.h a{font-family:var(--font-data);font-size:.95em}
+.stamp b,.ledger b{font-family:var(--font-data)}
+.stamp{font:400 13.5px/1.45 var(--font-body);color:var(--ink);margin:auto 0 0;padding-top:4px;transition:opacity .3s}
 .stamp[hidden]{display:block;visibility:hidden;opacity:0}
 .mid{align-items:center;text-align:center}
 .verdict{font:400 clamp(30px,3.4vw,44px)/1 var(--font-display);text-transform:uppercase;letter-spacing:.02em;margin:12px 0 6px;color:var(--before);transition:color .3s}
 .verdict.blocked{color:var(--after);text-shadow:0 0 22px color-mix(in srgb,var(--after) 40%,transparent)}
-.ledger{display:grid;grid-template-columns:auto auto;gap:2px 12px;font:400 13px/1.5 var(--font-data);color:var(--muted);margin:6px 0 0;text-align:left}
+.ledger{display:grid;grid-template-columns:auto auto;gap:2px 12px;font:400 13.5px/1.5 var(--font-body);color:var(--muted);margin:6px 0 0;text-align:left}
 .ledger b{color:var(--ink);font-weight:600}
 .track{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;align-items:center}
 .sec{position:relative;height:30px;display:flex;align-items:center;justify-content:center}
 .sec::before{content:"";position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;background:var(--ink);opacity:.85;border-radius:2px}
-.sec small{position:absolute;bottom:-18px;font:400 11px/1 var(--font-data);color:var(--muted);letter-spacing:.06em}
+.sec small{position:absolute;bottom:-18px;font:400 12px/1 var(--font-body);color:var(--muted);white-space:nowrap}
 .lamp{position:relative;width:22px;height:22px;border-radius:50%;background:var(--before);border:3px solid var(--deep);box-shadow:0 0 0 1px var(--rule),0 0 18px color-mix(in srgb,var(--before) 55%,transparent);transition:background .3s,box-shadow .3s}
 .lamp.off{background:var(--rule);box-shadow:0 0 0 1px var(--rule)}
 .lamp.red{background:var(--after);box-shadow:0 0 0 1px var(--rule),0 0 26px color-mix(in srgb,var(--after) 70%,transparent)}
-.copycat{margin:24px 0 0;font:400 13px/1.5 var(--font-data);color:var(--muted);transition:opacity .4s}
+.copycat{margin:28px 0 0;font:400 14px/1.5 var(--font-body);color:var(--muted);transition:opacity .4s}
 .copycat b{color:var(--ink);font-weight:600}
 .board figcaption{font-size:13.5px;color:var(--muted);margin-top:10px;max-width:90ch}
 /* receipts */
@@ -146,7 +148,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .s .intro{max-width:64ch;color:color-mix(in srgb,var(--ink) 84%,var(--bg));margin:0 0 36px}
 .pair{display:grid;grid-template-columns:1.05fr 1fr;gap:22px;align-items:start}
 .frame{border:1px solid var(--rule);border-radius:5px;overflow:hidden;background:var(--deep)}
-.frame .chrome{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--rule);font:400 12px/1 var(--font-data);color:var(--muted)}
+.frame .chrome{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--rule);font:400 12px/1 var(--font-body);color:var(--muted)}
 .frame .chrome i{width:9px;height:9px;border-radius:50%;background:var(--rule)}
 .frame .chrome span{margin-left:8px}
 .frame img{display:block;width:100%;height:auto}
@@ -161,7 +163,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 @keyframes blink{50%{opacity:0}}
 .register{width:100%;border-collapse:collapse;margin-top:44px;font-size:14px}
 .register caption{text-align:left;font:400 30px/1 var(--font-display);text-transform:uppercase;letter-spacing:.02em;padding-bottom:12px}
-.register th{font:600 11px/1.3 var(--font-data);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--rule)}
+.register th{font:700 11px/1.3 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--rule)}
 .register td{padding:11px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
 .register td.t,.register td.h{font-family:var(--font-data);font-size:13px;white-space:nowrap}
 .register tr:hover td{background:var(--panel)}
@@ -174,7 +176,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .dots .pct line{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 4}
 .dots .pct text{font:600 13px var(--font-data);fill:var(--ink)}
 .dots .pts circle{fill:var(--before);opacity:.9}
-.dots-cap{display:flex;flex-wrap:wrap;gap:6px 22px;font:400 13px/1.5 var(--font-data);color:var(--muted);margin:10px 0 0}
+.dots-cap{display:flex;flex-wrap:wrap;gap:6px 22px;font:400 14px/1.5 var(--font-body);color:var(--muted);margin:10px 0 0}
 .control{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:64px}
 .arm{border:1px solid var(--rule);padding:22px 24px;border-radius:3px;background:var(--panel)}
 .arm h3{font:400 30px/1 var(--font-display);text-transform:uppercase;margin:0 0 4px}
@@ -191,7 +193,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .card:hover{border-color:var(--muted);transform:translateY(-2px)}
 .card svg{width:44px;height:30px}
 .card svg *{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.card svg .b{stroke:var(--brass)}
+.card svg .b{stroke:var(--muted)}
 .card h3{font:400 30px/1 var(--font-display);text-transform:uppercase;letter-spacing:.02em;margin:0}
 .card p{margin:0;font-size:15.5px;color:color-mix(in srgb,var(--ink) 86%,var(--bg))}
 .chip.w{color:var(--brass);border-color:color-mix(in srgb,var(--brass) 55%,transparent)}
@@ -207,7 +209,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .limits li{display:grid;grid-template-columns:5ch 1fr;gap:18px;padding:22px 0;border-bottom:1px solid var(--rule)}
 .limits .no{font:400 40px/1 var(--font-display);color:var(--muted)}
 .limits blockquote{margin:0;font-size:clamp(18px,2vw,22px);line-height:1.45}
-.limits cite{display:block;margin-top:8px;font:400 12px/1.4 var(--font-data);font-style:normal;color:var(--muted);letter-spacing:.06em}
+.limits cite{display:block;margin-top:8px;font:400 13px/1.4 var(--font-body);font-style:normal;color:var(--muted);letter-spacing:.06em}
 /* faq */
 .faq{max-width:860px}
 .faq details{border-bottom:1px solid var(--rule)}
@@ -220,8 +222,8 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 /* final */
 .final{padding:96px 0 40px;background:radial-gradient(50% 70% at 50% 0%,color-mix(in srgb,var(--before) 8%,transparent),transparent 70%),var(--bg)}
 .final h2{font-size:clamp(48px,7vw,96px);margin:0 0 18px;max-width:16ch}
-.addr{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font:400 13px/1.5 var(--font-data);margin:30px 0 0;color:var(--muted)}
-.addr b{color:var(--ink);font-weight:400;word-break:break-all}
+.addr{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font:400 14px/1.5 var(--font-body);margin:30px 0 0;color:var(--muted)}
+.addr b{color:var(--ink);font-weight:400;word-break:break-all;font-family:var(--font-data);font-size:13px}
 footer{border-top:1px solid var(--rule);margin-top:64px;padding:22px 0 0;display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13.5px;color:var(--muted)}
 footer a{color:var(--muted)}
 footer .ver{font-family:var(--font-data);margin-left:auto}
@@ -319,8 +321,8 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
         </div>
       </div>
       <div class="track" aria-hidden="true">
-        <div class="sec"><i class="lamp off" id="lamp-l"></i><small>section Base ↔ Lasna</small></div>
-        <div class="sec"><i class="lamp red" id="lamp-r"></i><small>section Lasna ↔ Unichain</small></div>
+        <div class="sec"><i class="lamp off" id="lamp-l"></i><small>Base ↔ Lasna</small></div>
+        <div class="sec"><i class="lamp red" id="lamp-r"></i><small>Lasna ↔ Unichain</small></div>
       </div>
       <p class="copycat" id="copycat">Next copycat mint <a href="https://sepolia.uniscan.xyz/tx/0x0e0cdcb9191c5fa274ac7f2cdc4ae7bd313a01044852f669468740a1d59da6d4">0x0e0c…a6d4</a>: <b>reverted GatePaused</b>, in the same Unichain block as the pause, one position after it.</p>
       <figcaption id="board-cap">Observer clock, polling every 400 ms. Block timestamps agree: gate B one second after the mint, gate U two (different chains' clocks).</figcaption>
@@ -340,16 +342,16 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
 <section class="s" id="run" aria-labelledby="h-run">
   <div class="wrap">
     <p class="label">Scene 01 · The forged mint</p>
-    <h2 id="h-run" class="disp">One forged mint, four transactions</h2>
+    <h2 id="h-run" class="disp">One forged mint, four timed transactions</h2>
     <p class="intro">Run bu-015: 500 tUSD minted on Unichain Sepolia with nothing locked on Base Sepolia. Every row opens in a public explorer.</p>
     <div class="pair">
       <div>
         <div class="frame">
           <div class="chrome"><i></i><i></i><i></i><span>ledgerlock / status</span></div>
           <img src="assets/status-routes.png" width="2356" height="1396" alt="Status page: route A fixture bridge and route B Hyperlane warp route, both LINE CLEAR, every gate open, guard reserve in lREACT and gate balances in ETH" loading="lazy">
-          <img src="assets/status-inc.png" width="2356" height="750" alt="Status page, last attack run ap-020: mint at 0 s, Lasna react seen at +3.5 s, gate U Paused at +8.2 s, gate B Paused at +7.1 s, each with its transaction hash" loading="lazy">
+          <img src="assets/status-inc.png" width="2356" height="750" alt="Status page, last non-control attack run ap-020: mint at 0 s, Lasna react seen at +3.5 s, gate U Paused at +8.2 s, gate B Paused at +7.1 s, each with its transaction hash" loading="lazy">
         </div>
-        <p class="shot-cap">The status page on live testnet RPCs, captured 13 Nov 2026 21:08 UTC. Its last non-control attack run is ap-020; the replay is bu-015.</p>
+        <p class="shot-cap">The status page on live testnet RPCs, captured 13 Nov 2026 21:08 UTC. Its last non-control attack run is ap&#8209;020; the replay is bu-015.</p>
       </div>
       <div class="term" id="term">
 <pre><span class="c"># bu-015 · evidence/frozen3-bench-runs.csv · observer clock</span>
@@ -412,7 +414,7 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
         <div class="row"><span>collateral released</span><div class="bar"><i style="transform:scaleX(0)"></i></div><span class="v">0</span></div>
       </div>
     </div>
-    <p class="ctrl-note">Same forged mint in both arms, different copycat schedules: the unguarded arm fires a fixed 6 copycats, the guarded one up to 30, so issuance is an illustration, not a rate. Rows: <code>evidence/a0-control-runs.csv</code>, <code>evidence/frozen3-bench-runs.csv</code>.</p>
+    <p class="ctrl-note">Same attack script in both arms (one forged 500 tUSD mint), different copycat schedules: the unguarded arm fires a fixed 6 copycats, the guarded one up to 30, so issuance is an illustration, not a rate. Rows: <code>evidence/a0-control-runs.csv</code>, <code>evidence/frozen3-bench-runs.csv</code>.</p>
   </div>
 </section>
 
@@ -479,7 +481,7 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
     <h2 id="h-faq" class="disp">Before you open the repo</h2>
     <div class="faq">
       <details><summary>Does it stop the first bad mint?</summary><p>No. The forged mint is what trips the guard, so it always lands. The claim: loss is at most the mints inside the measured pause window. In 20 burst runs, at most one copycat landed per run.</p></details>
-      <details><summary>Why does this need Reactive Omni?</summary><p>A contract on Base never sees Unichain's <code>Minted</code>; one on Unichain never sees Base's <code>Locked</code>. One reactive contract on Lasna reads both and sends both pause callbacks from one <code>react()</code>. No off-chain watcher, no keeper key.</p></details>
+      <details><summary>Why does this need Reactive Omni?</summary><p>A contract on Base never sees Unichain's <code>Minted</code>; one on Unichain never sees Base's <code>Locked</code>. One reactive contract on Lasna reads both and sends both pause callbacks from one <code>react()</code>. No off-chain watcher in the loop.</p></details>
       <details><summary>How were the seconds measured?</summary><p>By our off-chain observer, polling public RPCs every 400 ms, from the forged mint's receipt to each log. On-chain cross-check, Unichain block timestamps from mint to gate U <code>Paused</code>: p50 2 s, p95 3 s.</p></details>
       <details><summary>What is real and what is a fixture?</summary><p>Every transaction is real, on Base Sepolia, Unichain Sepolia and Lasna. Route A is our own fixture bridge with a stolen relayer key reproduced on purpose. Route B is a Hyperlane warp route we deployed and deliver ourselves. Reorgs: Test Lib simulation only.</p></details>
       <details><summary>What if a real transfer arrives out of order?</summary><p>The gates pause, then reopen by themselves when the matching <code>Locked</code> arrives inside W = 60 s. We forced 20: paused p50 15.2 s, p95 23.1 s (19 rows have a duration). Of 80 in normal order, none paused.</p></details>
@@ -529,7 +531,7 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
     S.verdict.textContent = "Line clear"; S.verdict.classList.remove("blocked");
     S.lampL.className = "lamp"; S.lampR.className = "lamp";
     [S.stampB, S.stampU, S.stampL].forEach((e) => e.hidden = true);
-    S.mt.textContent = "0 tUSD"; S.bookU.style.opacity = .25; S.copycat.style.opacity = 0;
+    S.mt.textContent = "0 tUSD"; S.bookU.style.opacity = .25; S.copycat.style.opacity = 0; S.copycat.style.visibility = "hidden";
     S.clock.textContent = "+0.000 s";
   };
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
@@ -542,7 +544,7 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
     at(700 + 4249, () => { S.stampL.hidden = false; S.verdict.textContent = "Pending ack"; });
     at(700 + 4651, () => { S.stampB.hidden = false; needle(S.b, 60, true); S.lampL.className = "lamp off"; });
     at(700 + 5341, () => { S.stampU.hidden = false; needle(S.u, 60, true); S.lampR.className = "lamp red"; S.verdict.textContent = "Line blocked"; S.verdict.classList.add("blocked"); });
-    at(700 + 6300, () => { S.copycat.style.opacity = 1; });
+    at(700 + 6300, () => { S.copycat.style.visibility = "visible"; S.copycat.style.opacity = 1; });
   };
   $("replay").addEventListener("click", () => { S.verdict.setAttribute("aria-live", "polite"); play(); });
   if (!reduce) {

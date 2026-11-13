@@ -75,7 +75,7 @@ Testnet only; no wallet is needed to verify anything below, every item is a read
 
 Landing page, pitch deck and read-only status page: <https://edycutjong.github.io/ledgerlock/> (GitHub Pages from `docs/`; `/pitch/`, `/status/`). Route B's addresses are in `deployments/testnet.json`. Explorers: [Base Sepolia](https://sepolia.basescan.org), [Unichain Sepolia](https://sepolia.uniscan.xyz), [Lasna](https://lasna.reactscan.net).
 
-Every pause is a triple: origin transaction → Lasna `react()` → gate callback. `evidence/frozen3-triples.csv` has 846 rows: 636 origin transactions joined to their Lasna `react()`, plus 210 owner `resolve()` calls on Lasna joined to the resume callbacks they sent; 500 of the 846 carry a gate callback (500 of 500 callback legs joined: 250 pause legs = 125 `react()`s × 2 gates, 40 auto-resume legs, 210 resolve-driven resume legs) and 0 `CallbackFailure`. The other 346 rows send no callback: 140 locks, 80 matched mints, 105 seizures, 21 mints that arrived while the gates were already paused.
+Every pause is a triple: origin transaction → Lasna `react()` → gate callback. `evidence/frozen3-triples.csv` has 846 rows, one per callback leg (or one row where no callback is sent): 636 origin-log rows (491 distinct origin transactions) joined to their Lasna `react()`, plus 210 owner-`resolve()` rows (105 `resolve()` calls, one row per resume leg); 500 of the 846 carry a gate callback (500 of 500 callback legs joined: 250 pause legs = 125 `react()`s × 2 gates, 40 auto-resume legs, 210 resolve-driven resume legs) and 0 `CallbackFailure`. The other 346 rows send no callback: 140 locks, 80 matched mints, 105 seizures, 21 mints that arrived while the gates were already paused.
 
 ## 📊 Engineering Rigor
 
