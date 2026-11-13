@@ -8,11 +8,13 @@
 //   burst          forged mint, then one copycat per block until the first GatePaused revert (cap 30), then a forged
 //                  release on Base (carry-home); exposure = (1 + landed) x 500 tUSD
 // Usage: source ~/.config/reactive/testnet-deployer.env; tsx scripts/bench.ts <instance> <kind> <count> [firstIndex]
-// Never prints a key. Clocks: Date.now() of this machine; polls every POLL_MS, so every timestamp carries +/- POLL_MS.
+// Never prints a key. Clocks: every *_ms value is this machine's Date.now() when a poll returned. The poll interval is POLL_MS (default 400)
+// plus RPC latency, so it is not a bound on the error; block-timestamp deltas (whole seconds) are recorded beside them as the on-chain cross-check.
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
-import { createWalletClient, defineChain, http, keccak256, parseAbi, toHex, type Hex, type Log } from "viem";
+import { createWalletClient, defineChain, http, keccak256, parseAbi, parseEventLogs, toHex, type Hex, type Log } from "viem";
 import { nonceManager, privateKeyToAccount } from "viem/accounts";
 import { CHAINS, client } from "../packages/reactive-kit/ts/chains.ts";
+import { getLogsChunked } from "../packages/reactive-kit/ts/triples.ts";
 
 const [instance, kind, countArg, firstArg] = process.argv.slice(2);
 if (!instance || !kind || !countArg) throw new Error("usage: bench.ts <instance> <kind> <count> [firstIndex]");
@@ -24,7 +26,7 @@ const OUT = process.env.BENCH_OUT ?? `evidence/${instance}-bench-runs.csv`;
 const COLS = ["run_id", "kind", "instance", "seq", "key", "amount_tusd", "recipient", "lock_tx", "mint_tx", "mint_sent_ms", "mint_mined_ms", "mint_block_ts",
   "lasna_seen_ms", "lasna_tx", "lasna_block_ts", "gate_u_seen_ms", "gate_u_tx", "gate_u_block_ts", "gate_b_seen_ms", "gate_b_tx", "gate_b_block_ts",
   "resume_u_seen_ms", "resume_b_seen_ms", "pause_seconds", "pause_epoch", "false_pause", "copycats_fired", "copycats_landed", "reverted_tx",
-  "carry_home_tx", "carry_home_status", "exposure_tusd", "recovery_ms", "poll_ms", "outcome", "note"];
+  "carry_home_tx", "carry_home_status", "exposure_tusd", "recovery_ms", "poll_ms", "outcome", "note", "recovery"];
 
 const account = privateKeyToAccount(process.env.DEPLOYER_PRIVATE_KEY as Hex, { nonceManager });
 const mk = (id: number) => createWalletClient({
@@ -54,20 +56,22 @@ const ROUTE = 1n, E18 = 10n ** 18n;
 const FIXED_GAS = 400_000n;
 
 type Hit = { at: number; tx: Hex; block: bigint; epoch?: bigint; args?: Record<string, unknown> };
-/** Poll one chain for the first log matching `match`, starting at `from`. */
+/** Poll one chain for the first log matching `match`, starting at `from`; each request spans at most the chain's logSpan blocks. */
 async function watch(chainId: number, address: Hex, event: unknown, from: bigint, match: (l: Log & { args?: Record<string, unknown> }) => boolean, timeoutMs: number): Promise<Hit | null> {
-  const c = client(chainId), end = Date.now() + timeoutMs;
-  let f = from;
+  const c = client(chainId), span = CHAINS[chainId].logSpan, end = Date.now() + timeoutMs;
+  let f = from, errs = 0;
   while (Date.now() < end) {
     try {
       const head = await c.getBlockNumber();
-      if (head >= f) {
-        const logs = (await c.getLogs({ address, event: event as never, fromBlock: f, toBlock: head })) as (Log & { args?: Record<string, unknown> })[];
+      while (f <= head && Date.now() < end) {
+        const to = head < f + span - 1n ? head : f + span - 1n;
+        const logs = (await c.getLogs({ address, event: event as never, fromBlock: f, toBlock: to })) as (Log & { args?: Record<string, unknown> })[];
         const hit = logs.find(match);
         if (hit) return { at: Date.now(), tx: hit.transactionHash as Hex, block: hit.blockNumber as bigint, args: hit.args };
-        f = head + 1n;
+        f = to + 1n;
       }
-    } catch { /* transient RPC error: retry */ }
+      errs = 0;
+    } catch (e) { if (++errs === 5) console.error(`watch ${CHAINS[chainId].name} ${address}: 5 errors in a row, still trying: ${String(e).slice(0, 160)}`); }
     await sleep(POLL_MS);
   }
   return null;
@@ -75,12 +79,12 @@ async function watch(chainId: number, address: Hex, event: unknown, from: bigint
 const blockTs = async (chainId: number, b?: bigint) => (b === undefined ? "" : String(Number((await client(chainId).getBlock({ blockNumber: b })).timestamp)));
 const heads = async () => ({ lasna: await client(LASNA).getBlockNumber(), base: await client(BASE).getBlockNumber(), uni: await client(UNI).getBlockNumber() });
 
-async function send(chainId: number, to: Hex, abi: unknown, fn: string, args: unknown[], gas = FIXED_GAS): Promise<{ tx: Hex; sentAt: number; minedAt: number; block: bigint; status: string }> {
+async function send(chainId: number, to: Hex, abi: unknown, fn: string, args: unknown[], gas = FIXED_GAS): Promise<{ tx: Hex; sentAt: number; minedAt: number; block: bigint; status: string; logs: Log[] }> {
   const sentAt = Date.now();
   const extra = chainId === LASNA ? { type: "legacy" as const, gasPrice: 100_000_000_000n } : {};
   const tx = await wallet[chainId].writeContract({ address: to, abi: abi as never, functionName: fn as never, args: args as never, gas, ...extra } as never);
   const r = await client(chainId).waitForTransactionReceipt({ hash: tx, pollingInterval: 250 });
-  return { tx, sentAt, minedAt: Date.now(), block: r.blockNumber, status: r.status };
+  return { tx, sentAt, minedAt: Date.now(), block: r.blockNumber, status: r.status, logs: r.logs as Log[] };
 }
 const routeState = async () => {
   const s = await client(LASNA).readContract({ address: A.RC, abi: rcAbi, functionName: "routeState", args: [ROUTE] }) as readonly [boolean, boolean, boolean, bigint, number, bigint, bigint];
@@ -90,7 +94,7 @@ const gatesOpen = async () => (await client(BASE).readContract({ address: A.GATE
   ((await client(UNI).readContract({ address: A.GATE_U, abi: gateAbi, functionName: "isOpen" })) as boolean);
 
 /** Bring a paused/latched route back: seize every holder in `holders`, wait for the guard to have booked everything, resolve(), wait for both gates to reopen. */
-async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>): Promise<{ resumeU: Hit | null; resumeB: Hit | null; ms: number; note: string }> {
+async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>): Promise<{ resumeU: Hit | null; resumeB: Hit | null; ms: number; note: string; ok: boolean }> {
   const t0 = Date.now();
   let note = "";
   for (const hd of holders) {
@@ -102,19 +106,26 @@ async function recover(holders: Hex[], from: Awaited<ReturnType<typeof heads>>):
   for (let i = 0; i < 40 && !resolveTx; i++) {
     const st = await routeState();
     if (st.unbacked === 0n && st.unbackedRel === 0n) {
-      try { resolveTx = (await send(LASNA, A.RC, rcAbi, "resolve", [ROUTE, 1, false], 3_000_000n)).tx; } catch (e) { note += `resolve retry ${i}: ${String(e).slice(0, 60)}; `; }
+      try {
+        const r = await send(LASNA, A.RC, rcAbi, "resolve", [ROUTE, 1, false], 3_000_000n);
+        if (r.status === "success") resolveTx = r.tx; else note += `resolve retry ${i}: receipt ${r.status}; `;
+      } catch (e) { note += `resolve retry ${i}: ${String(e).slice(0, 60)}; `; }
     }
     if (!resolveTx) await sleep(3000);
   }
-  if (!resolveTx) return { resumeU: null, resumeB: null, ms: Date.now() - t0, note: note + "resolve failed" };
+  if (!resolveTx) return { resumeU: null, resumeB: null, ms: Date.now() - t0, note: note + "resolve failed", ok: false };
   const [ru, rb] = await Promise.all([
     watch(UNI, A.GATE_U, E(gateAbi, "Resumed"), pre.uni, () => true, 120_000),
     watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), pre.base, () => true, 120_000),
   ]);
   void from;
-  return { resumeU: ru, resumeB: rb, ms: Date.now() - t0, note };
+  return { resumeU: ru, resumeB: rb, ms: Date.now() - t0, note, ok: !!(ru && rb) };
 }
 
+if (existsSync(OUT)) {
+  const hdr = readFileSync(OUT, "utf8").split("\n")[0];
+  if (hdr !== COLS.join(",")) throw new Error(`${OUT} has a different header than this script's COLS (an older column set); refusing to append misaligned rows. Write to a new BENCH_OUT or migrate the file.`);
+}
 const done = new Set(existsSync(OUT) ? readFileSync(OUT, "utf8").split("\n").slice(1).map((l) => l.split(",")[0]) : []);
 if (!existsSync(OUT)) writeFileSync(OUT, COLS.join(",") + "\n");
 function emit(row: Record<string, unknown>) {
@@ -131,9 +142,12 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
   if (done.has(runId)) continue;
   // The route must be clean before a run starts; if a previous run left it paused, clear it (and say so).
   let note = "";
+  let recovery = "";
+  const markRec = (ok: boolean) => { recovery = recovery === "failed" || !ok ? "failed" : "ok"; };
   const st0 = await routeState();
   if (st0.paused || st0.incident || !(await gatesOpen())) {
     const r = await recover([addrOf(`attacker-leftover`)], await heads());
+    markRec(r.ok);
     note += `route was not clean at start (paused=${st0.paused} incident=${st0.incident}); cleared by resolve in ${r.ms} ms; `;
   }
   const amount = (kind.startsWith("legit") ? AMOUNTS[i % AMOUNTS.length] : 500n) * E18;
@@ -143,15 +157,20 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
   try {
     if (kind === "legit_strict") {
       const lk = await send(BASE, A.LOCKBOX, lockboxAbi, "lock", [user, amount]);
-      const nonce = BigInt(await client(BASE).readContract({ address: A.LOCKBOX, abi: lockboxAbi, functionName: "nonce", blockNumber: lk.block }) as bigint);
+      // the key comes from the Locked event of OUR lock receipt (another lock in the same block would make nonce() at that block wrong)
+      const locked = parseEventLogs({ abi: lockboxAbi, eventName: "Locked", logs: lk.logs as never }).find((l) => l.address.toLowerCase() === A.LOCKBOX.toLowerCase() && l.args.to?.toLowerCase() === user.toLowerCase());
+      if (!locked) throw new Error("no Locked event in the lock receipt");
+      const nonce = locked.args.nonce as bigint;
       const mint = await send(UNI, A.MINTER, minterAbi, "mint", [nonce, user, amount]);
       Object.assign(row, { key: nonce, recipient: user, lock_tx: lk.tx, mint_tx: mint.tx, mint_sent_ms: mint.sentAt, mint_mined_ms: mint.minedAt });
       // the guard must book the mint (Observed MINT, side 1) and must not have paused
       const seen = await watch(LASNA, A.RC, E(rcAbi, "Observed"), hd0.lasna, (l) => l.args?.originTx === mint.tx, 90_000);
-      const paused = (await client(LASNA).getLogs({ address: A.RC, event: E(rcAbi, "PauseRequested"), fromBlock: hd0.lasna, toBlock: "latest" })).length > 0;
+      // route B shares this reactive contract: count only PauseRequested for this route
+      const paused = (await getLogsChunked(LASNA, { address: A.RC, event: E(rcAbi, "PauseRequested"), fromBlock: hd0.lasna, args: { routeId: ROUTE } })).length > 0;
       Object.assign(row, { lasna_seen_ms: seen?.at, lasna_tx: seen?.tx, false_pause: paused ? 1 : 0, outcome: seen ? (paused ? "false_pause" : "ok") : "timeout" });
       if (paused) {
         const r = await recover([], hd0);
+        markRec(r.ok);
         Object.assign(row, { gate_u_seen_ms: "", resume_u_seen_ms: r.resumeU?.at, resume_b_seen_ms: r.resumeB?.at, recovery_ms: r.ms });
       }
     } else if (kind === "legit_forced") {
@@ -160,18 +179,19 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
       const wU = watch(UNI, A.GATE_U, E(gateAbi, "Paused"), hd0.uni, () => true, 90_000);
       const wB = watch(BASE, A.GATE_B, E(gateAbi, "Paused"), hd0.base, () => true, 90_000);
       const wL = watch(LASNA, A.RC, E(rcAbi, "PauseRequested"), hd0.lasna, () => true, 90_000);
+      // the Resumed watchers start with the Paused ones, so a resume landing while a pause leg is still polled is not stamped late
+      const rU = watch(UNI, A.GATE_U, E(gateAbi, "Resumed"), hd0.uni, () => true, 150_000);
+      const rB = watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), hd0.base, () => true, 150_000);
       const mint = await send(UNI, A.MINTER, minterAbi, "mint", [nonce, user, amount]);
       await sleep(delayMs);
       const lk = await send(BASE, A.LOCKBOX, lockboxAbi, "lock", [user, amount]);
-      const [pu, pb, pl] = await Promise.all([wU, wB, wL]);
-      const rU = watch(UNI, A.GATE_U, E(gateAbi, "Resumed"), hd0.uni, () => true, 120_000);
-      const rB = watch(BASE, A.GATE_B, E(gateAbi, "Resumed"), hd0.base, () => true, 120_000);
-      const [ru, rb] = await Promise.all([rU, rB]);
+      const [pu, pb, pl, ru, rb] = await Promise.all([wU, wB, wL, rU, rB]);
+      const all4 = !!(pu && pb && ru && rb);
       Object.assign(row, { key: nonce, recipient: user, lock_tx: lk.tx, mint_tx: mint.tx, mint_sent_ms: mint.sentAt, mint_mined_ms: mint.minedAt,
         lasna_seen_ms: pl?.at, lasna_tx: pl?.tx, gate_u_seen_ms: pu?.at, gate_u_tx: pu?.tx, gate_b_seen_ms: pb?.at, gate_b_tx: pb?.tx,
-        resume_u_seen_ms: ru?.at, resume_b_seen_ms: rb?.at, pause_seconds: pu && ru ? ((ru.at - pu.at) / 1000).toFixed(1) : "",
-        false_pause: 1, note: `forced fill-before-deposit; lock sent ${delayMs} ms after the mint`, outcome: pu && ru ? "ok" : "timeout" });
-      if (!(pu && ru)) note += "forced run did not complete; ";
+        resume_u_seen_ms: ru?.at, resume_b_seen_ms: rb?.at, pause_seconds: all4 ? (Math.max(ru!.at - pu!.at, rb!.at - pb!.at) / 1000).toFixed(1) : "",
+        false_pause: 1, note: `forced fill-before-deposit; lock sent ${delayMs} ms after the mint`, outcome: all4 ? "ok" : "timeout" });
+      if (!all4) note += "forced run did not complete; ";
     } else {
       // attack kinds: key forged (beyond highest lock + K) or plausible (just above the lock nonce)
       const lockNonce = BigInt(await client(BASE).readContract({ address: A.LOCKBOX, abi: lockboxAbi, functionName: "nonce" }) as bigint);
@@ -183,12 +203,14 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
       ];
       const ws = watchers();
       const mint = await send(UNI, A.MINTER, minterAbi, "mint", [key, attacker, amount]);
-      let fired = 0, landed = 0, reverted = "", carryTx = "", carryStatus = "";
+      let fired = 0, landed = 0, reverted = "", carryTx = "", carryStatus = "", burstErr = false;
       if (kind === "burst") {
         for (let c = 1; c <= 30; c++) {
           fired = c;
           const cp = await send(UNI, A.MINTER, minterAbi, "mint", [key + BigInt(c), attacker, amount], 300_000n).catch((e) => ({ status: "error", tx: "" as Hex, err: String(e) }));
-          if (cp.status === "success") landed++; else { reverted = cp.tx; break; }
+          if (cp.status === "success") landed++;
+          else if (cp.status === "reverted" && cp.tx) { reverted = cp.tx; break; } // only a mined revert is the stopping revert
+          else { burstErr = true; note += `copycat ${c} send failed (no mined revert): ${(cp as { err?: string }).err?.slice(0, 80) ?? cp.status}; `; break; }
         }
         const rel = await send(BASE, A.LOCKBOX, lockboxAbi, "releaseByRelayer", [key + 1000n, attacker, amount], 300_000n).catch((e) => ({ status: `error:${String(e).slice(0, 40)}`, tx: "" as Hex }));
         carryTx = rel.tx; carryStatus = rel.status;
@@ -201,8 +223,9 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
         gate_b_seen_ms: pb?.at, gate_b_tx: pb?.tx, gate_b_block_ts: await blockTs(BASE, pb?.block),
         pause_epoch: pl?.args?.epoch, copycats_fired: kind === "burst" ? fired : "", copycats_landed: kind === "burst" ? landed : "", reverted_tx: reverted,
         carry_home_tx: carryTx, carry_home_status: carryStatus, exposure_tusd: kind === "burst" ? (1 + landed) * 500 : 500,
-        outcome: pl && pu && pb ? (kind === "burst" && !reverted ? "censored" : "ok") : "timeout" });
+        outcome: burstErr ? "error" : pl && pu && pb ? (kind === "burst" && !reverted ? "censored" : "ok") : "timeout" });
       const r = await recover([attacker], hd0);
+      markRec(r.ok);
       Object.assign(row, { resume_u_seen_ms: r.resumeU?.at, resume_b_seen_ms: r.resumeB?.at, recovery_ms: r.ms });
       note += r.note;
       if (kind === "attack_plausible") { // advance the lock nonce past the consumed key so later legit transfers get clean nonces
@@ -214,5 +237,6 @@ for (let i = FIRST; i < FIRST + COUNT; i++) {
     row.outcome = "error"; note += String(e).slice(0, 120);
   }
   row.note = [row.note, note].filter(Boolean).join("; ");
+  row.recovery = recovery;
   emit(row);
 }

@@ -4,7 +4,7 @@
 //   evidence/<instance>-react-gas.csv        gas per Lasna tx + branch + CallbackRequest count, read from receipts
 //   evidence/<instance>-callback-failures.csv raw CallbackFailure logs on each destination proxy for this instance's gates
 // Usage: tsx scripts/triples.ts [evidence/core-dev-addresses.txt]
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { decodeEventLog, keccak256, parseAbi, toHex, type Log } from "viem";
 import { client } from "../packages/reactive-kit/ts/chains.ts";
 import { buildTriple, toCsvLine, TRIPLE_COLUMNS, type Hex, type TripleRow } from "../packages/reactive-kit/ts/triples.ts";
@@ -83,17 +83,25 @@ const gates: Record<number, D[]> = {
   [BASE]: dec(gateAbi, await allLogs(BASE, A.GATE_B as Hex, BigInt(A.BASE_FROM) - 50n), "gate_b"),
   [UNI]: dec(gateAbi, await allLogs(UNI, A.GATE_U as Hex, BigInt(A.UNI_FROM) - 50n), "gate_u"),
 };
+// Route B's gates (evidence/route-b-guard.txt, same guard contract) when that file exists; every gate/ack match below also keys on routeId.
+const GB = existsSync("evidence/route-b-guard.txt")
+  ? Object.fromEntries(readFileSync("evidence/route-b-guard.txt", "utf8").split("\n").filter((l) => /^[A-Z_0-9]+=/.test(l)).map((l) => l.replace(/\s+#.*$/, "").split("=") as [string, string]))
+  : null;
+if (GB && A.INSTANCE === "frozen") {
+  gates[BASE].push(...dec(gateAbi, await allLogs(BASE, GB.GATE_B2 as Hex, BigInt(GB.BASE_FROM_B) - 50n), "gate_b2"));
+  gates[UNI].push(...dec(gateAbi, await allLogs(UNI, GB.GATE_U2 as Hex, BigInt(GB.UNI_FROM_B) - 50n), "gate_u2"));
+}
 const byTx = new Map<string, D[]>();
 for (const d of rc) byTx.set(d.log.transactionHash!, [...(byTx.get(d.log.transactionHash!) ?? []), d]);
 
 // A gate event joins a request on (operation, epoch, origin tx, key). A retry re-emits the same ack, so the FIRST match
 // is the callback that executed the request; later matches are counted in the note.
-function gateEvents(chainId: number, paused: boolean, epoch: bigint, originTx: Hex, key: bigint): D[] {
-  return gates[chainId].filter((d) => d.name === (paused ? "Paused" : "Resumed") && d.args.epoch === epoch &&
+function gateEvents(chainId: number, paused: boolean, routeId: bigint, epoch: bigint, originTx: Hex, key: bigint): D[] {
+  return gates[chainId].filter((d) => d.name === (paused ? "Paused" : "Resumed") && d.args.routeId === routeId && d.args.epoch === epoch &&
     d.args.originTx === originTx && d.args.key === key);
 }
-const ackFor = (chainId: number, paused: boolean, epoch: bigint) =>
-  rc.find((d) => d.name === "AckSeen" && BigInt(d.args.chainId as bigint) === BigInt(chainId) &&
+const ackFor = (chainId: number, paused: boolean, routeId: bigint, epoch: bigint) =>
+  rc.find((d) => d.name === "AckSeen" && d.args.routeId === routeId && BigInt(d.args.chainId as bigint) === BigInt(chainId) &&
     SIDE[Number(d.args.side)] === (paused ? "ACK_PAUSED" : "ACK_RESUMED") && d.args.epoch === epoch);
 
 const keyed: { k: [bigint, number, number]; row: TripleRow }[] = [];
@@ -129,8 +137,8 @@ for (const [tx, ds] of byTx) {
   const paused = req.name === "PauseRequested";
   const epoch = req.args.epoch as bigint;
   for (const cbChain of [UNI, BASE]) {
-    const g = gateEvents(cbChain, paused, epoch, req.args.originTx as Hex, req.args.key as bigint);
-    const ack = ackFor(cbChain, paused, epoch);
+    const g = gateEvents(cbChain, paused, req.args.routeId as bigint, epoch, req.args.originTx as Hex, req.args.key as bigint);
+    const ack = ackFor(cbChain, paused, req.args.routeId as bigint, epoch);
     keyed.push({ k: [r.blockNumber, req.log.logIndex!, cbChain === UNI ? 1 : 2], row: await buildTriple({
       ...base,
       callback: g[0] ? { chainId: cbChain, tx: g[0].log.transactionHash! } : undefined,
@@ -143,8 +151,8 @@ for (const [tx, ds] of byTx) {
 for (const d of rc.filter((x) => x.name === "ResumeRequested" && !byTx.get(x.log.transactionHash!)!.some((y) => y.name === "Observed"))) {
   const epoch = d.args.epoch as bigint;
   for (const cbChain of [UNI, BASE]) {
-    const g = gateEvents(cbChain, false, epoch, d.args.originTx as Hex, d.args.key as bigint);
-    const ack = ackFor(cbChain, false, epoch);
+    const g = gateEvents(cbChain, false, d.args.routeId as bigint, epoch, d.args.originTx as Hex, d.args.key as bigint);
+    const ack = ackFor(cbChain, false, d.args.routeId as bigint, epoch);
     keyed.push({ k: [d.log.blockNumber!, d.log.logIndex!, cbChain === UNI ? 1 : 2], row: await buildTriple({
       stage: STAGE, seq: 0, triggerKind: "origin_log", triggerChain: LASNA, triggerTx: d.log.transactionHash!, reactiveChain: LASNA, reactiveTx: d.log.transactionHash!,
       callback: g[0] ? { chainId: cbChain, tx: g[0].log.transactionHash! } : undefined,

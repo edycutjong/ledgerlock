@@ -10,6 +10,7 @@
     "triples:core": "tsx scripts/triples.ts",
     "bench": "script/bench-all.sh frozen",
     "bench:summary": "tsx scripts/bench-summary.ts",
+    "burst:verify": "tsx scripts/burst-verify.ts",
     "status:data": "tsx scripts/status-data.ts frozen",
     "control": "tsx scripts/control.ts 5",
     "routeb": "tsx scripts/routeb.ts"
