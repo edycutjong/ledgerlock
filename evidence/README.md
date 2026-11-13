@@ -57,3 +57,12 @@ Addresses in `spike-addresses.txt`. Its bytecode is the spike contract at the co
 Block timestamps are whole seconds on every chain, and chain clocks are not synchronised to each other: a Lasna
 timestamp can read *earlier* than the origin block that triggered it. Latency figures are therefore measured
 off-chain by the observer; these rows prove the loop and its order, not fine-grained timing.
+
+## Frozen deployment (P1c)
+- `frozen-addresses.txt` (route A, route id 1), `route-b-addresses.txt` + `route-b-guard.txt` (route B, route id 2), `a0-addresses.txt` (unguarded control), `../deployments/testnet.json`.
+- `frozen-bench-runs.csv`: one row per bench run (observer wall clock; ±`poll_ms`). `frozen-bench-summary.{json,md}` are generated from it by `scripts/bench-summary.ts` (never edited). `af-001` is a harness artifact (a smoke run had used its key, so the mint reverted `NonceUsed`); `af-061` replaces it. `bu-001..020` are the headline bursts, `bu-021..025` the guarded arm of the paired control.
+- `a0-control-runs.csv`: the unguarded arm (`scripts/control.ts`; a fixed 6 copycats, so its issuance is illustrative).
+- `frozen-routeb-runs.csv` + `g2-hyperlane.csv`: route B (Hyperlane warp route). The public relayer did not deliver, so deliveries are our own `Mailbox.process` (self-delivered).
+- `frozen-pause-audit.csv`: every `PauseRequested` the guard emitted, joined to the run that caused it (`scripts/pause-audit.ts`); the one `UNMATCHED` row is the pre-bench smoke attack.
+- `frozen-triples.csv` / `frozen-react-gas.csv`: origin tx → Lasna react → gate callback joins from chain logs (`scripts/triples.ts`). Route B rows carry no gate-callback columns (its gates are listed in `route-b-guard.txt` and `frozen-routeb-runs.csv`).
+- `frozen-heartbeat-runs.csv`: the 6-hourly liveness runs (`script/heartbeat.sh`).
