@@ -1,0 +1,42 @@
+# Terminal output shown in the demo video (scripts/bench.ts VERBOSE=1 and forge), verbatim; 2026-11-13 UTC, testnet.
+# The video shortens 32-byte hashes to 0x1234…abcd for display; the full hashes are below.
+
+## seg01_attack on camera · 2026-11-13 22:27 UTC · $ BENCH_OUT=evidence/video-live-bench-runs.csv VERBOSE=1 npx tsx scripts/bench.ts frozen3 burst 1 101
+run bu-101 · burst · frozen3 · route A clean, both gates open
+forged mint: key 1601000, 500 tUSD to the attacker, no lock behind it on Base
+mint mined on Unichain  tx 0xa96203cd51a5f656fed9cf9ed87ae0c64687ffdafae14a7ccf3b72e9c71964bf  (t0)
+copycat 1 landed  +1.238 s
+gate B Paused (Base)  +2.210 s  tx 0x5937c215e363a16be04733ba4907129a13dcca810a6bc8f5377c267cb413a22f
+copycat 2 reverted  +2.975 s  tx 0x30019ac10497358c51d99f3396ed7c2c81daa3e384a5afa87646ce4a9fbe5669
+Lasna  PauseRequested (detection)  +3.139 s  tx 0xdd2591adb689809394165bfa5ffbc440ec83553372b4c2f01999a55a790fcb27
+forged release on Base (carry-home): reverted  tx 0x69e735fc72be66d45dddfa8dd4c725c5210889a0348fcbe2c6dca8ac731f22d6
+gate U Paused (Unichain)  +7.986 s  tx 0xe452f91ef01f74e8d4849209d747ce5711dede5086a8f44a0773b50a282e2eec
+both gates shut  +7.986 s
+recovery: seize 1000 tUSD from the attacker on Unichain  tx 0x6ef381cc42504ae6b2dc9d667d8d7ac21a64ce292d36f3ed57a087f56e4dcbe7
+recovery: owner resolve() on Lasna  tx 0xc55846f682a48f87f98962b2bfaf386873028d5a8f32372d43c5a457a89eb721
+recovery: gate U Resumed · gate B Resumed  14.8 s after recovery began
+bu-101 ok
+
+## seg05_legit on camera · 2026-11-13 22:44 UTC · $ BENCH_OUT=evidence/video-live-bench-runs.csv VERBOSE=1 npx tsx scripts/bench.ts frozen3 legit_forced 1 104
+run lf-104 · legit_forced · frozen3 · route A clean, both gates open
+legit transfer sent OUT OF ORDER on purpose: mint key 162 first, its lock 8 s later
+mint mined on Unichain, 500 tUSD, lock not sent yet  tx 0x521baf3ede83b18cf8b1f8ceec1dd6090e8cb4f6f899a4d4d9b72c3df405294d  (t0)
+Lasna  PauseRequested (no lock seen yet)  +3.123 s  tx 0x1c6371dcdb1f07839e14cbd9a70d23c05877f4158a03424885d96f1a869c9138
+gate B Paused (Base)  +6.846 s  tx 0xa8f5d3422808878fea79b9dd8fe2b1d4cd34af843a54f8389c084b549878e896
+gate U Paused (Unichain)  +7.988 s  tx 0x8650135cd93851c88acec6edcb68cbdee6227908cf62a53894550476fa49ee56
+lock mined on Base  +9.577 s  tx 0x2523a4d0af01fd31a7345df3ab676aadf7c07833627ec8a1966b9d7052a34e92
+gate B Resumed by itself (lock matched)  +11.374 s  tx 0x50d51388b9e273e521e6b7f8a953a5afe611a5d8a7e3194fe9f8a86773959ab4
+gate U Resumed by itself (lock matched)  +13.043 s  tx 0x5ccc3ace65050b0fea6a693d37c80c2c8e8781e5de2607842d05e0624dd6a2ba
+false-pause cost: 5.1 s shut, reopened with no human action
+lf-104 ok forced fill-before-deposit; lock sent 8000 ms after the mint
+
+## seg06 on camera · 2026-11-13 22:32 UTC
+$ forge test --match-test reorg
+No files changed, compilation skipped
+
+Ran 2 tests for test/LedgerlockReactive.t.sol:LedgerlockReactiveTest
+[PASS] test_reorg_redelivery_of_same_log_is_counted_once() (gas: 2579120)
+[PASS] test_reorged_lock_is_simulated_passes_as_matched() (gas: 531825)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 44.61ms (13.07ms CPU time)
+
+Ran 1 test suite in 66.64ms (44.61ms CPU time): 2 tests passed, 0 failed, 0 skipped (2 total tests)

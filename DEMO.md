@@ -21,6 +21,10 @@ block timestamps are mint 1794595469, Gate B 1794595470, Gate U 1794595471.
 
 All 846 triple rows (636 origin → `react()`, 210 owner `resolve()` → resume; 500 with a gate callback leg) are in `evidence/frozen3-triples.csv`.
 
+The demo video's two live runs (burst `bu-101` and the out-of-order legit transfer `lf-104`, 2026-11-13 UTC, same
+deployment and harness) are rows in `evidence/video-live-bench-runs.csv`; their legs, block order and the terminal output
+shown on screen are in `evidence/video-live-runs.md` and `evidence/video-live-oncamera.log`.
+
 ## 2. Bench results (frozen3, contract `e425c78`)
 
 | Metric | Value |

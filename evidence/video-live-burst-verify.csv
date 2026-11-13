@@ -1,0 +1,2 @@
+run_id,reverted_tx,reverted_status,reverted_block,reverted_tx_index,gate_u_paused_block,gate_u_tx_index,paused_event_ok,reverted_after_pause,reason
+bu-101,0x30019ac10497358c51d99f3396ed7c2c81daa3e384a5afa87646ce4a9fbe5669,reverted,67756410,2,67756410,1,1,1,GatePaused
