@@ -26,6 +26,14 @@ proceeds, then the owner's `resolve()` (two resume callbacks); a mint sent befor
 `CallbackFailure`, the guard re-requests once per chain, the second failure ends in `GateUnreachable`, visible in `rc_events`; the gates
 stayed open, which is the documented failure mode); then `seize` + `resolve()` again.
 
+## Instance `core-dev2` (core flow after QA fixes; same scripts, `INSTANCE=core-dev2`)
+
+The same deployment and joiner as `core-dev`, from the later commit in `core-dev2-addresses.txt`. Files
+`core-dev2-{addresses.txt,actions.csv,triples.csv,react-gas.csv,callback-failures.csv}` have the same columns. The run:
+a legitimate transfer (two no-op rows), a forged mint (pause ×2 in one `react()`, latched `REPEAT`), `seize` + `resolve()`,
+then a mint sent before its lock and the real lock (auto-resume). No forced failure on this instance, so its
+callback-failures file has a header only.
+
 ## Instance `spike-dev` (gate G1 + day-1 probes; `scripts/spike-triples.ts`, `pnpm triples`)
 
 Addresses in `spike-addresses.txt`. Its bytecode is the spike contract at the commit in that file's
