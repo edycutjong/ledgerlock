@@ -12,6 +12,6 @@ GB=$(create "$BASE_SEPOLIA_RPC" src/Gate.sol:Gate 0 $BASE_PROXY $DEAD $DEPLOYER_
 GU=$(create "$UNICHAIN_SEPOLIA_RPC" src/Gate.sol:Gate 0 $UNI_PROXY $DEAD $DEPLOYER_ADDRESS)
 LB=$(create "$BASE_SEPOLIA_RPC" src/fixture/LockBox.sol:LockBox 0 $GB $DEPLOYER_ADDRESS)
 MN=$(create "$UNICHAIN_SEPOLIA_RPC" src/fixture/Minter.sol:Minter 0 $GU $DEPLOYER_ADDRESS)
-cast send "$LB" 'seedCollateral(uint256)' "$COLLATERAL" --rpc-url "$BASE_SEPOLIA_RPC" --private-key "$DEPLOYER_PRIVATE_KEY" >/dev/null
+out=$(cast send "$LB" 'seedCollateral(uint256)' "$COLLATERAL" --rpc-url "$BASE_SEPOLIA_RPC" --private-key "$DEPLOYER_PRIVATE_KEY" --json); echo "seed: $(echo "$out" | jq -r '.transactionHash + " " + .status')"
 { echo "INSTANCE=a0"; echo "GATE_B=$GB"; echo "GATE_U=$GU"; echo "LOCKBOX=$LB"; echo "MINTER=$MN"; echo "RELAYER=$DEPLOYER_ADDRESS"; echo "COMMIT=$(git rev-parse --short HEAD)"; } > evidence/a0-addresses.txt
 cat evidence/a0-addresses.txt

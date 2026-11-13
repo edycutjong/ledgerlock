@@ -14,12 +14,13 @@ G2B=$(create "$BASE_SEPOLIA_RPC" src/Gate.sol:Gate 0.0002ether --constructor-arg
 G2U=$(create "$UNICHAIN_SEPOLIA_RPC" src/Gate.sol:Gate 0.0002ether --constructor-args $UNI_PROXY $RC $DEPLOYER_ADDRESS)
 DB=$(create "$BASE_SEPOLIA_RPC" src/DrillBeacon.sol:DrillBeacon 0)
 snd() { cast send "$@" --private-key "$DEPLOYER_PRIVATE_KEY" --json | jq -r '.transactionHash+" "+.status'; }
-echo "setTarget B: $(snd $G2B 'setTarget(address)' $BASE_PAUSABLE_ISM --rpc-url $BASE_SEPOLIA_RPC)"
-echo "setTarget U: $(snd $G2U 'setTarget(address)' $UNI_PAUSABLE_ISM --rpc-url $UNICHAIN_SEPOLIA_RPC)"
-echo "own B: $(snd $BASE_PAUSABLE_ISM 'transferOwnership(address)' $G2B --rpc-url $BASE_SEPOLIA_RPC)"
-echo "own U: $(snd $UNI_PAUSABLE_ISM 'transferOwnership(address)' $G2U --rpc-url $UNICHAIN_SEPOLIA_RPC)"
+out=$(snd $G2B 'setTarget(address)' $BASE_PAUSABLE_ISM --rpc-url $BASE_SEPOLIA_RPC); echo "setTarget B: $out"
+out=$(snd $G2U 'setTarget(address)' $UNI_PAUSABLE_ISM --rpc-url $UNICHAIN_SEPOLIA_RPC); echo "setTarget U: $out"
+out=$(snd $BASE_PAUSABLE_ISM 'transferOwnership(address)' $G2B --rpc-url $BASE_SEPOLIA_RPC); echo "own B: $out"
+out=$(snd $UNI_PAUSABLE_ISM 'transferOwnership(address)' $G2U --rpc-url $UNICHAIN_SEPOLIA_RPC); echo "own U: $out"
 SENT=$(cast keccak 'SentTransferRemote(uint32,bytes32,uint256)'); RECV=$(cast keccak 'ReceivedTransferRemote(uint32,bytes32,uint256)'); DRILL=$(cast keccak 'Drill(uint256)')
 T0S="[$SENT,$RECV,$SENT,$RECV,0,$DRILL]"
 ROUTE="(1,84532,1301,$ROUTE_B_COLLATERAL_BASE,$ROUTE_B_SYNTHETIC_UNI,0,0,0,$G2B,$G2U,60,$DB,16)"
-echo "addRoute: $(snd $RC 'addRoute((uint8,uint256,uint256,address,address,uint8,uint8,uint8,address,address,uint32,address,uint32),uint256[6])' "$ROUTE" "$T0S" --rpc-url $LASNA_RPC "${LASNA[@]}")"
-{ echo "ROUTE_ID_B=2"; echo "GATE_B2=$G2B"; echo "GATE_U2=$G2U"; echo "DRILL_BEACON=$DB"; echo "BASE_FROM_B=$(cast block-number --rpc-url $BASE_SEPOLIA_RPC)"; echo "UNI_FROM_B=$(cast block-number --rpc-url $UNICHAIN_SEPOLIA_RPC)"; echo "LASNA_FROM_B=$(cast block-number --rpc-url $LASNA_RPC)"; } | tee evidence/route-b-guard.txt
+out=$(snd $RC 'addRoute((uint8,uint256,uint256,address,address,uint8,uint8,uint8,address,address,uint32,address,uint32),uint256[6])' "$ROUTE" "$T0S" --rpc-url $LASNA_RPC "${LASNA[@]}"); echo "addRoute: $out"
+ROUTE_ID_B=$(cast call $RC 'routeCount()(uint256)' --rpc-url $LASNA_RPC | awk '{print $1}')   # route ids count up from 1, so the new route's id is the count
+{ echo "ROUTE_ID_B=$ROUTE_ID_B"; echo "GATE_B2=$G2B"; echo "GATE_U2=$G2U"; echo "DRILL_BEACON=$DB"; echo "BASE_FROM_B=$(cast block-number --rpc-url $BASE_SEPOLIA_RPC)"; echo "UNI_FROM_B=$(cast block-number --rpc-url $UNICHAIN_SEPOLIA_RPC)"; echo "LASNA_FROM_B=$(cast block-number --rpc-url $LASNA_RPC)"; } | tee evidence/route-b-guard.txt
