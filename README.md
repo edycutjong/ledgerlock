@@ -1,8 +1,9 @@
 <div align="center">
-  <h1>Ledgerlock 🔒</h1>
+  <img src="docs/assets/brand/icon-animated.svg" alt="Ledgerlock — pauses a bridge seconds after it mints what was never locked" width="112">
+  <h1>Ledgerlock</h1>
   <p><em>Two chains, one book: pause a bridge seconds after it mints what was never locked.</em></p>
+  <img src="docs/assets/brand/readme-hero-animated.svg" alt="Ledgerlock — pauses a bridge seconds after it mints what was never locked. Minted on Unichain, never locked on Base: one react() turns both lamps from white to red, shutting both gates." width="100%">
   <p><b>One Reactive Omni contract on Lasna sees Base <code>Locked</code> and Unichain <code>Minted</code> together, which a contract on either chain cannot.</b> Measured live on our own fixture bridge (observer clock, polled every 400 ms; the on-chain block-timestamp check is p50 2 s / p95 3 s): a mint with no lock is seen on Lasna in <b>3.873 s</b> (p50) and both gates are shut by <b>8.245 s</b> (p95), over 100 attack runs, with <b>0 false pauses in 80</b> legitimate transfers. Regenerate from the committed rows: <code>pnpm bench:summary</code>.</p>
-  <img src="docs/architecture.png" alt="Ledgerlock architecture: one reactive contract on Lasna reads both sides of a route and pauses a gate on each chain" width="100%">
 
   <br/>
 
@@ -42,7 +43,9 @@ Each gate is a small contract that flips the bridge's own pause switch. **Why Om
 
 ## 🏗️ Architecture & Tech Stack
 
-See the diagram above (source: `docs/architecture.svg`).
+<img src="docs/architecture.png" alt="Ledgerlock architecture: one reactive contract on Lasna reads both sides of a route and pauses a gate on each chain" width="100%">
+
+Source: `docs/architecture.svg`.
 
 | Layer | Choice |
 |---|---|
