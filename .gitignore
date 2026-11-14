@@ -1,12 +1,44 @@
+# Environment variables and keys (keys live in ~/.config/, never in the tree)
 .env
 .env.*
+!.env.example
+*.key
+*.pem
+keystore/
+
+# Dependencies and tool caches
 node_modules/
 __pycache__/
-.next/
-dist/
-coverage/
-.DS_Store
+.pnpm-store/
+
+# Foundry build output
 out/
 out-kit/
 cache/
 broadcast/
+lcov.info
+
+# Build output
+.next/
+dist/
+
+# Coverage
+coverage/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Lighthouse
+.lighthouseci/
+
+# Tool output
+graphify-out/
+
+# OS
+.DS_Store
+
+# Built Pages site (script/build-site.mjs)
+_site/
