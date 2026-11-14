@@ -93,9 +93,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install slither-analyzer==0.11.5
-      # Fails on any High finding except the two triaged in SECURITY.md ("Static analysis"):
-      # uninitialized-state is the fixture's deliberate Nomad-class bug; reentrancy-eth flags calls to the Reactive system contract.
-      - run: slither . --filter-paths "lib/|test/|script/" --exclude uninitialized-state,reentrancy-eth --fail-high
+      # Fails on any High finding. One detector is excluded, triaged in SECURITY.md ("Static analysis"):
+      # uninitialized-state fires only on the fixture's deliberate Nomad-class bug (LockBox.messages).
+      - run: slither . --filter-paths "lib/|test/|script/" --exclude uninitialized-state --fail-high
 
   dependency-audit:
     name: "Stage 2 · Dependency audit (pnpm audit)"

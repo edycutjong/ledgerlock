@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ledgerlock">
 <meta property="og:title" content="Ledgerlock for judges: the 30-second path">
-<meta property="og:description" content="A forged mint on Unichain, one react() on Lasna, both gates paused, the copycat reverted. Four explorer links, no wallet.">
+<meta property="og:description" content="A forged mint on Unichain, one react() on Lasna, both gates paused, the copycat reverted. Six explorer links, no wallet.">
 <meta property="og:url" content="https://edycutjong.github.io/ledgerlock/judge">
 <meta property="og:image" content="https://edycutjong.github.io/ledgerlock/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -20,7 +20,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@edycutjong">
 <meta name="twitter:title" content="Ledgerlock for judges: the 30-second path">
-<meta name="twitter:description" content="A forged mint on Unichain, one react() on Lasna, both gates paused, the copycat reverted. Four explorer links, no wallet.">
+<meta name="twitter:description" content="A forged mint on Unichain, one react() on Lasna, both gates paused, the copycat reverted. Six explorer links, no wallet.">
 <meta name="twitter:image" content="https://edycutjong.github.io/ledgerlock/assets/og.png">
 <link rel="preload" href="status/fonts/league-gothic-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -73,7 +73,7 @@ h1 em{font-style:normal;color:var(--after)}
 .claim b{color:var(--before);font-weight:700}
 .sub{color:var(--muted);max-width:68ch;margin:0}
 h2.disp{font-size:clamp(34px,5vw,48px);margin:0 0 20px}
-ol.path{list-style:none;margin:0;padding:0;counter-reset:s}
+ol.path{list-style:none;margin:22px 0 0;padding:0;counter-reset:s}
 ol.path>li{counter-increment:s;display:grid;grid-template-columns:52px 1fr;gap:4px 16px;padding:18px 0;border-top:1px solid var(--rule)}
 ol.path>li:first-child{border-top:0;padding-top:4px}
 ol.path>li::before{content:counter(s,decimal-leading-zero);font:400 40px/1 var(--font-display);color:var(--brass);grid-row:span 2}
@@ -195,14 +195,14 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
       <div class="rc"><b>2 s / 3 s</b><p>on-chain cross-check, p50 / p95: Unichain block timestamps from the mint block to the gate's <code>Paused</code> block</p><small>evidence/frozen3-bench-summary.md</small></div>
     </div>
     <div class="tbl"><table>
-      <caption class="label" style="text-align:left;caption-side:top;padding-bottom:4px">Paired control, 5 runs per arm, same attack</caption>
+      <caption class="label" style="text-align:left;caption-side:top;padding-bottom:4px">Paired control, 5 runs per arm, same forged 500 tUSD mint, different copycat schedules</caption>
       <thead><tr><th scope="col">Arm</th><th scope="col">Copycats landed</th><th scope="col">tUSD issued per run</th><th scope="col">Collateral released</th></tr></thead>
       <tbody>
         <tr><td>Unguarded copy of route A</td><td class="n">6</td><td class="n">3,500</td><td class="n">500 (succeeded)</td></tr>
         <tr><td>Guarded by Ledgerlock</td><td class="n">1</td><td class="n">1,000</td><td class="n">0 (reverted)</td></tr>
       </tbody>
     </table></div>
-    <p class="sub" style="margin-top:14px">The arms use different copycat schedules, so issuance illustrates the effect rather than a like-for-like rate. Tests: <span data-tests>113 contract tests and 29 reactive-kit Solidity tests (100% lines, statements, branches and functions on <code>src/</code> and the kit), 80 TypeScript unit tests at 100%, and one property test that checks 262,144 random queue steps</span>.</p>
+    <p class="sub" style="margin-top:14px">The arms use different copycat schedules, so issuance illustrates the effect rather than a like-for-like rate. Tests: <span data-tests>113 contract tests and 29 reactive-kit Solidity tests (100% lines, statements, branches and functions on <code>src/</code> and the kit), 80 TypeScript unit tests on the reactive-kit helpers at 100%, and one property test that checks 262,144 random queue steps</span>.</p>
   </div>
 </section>
 
@@ -214,7 +214,7 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
 <pre><code>git clone --recurse-submodules https://github.com/edycutjong/ledgerlock.git && cd ledgerlock
 pnpm install
 pnpm burst:verify     <span class="c"># re-reads the 25 burst rows (20 headline + 5 paired control) from the chains</span>
-pnpm bench:summary    <span class="c"># regenerates every number above from evidence/frozen3-bench-runs.csv</span></code></pre>
+pnpm bench:summary    <span class="c"># regenerates the latency, false-pause and burst numbers from evidence/frozen3-bench-runs.csv</span></code></pre>
     <p class="lab">Re-run the attack bench live on your own deployment (funded testnet keys, about 25 lREACT):</p>
 <pre><code>export LEDGERLOCK_ENV=~/.config/&lt;you&gt;/testnet.env   <span class="c"># deployer key + RPC URLs, outside the repo</span>
 INSTANCE=mine script/core-deploy.sh

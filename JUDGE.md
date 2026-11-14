@@ -38,8 +38,8 @@ behind it on Base.
 | False pauses, strict legitimate transfers | 0 of 80 | same |
 | Bursts | 20 of 20 stopped at the first reverted copycat; at most 1 copycat landed | `evidence/frozen3-burst-verify.csv` |
 | Triples (origin → Lasna `react()` → gate callback) | 846 rows; 500 of 500 callback legs joined; 0 `CallbackFailure` | `evidence/frozen3-triples.csv` |
-| Paired control (5 runs per arm) | unguarded: 6 copycats landed, 3,500 tUSD issued, 500 released · guarded: 1 landed, 1,000 issued, release reverted | `evidence/a0-control-runs.csv` |
-| Tests | 113 contract + 29 reactive-kit Solidity tests (100% lines, statements, branches, functions on `src/` and the kit); 80 TypeScript unit tests at 100%; one property test checks 262,144 random queue steps | `forge test`, `pnpm test:coverage` |
+| Paired control (5 runs per arm, same forged 500 tUSD mint, different copycat schedules) | unguarded: 6 copycats landed, 3,500 tUSD issued, 500 released · guarded: 1 landed, 1,000 issued, release reverted | `evidence/a0-control-runs.csv` |
+| Tests | 113 contract + 29 reactive-kit Solidity tests (100% lines, statements, branches, functions on `src/` and the kit); 80 TypeScript unit tests on the reactive-kit helpers at 100%; one property test checks 262,144 random queue steps | `forge test`, `pnpm test:coverage` |
 
 The control arms use different copycat schedules, so issuance illustrates the effect rather than a like-for-like rate.
 
@@ -51,7 +51,7 @@ Re-check the live runs on-chain (public RPC reads, no keys):
 git clone --recurse-submodules https://github.com/edycutjong/ledgerlock.git && cd ledgerlock
 pnpm install
 pnpm burst:verify     # re-reads the 25 burst rows (20 headline + 5 paired control) from the chains
-pnpm bench:summary    # regenerates every number above from evidence/frozen3-bench-runs.csv
+pnpm bench:summary    # regenerates the latency, false-pause and burst numbers from evidence/frozen3-bench-runs.csv
 ```
 
 Re-run the attack bench live on your own deployment (funded testnet keys, about 25 lREACT): see [DEMO.md](DEMO.md) §4

@@ -146,7 +146,7 @@ Re-running the live bench needs your own funded testnet keys; steps are in [DEMO
 ```bash
 forge test && FOUNDRY_PROFILE=kit forge test   # 113 + 29 Solidity tests on the Reactive Test Lib
 pnpm coverage:sol                               # fails below 100% on src/ or packages/reactive-kit/src
-pnpm typecheck && pnpm test:coverage            # 80 TypeScript unit tests, 100% thresholds enforced
+pnpm typecheck && pnpm test:coverage            # 80 TypeScript unit tests (reactive-kit helpers), 100% thresholds
 pnpm e2e                                        # Playwright: landing, /judge, deck, status page, release tag, 375/768/1440 px
 ```
 
@@ -155,7 +155,7 @@ Every push and pull request runs a six-stage pipeline (`.github/workflows/ci.yml
 | Stage | What runs |
 |---|---|
 | 1 · Quality | `forge fmt --check test/`, `forge build --sizes`, both test profiles, the 100% coverage gate; `tsc`, vitest at 100%, and `pnpm bench:summary` must regenerate the committed summary byte for byte |
-| 2 · Security | gitleaks over every commit, Slither (`--fail-high`, two findings triaged in [SECURITY.md](SECURITY.md)), `pnpm audit` |
+| 2 · Security | gitleaks over every commit, Slither (`--fail-high`; one detector excluded, its single finding triaged in [SECURITY.md](SECURITY.md)), `pnpm audit` |
 | 3 · Build | the Pages site with the latest release tag stamped in and every local link checked |
 | 4 · E2E | Playwright on desktop and mobile Chrome |
 | 5 · Performance | Lighthouse CI (advisory) |
