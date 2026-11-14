@@ -6,6 +6,9 @@
 
   <br/>
 
+  [![Live Demo](https://img.shields.io/badge/🚀_Live-Demo-06b6d4?style=for-the-badge)](https://edycutjong.github.io/ledgerlock/)
+  [![For Judges](https://img.shields.io/badge/⚖️_For-Judges-e4412a?style=for-the-badge)](https://edycutjong.github.io/ledgerlock/judge)
+  [![Pitch Deck](https://img.shields.io/badge/📊_Pitch-Deck-f59e0b?style=for-the-badge)](https://edycutjong.github.io/ledgerlock/pitch/)
   [![Built for Reactive Omni Buildathon](https://img.shields.io/badge/DoraHacks-Reactive_Omni_Buildathon-8b5cf6?style=for-the-badge)](https://dorahacks.io/hackathon/reactive-omni-buildathon/detail)
 
   <br/>
@@ -15,6 +18,9 @@
   ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
   [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
   [![CI](https://github.com/edycutjong/ledgerlock/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/ledgerlock/actions/workflows/ci.yml)
+  [![Release](https://img.shields.io/github/v/release/edycutjong/ledgerlock?sort=semver)](https://github.com/edycutjong/ledgerlock/releases/latest)
+
+  <p><b>Judging?</b> Start at <a href="https://edycutjong.github.io/ledgerlock/judge">/judge</a> (<a href="JUDGE.md">JUDGE.md</a>): one forged mint, one Lasna <code>react()</code>, both gates paused, the copycat reverted, in six explorer links. No wallet needed.</p>
 
 </div>
 
@@ -81,8 +87,9 @@ Every pause is a triple: origin transaction → Lasna `react()` → gate callbac
 
 | Metric | Value | Source |
 |---|---|---|
-| Foundry tests | 83 passing | `forge test` |
-| reactive-kit tests | 23 passing (Solidity), 6 passing (TS) | `FOUNDRY_PROFILE=kit forge test`, `pnpm test:ts` |
+| Foundry tests | 113 passing; `src/` at 100% lines, statements, branches and functions | `forge test`, `pnpm coverage:sol` |
+| reactive-kit tests | 29 passing (Solidity), 80 passing (TS); both at 100% coverage | `FOUNDRY_PROFILE=kit forge test`, `pnpm test:coverage` |
+| Property test (queue head never rests on a cleared entry) | 262,144 random steps (4,096 runs × 64 ops) | `testFuzz_queue_head_never_rests_on_a_cleared_entry` |
 | Detection (mint mined → Lasna react seen) | p50 3.873 s · p95 4.391 s · max 6.545 s (n=100) | `evidence/frozen3-bench-summary.md` |
 | Pause, Unichain gate | p50 5.917 s · p95 8.245 s (n=100) | same |
 | Pause, Base gate | p50 3.378 s · p95 7.079 s (n=100) | same |
@@ -128,22 +135,46 @@ Lasna's `react()` is polled on a different RPC than the gates, so its first-seen
 ### Installation
 ```bash
 git submodule update --init --recursive && pnpm install
-forge test                       # 83 contract tests (Reactive Test Lib)
+forge test                       # 113 contract tests (Reactive Test Lib)
 pnpm bench:summary               # regenerate the numbers from evidence/frozen3-bench-runs.csv
 ```
 
 Re-running the live bench needs your own funded testnet keys; steps are in [DEMO.md](DEMO.md).
+
+## 🧪 Testing & CI
+
+```bash
+forge test && FOUNDRY_PROFILE=kit forge test   # 113 + 29 Solidity tests on the Reactive Test Lib
+pnpm coverage:sol                               # fails below 100% on src/ or packages/reactive-kit/src
+pnpm typecheck && pnpm test:coverage            # 80 TypeScript unit tests, 100% thresholds enforced
+pnpm e2e                                        # Playwright: landing, /judge, deck, status page, release tag, 375/768/1440 px
+```
+
+Every push and pull request runs a six-stage pipeline (`.github/workflows/ci.yml`):
+
+| Stage | What runs |
+|---|---|
+| 1 · Quality | `forge fmt --check test/`, `forge build --sizes`, both test profiles, the 100% coverage gate; `tsc`, vitest at 100%, and `pnpm bench:summary` must regenerate the committed summary byte for byte |
+| 2 · Security | gitleaks over every commit, Slither (`--fail-high`, two findings triaged in [SECURITY.md](SECURITY.md)), `pnpm audit` |
+| 3 · Build | the Pages site with the latest release tag stamped in and every local link checked |
+| 4 · E2E | Playwright on desktop and mobile Chrome |
+| 5 · Performance | Lighthouse CI (advisory) |
+| 6 · Deploy gate | main only, needs every stage; `pages.yml` then deploys `docs/` |
+
+CodeQL scans the TypeScript and the workflows; Dependabot (grouped, monthly, majors and `lib/` submodules excluded so the deployed bytecode keeps matching the source), secret scanning and push protection are on. The coverage work added tests only: `git diff e425c78 -- src packages/reactive-kit/src` is empty, so the frozen3 contracts still match this source.
 
 ## 📁 Project Structure
 
 | Path | What |
 |---|---|
 | `src/` | `LedgerlockReactive.sol`, `Gate.sol`, `DrillBeacon.sol`, `fixture/` (route A), `probe/` |
-| `packages/reactive-kit/` | shared Omni building blocks, copied unchanged from the same author's Heirloom repo (MIT; see its README) |
+| `packages/reactive-kit/` | shared Omni building blocks; the Solidity and TypeScript sources are copied unchanged from the same author's Heirloom repo (MIT; see its README), the tests beside them were added here |
 | `script/`, `scripts/` | deploy and trigger shell scripts; bench, summary and join scripts |
 | `evidence/` | committed raw rows from live runs; start with `evidence/README.md` |
-| `docs/` | landing page (`index.html`), pitch deck (`pitch/`), read-only status page (`status/`), architecture diagram |
+| `docs/` | landing page (`index.html`), judge page (`judge.html`), pitch deck (`pitch/`), read-only status page (`status/`), architecture diagram |
 | `deployments/testnet.json` | per-route addresses |
+| `test/`, `e2e/` | Foundry tests (Reactive Test Lib) and Playwright tests for the Pages site |
+| `JUDGE.md` | the judge path, mirrored at `/judge` on the Pages site |
 
 ## 📄 License
 

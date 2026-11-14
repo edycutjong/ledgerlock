@@ -58,10 +58,14 @@ owner drills (`DrillBeacon.fire()`), not attacks. Drill pause latencies are in `
 
 ```bash
 forge test
-# Suite result: ok. 83 passed; 0 failed; 0 skipped
+# Ran 6 test suites: 113 tests passed, 0 failed, 0 skipped (113 total tests)
 FOUNDRY_PROFILE=kit forge test
-# 23 tests passed, 0 failed (4 suites)
-pnpm test:ts
+# Ran 6 test suites: 29 tests passed, 0 failed, 0 skipped (29 total tests)
+pnpm test:coverage
+# Tests 80 passed (80) · Statements 100% · Branches 100% · Functions 100% · Lines 100%
+pnpm coverage:sol
+# OK  src/: 100% lines, statements, branches, functions
+# OK  packages/reactive-kit/src: 100% lines, statements, branches, functions
 ```
 
 Named tests that carry the claims (`test/LedgerlockReactive.t.sol`), all `[PASS]`:

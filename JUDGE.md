@@ -39,7 +39,7 @@ behind it on Base.
 | Bursts | 20 of 20 stopped at the first reverted copycat; at most 1 copycat landed | `evidence/frozen3-burst-verify.csv` |
 | Triples (origin → Lasna `react()` → gate callback) | 846 rows; 500 of 500 callback legs joined; 0 `CallbackFailure` | `evidence/frozen3-triples.csv` |
 | Paired control (5 runs per arm) | unguarded: 6 copycats landed, 3,500 tUSD issued, 500 released · guarded: 1 landed, 1,000 issued, release reverted | `evidence/a0-control-runs.csv` |
-| Tests | 110 contract + 29 reactive-kit Solidity tests (100% lines, statements, branches, functions on `src/` and the kit); 80 TypeScript unit tests at 100%; one property test checks 262,144 random queue steps | `forge test`, `pnpm test:coverage` |
+| Tests | 113 contract + 29 reactive-kit Solidity tests (100% lines, statements, branches, functions on `src/` and the kit); 80 TypeScript unit tests at 100%; one property test checks 262,144 random queue steps | `forge test`, `pnpm test:coverage` |
 
 The control arms use different copycat schedules, so issuance illustrates the effect rather than a like-for-like rate.
 
