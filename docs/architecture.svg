@@ -15,7 +15,7 @@
 <text x="380" y="178" fill="#F1DE9C">LedgerlockReactive</text></g>
 <g fill="#85907F" font-size="12"><text x="55" y="146">emits Locked · Released</text><text x="55" y="246">callback target · isOpen()</text><text x="55" y="376">A: isOpen() check · B: PausableIsm</text>
 <text x="705" y="146">emits Minted · Burned</text><text x="705" y="246">callback target · isOpen()</text><text x="705" y="376">A: isOpen() check · B: PausableIsm</text>
-<text x="380" y="204">one ledger per route, both sides</text><text x="380" y="224">unmatched Minted → pause both gates</text><text x="380" y="244">matching Locked inside W → resume</text><text x="380" y="264">Released without Burned → pause</text><text x="380" y="284">no match, no callback (no cost)</text><text x="380" y="304">acks + CallbackFailure watched</text></g>
+<text x="380" y="204">one ledger per route, both sides</text><text x="380" y="224">unmatched Minted → pause both gates</text><text x="380" y="244">matching Locked inside W → resume</text><text x="380" y="264">Released without Burned → pause</text><text x="380" y="284">no match, no callback sent</text><text x="380" y="304">acks + CallbackFailure watched</text></g>
 <g stroke="#EAE3CC" stroke-width="1.8" fill="none" marker-end="url(#a)"><path d="M270 132 L365 190"/><path d="M690 132 L595 190"/></g>
 <g stroke="#E4412A" stroke-width="2.2" fill="none" marker-end="url(#r)"><path d="M365 290 L270 232"/><path d="M595 290 L690 232"/></g>
 <g stroke="#EAE3CC" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#a)"><path d="M155 264 L155 330"/><path d="M805 264 L805 330"/></g>

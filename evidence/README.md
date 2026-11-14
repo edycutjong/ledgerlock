@@ -73,3 +73,6 @@ off-chain by the observer; these rows prove the loop and its order, not fine-gra
 - `frozen3-bench-runs.csv`: the full bench re-run on frozen3 (same columns and harness as `frozen-bench-runs.csv`): 80 strict legit + 20 forced legit, 60 forged + 20 plausible attacks, `bu-001..020` headline bursts and `bu-021..025` the guarded arm of the paired control. `lf-019` has no `pause_seconds` (`observer order inverted`), and the summary names it.
 - `frozen3-bench-summary.{json,md}` (`scripts/bench-summary.ts`, the default input), `frozen3-burst-verify.csv` (`scripts/burst-verify.ts`), `frozen3-pause-audit.csv` (`scripts/pause-audit.ts frozen3`), `frozen3-triples.csv` / `frozen3-react-gas.csv` / `frozen3-callback-failures.csv` (`scripts/triples.ts evidence/frozen3-addresses.txt`): all generated, never edited. The route B section of the frozen3 summary reads `frozen-routeb-runs.csv` (set `ROUTE_B_INSTANCE` to change it).
 - `frozen3-heartbeat-runs.csv`: the 6-hourly liveness runs from now on (`script/heartbeat.sh` defaults to frozen3).
+
+## Test run log
+- `forge-test-2026-11-14.txt`: full `forge test` output on 2026-11-14 (ANSI colours stripped): 6 suites, 113 tests passed, 0 failed. Its last line is the one the landing page's terminal prints; timings are this machine's and vary per run.
