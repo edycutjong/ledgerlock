@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Ledgerlock pitch deck · v0.1.0 · 10 slides · 1920×1080 stage scaled to the viewport.
+  Ledgerlock pitch deck · release tag stamped at deploy (script/build-site.mjs) · 10 slides · 1920×1080 stage scaled to the viewport.
   Keys: → / Space / PageDown next · ← / PageUp previous · Home / End · Esc slide overview (click a slide) ·
         P presenter mode (speaker notes panel, chrome dimmed, cursor hides after 2 s) · C contrast debug (outlines every text box).
   Print: Cmd/Ctrl+P → Save as PDF → one slide per 16in × 9in page, backgrounds on.
@@ -12,7 +12,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ledgerlock · pitch deck · v0.1.0</title>
+<title>Ledgerlock · pitch deck</title>
 <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
 <link rel="preload" href="../status/fonts/league-gothic-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -131,7 +131,9 @@ svg.flow .m{font-family:var(--font-body);text-transform:none;fill:var(--muted)}
 /* ask */
 .ask{display:grid;grid-template-columns:1fr 420px;gap:90px;align-items:center;flex:1}
 .links{font:400 38px/1.9 var(--font-data);margin:0}
-.links b{color:var(--muted);font-weight:400;display:inline-block;width:6ch;font-family:var(--font-body)}
+.links b{color:var(--muted);font-weight:400;display:inline-block;width:7ch;font-family:var(--font-body)}
+.links a{color:var(--ink);text-decoration:none;transition:color .2s}.links a:hover{color:var(--before)}
+.badge a.ver{color:inherit;text-decoration:none;transition:color .2s}.badge a.ver:hover{color:var(--ink)}
 .qr{width:420px;height:420px;display:block;border-radius:6px}
 .closer{font:400 64px/1 var(--font-display);text-transform:uppercase;color:var(--before);margin:40px 0 0}
 /* chrome */
@@ -166,7 +168,7 @@ body.overview .chrome{display:none}
     <div>
       <div class="brand"><img src="../assets/icon.svg" alt="" width="64" height="64">LEDGERLOCK</div>
       <h1 class="disp">When the books<br> disagree, the line<br> <em>blocks itself.</em></h1>
-      <span class="badge">Reactive Omni · Every Second Counts · <span class="ver">v0.1.0</span></span>
+      <span class="badge">Reactive Omni · Every Second Counts · <a class="ver" href="https://github.com/edycutjong/ledgerlock/releases/latest" title="Latest release" data-release>v0.1.0</a></span>
     </div>
 <div class="term"><span class="k">+0.000 s</span>  mint
 <span class="k">+4.249 s</span>  react()
@@ -188,7 +190,7 @@ body.overview .chrome{display:none}
   </div>
   <div class="track" aria-hidden="true"><div class="sec"><i class="lamp"></i></div><div class="sec"><i class="lamp red"></i></div></div>
   <aside class="speaker-notes" data-note="This is the slide to remember. The forged mint lands; about five seconds later both gates are shut and the next copycat reverts in the same Unichain block."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="3 of 10, the problem">
@@ -200,7 +202,7 @@ body.overview .chrome{display:none}
     <div><h3>Unichain sees</h3><p><b>Minted</b> · tokens out</p></div>
   </div>
   <aside class="speaker-notes" data-note="Lock-and-mint bridges fail by minting value that was never locked. Figures from Rekt. A guard on either chain sees only one side."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span>Source: Rekt</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span>Source: Rekt</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="4 of 10, the solution">
@@ -213,7 +215,7 @@ body.overview .chrome{display:none}
     <div class="frame"><img src="../assets/status-route-a.png" loading="lazy" decoding="async" width="2024" height="478" alt="Status page, route A fixture bridge: LINE CLEAR, gate B and gate U open"></div>
   </div>
   <aside class="speaker-notes" data-note="No off-chain watcher: the decision and both pause callbacks come from one react(). This is our status page reading live testnet."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="5 of 10, how it works">
@@ -238,7 +240,7 @@ body.overview .chrome{display:none}
     <path d="M1080 320 L1282 392" stroke="#E4412A" stroke-width="5" fill="none" marker-end="url(#ar)"/><text class="m" x="975" y="470" font-size="30">pause +5.341 s</text>
   </svg>
   <aside class="speaker-notes" data-note="Run bu-015. The forged Minted reaches Lasna, there is no Locked, so one react() sends both pauses. A matching lock inside W, 60 seconds, would reopen them."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="6 of 10, live demo">
@@ -255,7 +257,7 @@ body.overview .chrome{display:none}
     <li><span>4</span>gate B Paused</li>
   </ul>
   <aside class="speaker-notes" data-note="The status page reads public RPCs, no wallet. This capture is run ap-020, a plausible-key forgery. Each hash under a timestamp opens an explorer."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="7 of 10, the numbers">
@@ -267,7 +269,7 @@ body.overview .chrome{display:none}
 <g class="pts"><circle cx="369.0" cy="208.0" r="3.2"></circle><circle cx="425.0" cy="208.0" r="3.2"></circle><circle cx="439.0" cy="208.0" r="3.2"></circle><circle cx="446.0" cy="208.0" r="3.2"></circle><circle cx="453.0" cy="208.0" r="3.2"></circle><circle cx="460.0" cy="208.0" r="3.2"></circle><circle cx="460.0" cy="200.8" r="3.2"></circle><circle cx="460.0" cy="193.6" r="3.2"></circle><circle cx="460.0" cy="186.4" r="3.2"></circle><circle cx="460.0" cy="179.2" r="3.2"></circle><circle cx="460.0" cy="172.0" r="3.2"></circle><circle cx="460.0" cy="164.8" r="3.2"></circle><circle cx="460.0" cy="157.6" r="3.2"></circle><circle cx="467.0" cy="208.0" r="3.2"></circle><circle cx="467.0" cy="200.8" r="3.2"></circle><circle cx="467.0" cy="193.6" r="3.2"></circle><circle cx="481.0" cy="208.0" r="3.2"></circle><circle cx="495.0" cy="208.0" r="3.2"></circle><circle cx="495.0" cy="200.8" r="3.2"></circle><circle cx="495.0" cy="193.6" r="3.2"></circle><circle cx="509.0" cy="208.0" r="3.2"></circle><circle cx="509.0" cy="200.8" r="3.2"></circle><circle cx="516.0" cy="208.0" r="3.2"></circle><circle cx="530.0" cy="208.0" r="3.2"></circle><circle cx="530.0" cy="200.8" r="3.2"></circle><circle cx="537.0" cy="208.0" r="3.2"></circle><circle cx="537.0" cy="200.8" r="3.2"></circle><circle cx="537.0" cy="193.6" r="3.2"></circle><circle cx="537.0" cy="186.4" r="3.2"></circle><circle cx="537.0" cy="179.2" r="3.2"></circle><circle cx="537.0" cy="172.0" r="3.2"></circle><circle cx="544.0" cy="208.0" r="3.2"></circle><circle cx="544.0" cy="200.8" r="3.2"></circle><circle cx="544.0" cy="193.6" r="3.2"></circle><circle cx="544.0" cy="186.4" r="3.2"></circle><circle cx="544.0" cy="179.2" r="3.2"></circle><circle cx="544.0" cy="172.0" r="3.2"></circle><circle cx="544.0" cy="164.8" r="3.2"></circle><circle cx="544.0" cy="157.6" r="3.2"></circle><circle cx="544.0" cy="150.4" r="3.2"></circle><circle cx="544.0" cy="143.2" r="3.2"></circle><circle cx="544.0" cy="136.0" r="3.2"></circle><circle cx="544.0" cy="128.8" r="3.2"></circle><circle cx="544.0" cy="121.6" r="3.2"></circle><circle cx="544.0" cy="114.4" r="3.2"></circle><circle cx="544.0" cy="107.2" r="3.2"></circle><circle cx="544.0" cy="100.0" r="3.2"></circle><circle cx="544.0" cy="92.8" r="3.2"></circle><circle cx="544.0" cy="85.6" r="3.2"></circle><circle cx="544.0" cy="78.4" r="3.2"></circle><circle cx="544.0" cy="71.2" r="3.2"></circle><circle cx="544.0" cy="64.0" r="3.2"></circle><circle cx="544.0" cy="56.8" r="3.2"></circle><circle cx="544.0" cy="49.6" r="3.2"></circle><circle cx="544.0" cy="42.4" r="3.2"></circle><circle cx="544.0" cy="35.2" r="3.2"></circle><circle cx="572.0" cy="208.0" r="3.2"></circle><circle cx="572.0" cy="200.8" r="3.2"></circle><circle cx="572.0" cy="193.6" r="3.2"></circle><circle cx="572.0" cy="186.4" r="3.2"></circle><circle cx="572.0" cy="179.2" r="3.2"></circle><circle cx="572.0" cy="172.0" r="3.2"></circle><circle cx="572.0" cy="164.8" r="3.2"></circle><circle cx="572.0" cy="157.6" r="3.2"></circle><circle cx="572.0" cy="150.4" r="3.2"></circle><circle cx="572.0" cy="143.2" r="3.2"></circle><circle cx="579.0" cy="208.0" r="3.2"></circle><circle cx="579.0" cy="200.8" r="3.2"></circle><circle cx="579.0" cy="193.6" r="3.2"></circle><circle cx="579.0" cy="186.4" r="3.2"></circle><circle cx="579.0" cy="179.2" r="3.2"></circle><circle cx="579.0" cy="172.0" r="3.2"></circle><circle cx="579.0" cy="164.8" r="3.2"></circle><circle cx="579.0" cy="157.6" r="3.2"></circle><circle cx="621.0" cy="208.0" r="3.2"></circle><circle cx="677.0" cy="208.0" r="3.2"></circle><circle cx="705.0" cy="208.0" r="3.2"></circle><circle cx="719.0" cy="208.0" r="3.2"></circle><circle cx="719.0" cy="200.8" r="3.2"></circle><circle cx="726.0" cy="208.0" r="3.2"></circle><circle cx="740.0" cy="208.0" r="3.2"></circle><circle cx="740.0" cy="200.8" r="3.2"></circle><circle cx="740.0" cy="193.6" r="3.2"></circle><circle cx="740.0" cy="186.4" r="3.2"></circle><circle cx="740.0" cy="179.2" r="3.2"></circle><circle cx="740.0" cy="172.0" r="3.2"></circle><circle cx="740.0" cy="164.8" r="3.2"></circle><circle cx="740.0" cy="157.6" r="3.2"></circle><circle cx="740.0" cy="150.4" r="3.2"></circle><circle cx="740.0" cy="143.2" r="3.2"></circle><circle cx="740.0" cy="136.0" r="3.2"></circle><circle cx="740.0" cy="128.8" r="3.2"></circle><circle cx="740.0" cy="121.6" r="3.2"></circle><circle cx="740.0" cy="114.4" r="3.2"></circle><circle cx="740.0" cy="107.2" r="3.2"></circle><circle cx="740.0" cy="100.0" r="3.2"></circle><circle cx="740.0" cy="92.8" r="3.2"></circle><circle cx="740.0" cy="85.6" r="3.2"></circle><circle cx="887.0" cy="208.0" r="3.2"></circle><circle cx="971.0" cy="208.0" r="3.2"></circle></g></svg>
   <p class="capline">Lasna react() seen: <b>3.873 s</b> (p50). In-order legit transfers paused: <b>0 of 80</b>.</p>
   <aside class="speaker-notes" data-note="One dot per attack run. Observer clock, 400 ms polling; the Unichain block-timestamp check is p50 2 s, p95 3 s."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span>evidence/frozen3-bench-summary.md</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span>evidence/frozen3-bench-summary.md</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="8 of 10, paired control">
@@ -285,7 +287,7 @@ body.overview .chrome{display:none}
   </div>
   <p class="caveat">Fixed 6 copycats vs up to 30: illustration, not rate.</p>
   <aside class="speaker-notes" data-note="Collateral released to the attacker is in tUSD. The unguarded arm fires a fixed six copycats, so treat issuance as an illustration, not a rate."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span>evidence/a0-control-runs.csv</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span>evidence/a0-control-runs.csv</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="9 of 10, honest limits">
@@ -297,7 +299,7 @@ body.overview .chrome{display:none}
     <li><span>06</span>Reorgs: Test Lib simulation only.</li>
   </ol>
   <aside class="speaker-notes" data-note="Our claim is narrow: loss is at most the mints inside the measured pause window. All nine limits are in the README."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 <section class="slide" aria-label="10 of 10, the ask">
@@ -305,13 +307,13 @@ body.overview .chrome{display:none}
   <div class="ask">
     <div>
       <h2 class="disp">Judge us on <em>the seconds</em></h2>
-      <p class="links"><b>repo</b> github.com/edycutjong/ledgerlock<br><b>live</b> edycutjong.github.io/ledgerlock</p>
+      <p class="links"><b>repo</b> <a href="https://github.com/edycutjong/ledgerlock">github.com/edycutjong/ledgerlock</a><br><b>live</b> <a href="https://edycutjong.github.io/ledgerlock/">edycutjong.github.io/ledgerlock</a><br><b>judge</b> <a href="../judge">edycutjong.github.io/ledgerlock/judge</a><br><b>release</b> <a href="https://github.com/edycutjong/ledgerlock/releases/latest" data-release>v0.1.0</a></p>
       <p class="closer">Every measured number comes from a committed row.</p>
     </div>
     <svg class="qr" role="img" aria-label="QR code for edycutjong.github.io/ledgerlock" xmlns="http://www.w3.org/2000/svg" width="330" height="330"><g transform="scale(10)"><path fill="#eae3cc" d="M0 0h33v33h-33z"/><path class="qrline" stroke="#182019" d="M2 2.5h7m1 0h1m1 0h1m1 0h2m2 0h5m1 0h7m-29 1h1m5 0h1m1 0h1m1 0h4m3 0h1m2 0h1m1 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m6 0h2m4 0h2m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h4m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m7 0h6m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m9 0h1m1 0h3m1 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h5m2 0h1m1 0h2m1 0h1m-21 1h1m1 0h2m1 0h3m3 0h1m2 0h1m2 0h2m3 0h1m2 0h1m1 0h2m-29 1h4m1 0h1m5 0h3m2 0h1m1 0h3m1 0h3m3 0h1m-29 1h2m1 0h4m2 0h1m1 0h1m1 0h2m1 0h1m4 0h1m2 0h1m1 0h2m-26 1h1m5 0h2m1 0h1m1 0h2m5 0h3m5 0h1m-29 1h11m2 0h1m1 0h1m1 0h2m6 0h2m-26 1h2m1 0h1m4 0h2m1 0h5m2 0h1m1 0h2m3 0h3m-28 1h3m2 0h1m1 0h1m2 0h1m2 0h1m2 0h3m1 0h3m2 0h3m-29 1h2m1 0h2m3 0h1m1 0h3m1 0h1m1 0h1m1 0h4m5 0h1m-26 1h2m1 0h4m1 0h2m2 0h1m3 0h4m2 0h2m1 0h1m-27 1h1m6 0h1m1 0h1m2 0h1m1 0h1m1 0h1m5 0h1m1 0h3m-28 1h1m2 0h1m2 0h1m1 0h1m1 0h3m2 0h1m2 0h1m1 0h3m1 0h1m1 0h1m-22 1h1m1 0h5m2 0h1m1 0h4m2 0h1m3 0h1m-26 1h2m1 0h3m1 0h1m1 0h1m2 0h1m2 0h11m-19 1h1m2 0h3m2 0h3m1 0h1m3 0h5m-29 1h7m1 0h1m2 0h3m2 0h1m1 0h3m1 0h1m1 0h2m1 0h1m-28 1h1m5 0h1m1 0h3m1 0h1m5 0h1m1 0h1m3 0h2m2 0h1m-29 1h1m1 0h3m1 0h1m4 0h1m2 0h2m1 0h2m1 0h5m1 0h3m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h4m4 0h1m1 0h3m2 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h4m2 0h3m1 0h1m2 0h1m2 0h1m1 0h1m-29 1h1m5 0h1m3 0h2m1 0h1m1 0h2m3 0h1m1 0h4m1 0h1m-28 1h7m1 0h2m3 0h1m1 0h1m2 0h5m4 0h1"/></g></svg>
   </div>
   <aside class="speaker-notes" data-note="Open the register, click any hash, and rerun pnpm bench:summary. Every measured number here comes from committed rows; the Nomad figure is from Rekt."></aside>
-  <div class="foot"><span>LEDGERLOCK</span><span class="ver">v0.1.0</span></div>
+  <div class="foot"><span>LEDGERLOCK</span><span class="ver" data-release>v0.1.0</span></div>
 </section>
 
 </div>
@@ -352,5 +354,6 @@ body.overview .chrome{display:none}
   fit(); show(i);
 })();
 </script>
+<script src="../assets/release.js" defer></script>
 </body>
 </html>

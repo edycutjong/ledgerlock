@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledgerlock for judges: the 30-second path</title>
+<meta name="description" content="One Reactive contract reads Base locks and Unichain mints together and pauses a bridge seconds after a mint appears with no lock. Every step is a read-only explorer link.">
+<meta name="author" content="Edy Cu">
+<meta name="theme-color" content="#182019">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://edycutjong.github.io/ledgerlock/judge">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ledgerlock">
+<meta property="og:title" content="Ledgerlock for judges: the 30-second path">
+<meta property="og:description" content="A forged mint on Unichain, one react() on Lasna, both gates paused, the copycat reverted. Four explorer links, no wallet.">
+<meta property="og:url" content="https://edycutjong.github.io/ledgerlock/judge">
+<meta property="og:image" content="https://edycutjong.github.io/ledgerlock/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@edycutjong">
+<meta name="twitter:title" content="Ledgerlock for judges: the 30-second path">
+<meta name="twitter:description" content="A forged mint on Unichain, one react() on Lasna, both gates paused, the copycat reverted. Four explorer links, no wallet.">
+<meta name="twitter:image" content="https://edycutjong.github.io/ledgerlock/assets/og.png">
+<link rel="preload" href="status/fonts/league-gothic-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"League Gothic";src:url(status/fonts/league-gothic-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Libre Franklin";src:url(status/fonts/libre-franklin-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Libre Franklin";src:url(status/fonts/libre-franklin-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Chivo Mono";src:url(status/fonts/chivo-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+/* design tokens: signal-box panel (same as the landing page) */
+:root{
+  --bg:#182019;--ink:#EAE3CC;--muted:#85907F;--before:#F1DE9C;--after:#E4412A;--rule:#34402F;--brass:#B8914A;
+  --font-display:"League Gothic","Alternate Gothic No1 D","Oswald",Impact,sans-serif;
+  --font-body:"Libre Franklin","Franklin Gothic Book","Helvetica Neue",Arial,sans-serif;
+  --font-data:"Chivo Mono","Courier New",monospace;
+  --panel:color-mix(in srgb,var(--ink) 4%,var(--bg));--deep:color-mix(in srgb,black 28%,var(--bg));--ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box}
+html{overflow-x:clip;-webkit-text-size-adjust:100%;scrollbar-color:var(--rule) var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--font-body)}
+::selection{background:var(--before);color:var(--bg)}
+a{color:var(--before);text-decoration-thickness:1px;text-underline-offset:3px;transition:color .2s}
+a:hover{color:var(--ink)}
+:focus-visible{outline:2px solid var(--before);outline-offset:3px;border-radius:2px}
+.wrap{max-width:980px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.disp{font-family:var(--font-display);font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95;margin:0}
+.label{font:700 12px/1.4 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+code,.mono{font-family:var(--font-data);font-size:.9em}
+.muted{color:var(--muted)}
+.skip{position:absolute;left:-999px;top:8px;background:var(--before);color:var(--bg);padding:8px 12px;z-index:9}
+.skip:focus{left:8px}
+header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
+.nav .wrap{display:flex;align-items:center;gap:20px;height:62px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.brand img{width:30px;height:30px;transition:transform .2s var(--ease)}
+.brand span{font:400 26px/1 var(--font-display);letter-spacing:.04em;transition:color .2s}
+.brand:hover span{color:var(--before)}.brand:hover img{transform:rotate(-6deg)}
+.nav nav{display:flex;gap:18px;margin-left:auto;align-items:center}
+.nav nav a{color:var(--muted);text-decoration:none;font-size:14px}
+.nav nav a:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:11px 18px;border:1px solid var(--rule);border-radius:3px;text-decoration:none;color:var(--ink);font:600 14px/1.2 var(--font-body);letter-spacing:.02em;transition:background .2s,border-color .2s,transform .15s,color .2s}
+.btn:hover{border-color:var(--before);color:var(--before)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--before);border-color:var(--before);color:var(--bg)}
+.btn.primary:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.nav .btn{min-height:36px;padding:8px 14px}
+section{padding:44px 0;border-bottom:1px solid var(--rule)}
+.claim-sec{padding:40px 0 44px}
+h1.disp{font-size:clamp(46px,8vw,84px);margin:6px 0 18px}
+h1 em{font-style:normal;color:var(--after)}
+.claim{font-size:clamp(19px,2.4vw,23px);line-height:1.45;max-width:60ch;margin:0 0 14px}
+.claim b{color:var(--before);font-weight:700}
+.sub{color:var(--muted);max-width:68ch;margin:0}
+h2.disp{font-size:clamp(34px,5vw,48px);margin:0 0 20px}
+ol.path{list-style:none;margin:0;padding:0;counter-reset:s}
+ol.path>li{counter-increment:s;display:grid;grid-template-columns:52px 1fr;gap:4px 16px;padding:18px 0;border-top:1px solid var(--rule)}
+ol.path>li:first-child{border-top:0;padding-top:4px}
+ol.path>li::before{content:counter(s,decimal-leading-zero);font:400 40px/1 var(--font-display);color:var(--brass);grid-row:span 2}
+ol.path>li>*{min-width:0}
+.step-t{font-weight:700;margin:0}
+.step-d{margin:4px 0 0;color:color-mix(in srgb,var(--ink) 82%,var(--bg))}
+.tx{display:inline-flex;flex-wrap:wrap;max-width:100%;overflow-wrap:anywhere;align-items:center;gap:4px 8px;margin:10px 10px 0 0;padding:8px 12px;min-height:40px;border:1px solid var(--rule);border-radius:3px;background:var(--panel);font:400 14px/1.3 var(--font-data);color:var(--ink);text-decoration:none;transition:border-color .2s,color .2s,background .2s}
+.tx span{font-family:var(--font-body);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tx:hover{border-color:var(--before);color:var(--before);background:var(--deep)}
+.tx.bad{border-color:color-mix(in srgb,var(--after) 55%,var(--rule))}
+.receipts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.rc{background:var(--bg);padding:20px 18px}
+.rc b{display:block;font:400 clamp(34px,4.6vw,46px)/1 var(--font-display);color:var(--before);letter-spacing:.02em}
+.rc p{margin:8px 0 0;font-size:14.5px;line-height:1.45}
+.rc small{display:block;margin-top:6px;font:400 12px/1.4 var(--font-data);color:var(--muted);overflow-wrap:anywhere}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:22px;font-size:15px}
+th,td{text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:700 12px/1.4 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--font-data);white-space:nowrap}
+pre{margin:12px 0 0;padding:16px 18px;background:var(--deep);border:1px solid var(--rule);border-radius:3px;overflow-x:auto;font:400 14px/1.7 var(--font-data);color:var(--ink)}
+pre .c{color:var(--muted)}
+.lab{margin:22px 0 0;font-weight:700}
+ul.limits{margin:0;padding:0;list-style:none}
+ul.limits li{padding:14px 0 14px 28px;border-top:1px solid var(--rule);position:relative}
+ul.limits li:first-child{border-top:0}
+ul.limits li::before{content:"";position:absolute;left:4px;top:23px;width:10px;height:10px;border-radius:50%;background:var(--after)}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+footer{padding:24px 0 40px;display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13.5px;color:var(--muted)}
+footer a{color:var(--muted)}
+footer a:hover{color:var(--ink)}
+footer .ver{font-family:var(--font-data);margin-left:auto}
+@media (max-width:760px){.receipts{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){
+  .nav nav a:not(.btn){display:none}
+  body{font-size:16px}
+  .receipts{grid-template-columns:1fr}
+  ol.path>li{grid-template-columns:38px 1fr}
+  ol.path>li::before{font-size:30px}
+  table{font-size:14px}
+  td.n{white-space:normal}
+  th,td{padding-right:8px}
+  footer .ver{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="Ledgerlock home"><img src="assets/icon.svg" alt="" width="30" height="30"><span>LEDGERLOCK</span></a>
+    <nav aria-label="Judge page">
+      <a href="#path">30-second path</a>
+      <a href="#receipt">Receipt</a>
+      <a href="#limits">Limits</a>
+      <a class="btn" href="https://github.com/edycutjong/ledgerlock">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section class="claim-sec" aria-labelledby="h1">
+  <div class="wrap">
+    <p class="label">For judges · Reactive Omni Buildathon · Every Second Counts</p>
+    <h1 id="h1" class="disp">Two chains, <em>one book.</em></h1>
+    <p class="claim" data-claim><b>One Reactive contract reads Base locks and Unichain mints together and pauses a bridge seconds after a mint appears with no lock.</b></p>
+    <p class="sub">Testnet only (Reactive Lasna, Base Sepolia, Unichain Sepolia). No wallet, no login, no clone: every step below is a read-only explorer link. Route A is our own fixture bridge, labelled as one.</p>
+  </div>
+</section>
+
+<section id="path" aria-labelledby="h-path">
+  <div class="wrap">
+    <p class="label">Click in this order</p>
+    <h2 id="h-path" class="disp">The 30-second path</h2>
+    <p class="sub">Run <code>bu-021</code> on the final deployment <code>frozen3</code> (contract commit <code>e425c78</code>): a forged mint of 500 tUSD on Unichain Sepolia with no lock behind it on Base.</p>
+    <ol class="path">
+      <li>
+        <p class="step-t">The forged mint lands on Unichain Sepolia.</p>
+        <p class="step-d">A <code>Minted</code> event with no matching <code>Locked</code> on Base. A guard on Unichain alone cannot know that.<br>
+          <a class="tx bad" href="https://sepolia.uniscan.xyz/tx/0x4bfe94f268205f7918c3396c6b76ca21f60ebd5c800cc138516650d238f8a84e" rel="noopener"><span>Unichain</span>0x4bfe94f2…a84e</a></p>
+      </li>
+      <li>
+        <p class="step-t">One <code>react()</code> on Lasna sees it, seen 3.175 s after the mint was mined.</p>
+        <p class="step-d">The same transaction emits two <code>CallbackRequest</code> logs, one per gate.<br>
+          <a class="tx" href="https://lasna.reactscan.net/tx/0xbacbf5a0da2c6adf9e89f0b950dd078e707459bfbc916794826f627a03059068" rel="noopener"><span>Lasna</span>0xbacbf5a0…9068</a></p>
+      </li>
+      <li>
+        <p class="step-t">Both gates are paused: Base at 2.184 s, Unichain at 8.062 s (observer clock).</p>
+        <p class="step-d">Block timestamps: mint 1794595469, gate B 1794595470, gate U 1794595471. The Base gate is seen before the Lasna transaction, which we attribute to Lasna RPC visibility lag (not measured separately); block timestamps never invert.<br>
+          <a class="tx" href="https://sepolia.basescan.org/tx/0x5eacdc824b92a2c83498d64e7511dd97fb9fb3a340f1baa4f24417b351a14303" rel="noopener"><span>Gate B · Base</span>0x5eacdc82…4303</a>
+          <a class="tx" href="https://sepolia.uniscan.xyz/tx/0x60f4bcba2e0bbd4c2d26f2e02855e27ab5c6103c200b73b5588427970c25f3c4" rel="noopener"><span>Gate U · Unichain</span>0x60f4bcba…f3c4</a></p>
+      </li>
+      <li>
+        <p class="step-t">The next copycat reverts <code>GatePaused</code>, and the release on Base reverts too.</p>
+        <p class="step-d">The mint is in Unichain block 67743041, gate U's <code>Paused</code> in 67743043, and the reverted copycat in 67743044. Exposure: 1,000 tUSD (the forged mint plus one copycat that landed before the pause).<br>
+          <a class="tx bad" href="https://sepolia.uniscan.xyz/tx/0x6006802eb3eab302322d15af5c2281feee3378b58e65750b1258997bced12fb6" rel="noopener"><span>Copycat · reverted</span>0x6006802e…2fb6</a>
+          <a class="tx bad" href="https://sepolia.basescan.org/tx/0x80ff77c4362d72a8aa9eddfb02013e20f0831be315baa1cadc631c6cb07e9bfb" rel="noopener"><span>Release · reverted</span>0x80ff77c4…9bfb</a></p>
+      </li>
+      <li>
+        <p class="step-t">Open the live status page.</p>
+        <p class="step-d">It reads both gates' state straight from the public testnet RPCs and lists every committed run with its hashes.<br>
+          <a class="tx" href="status/"><span>Status</span>/ledgerlock/status/</a></p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="receipt" aria-labelledby="h-rc">
+  <div class="wrap">
+    <p class="label">Measured live, committed as rows in evidence/</p>
+    <h2 id="h-rc" class="disp">Receipt</h2>
+    <div class="receipts">
+      <div class="rc"><b>3.873 s</b><p>p50 from the forged mint being mined to Lasna's <code>react()</code> being seen (p95 4.391 s, n=100)</p><small>evidence/frozen3-bench-summary.md</small></div>
+      <div class="rc"><b>8.245 s</b><p>p95 until both gates are seen shut (p50 5.92 s) over 100 attack runs</p><small>evidence/frozen3-bench-runs.csv</small></div>
+      <div class="rc"><b>0 of 80</b><p>strict legitimate transfers paused by mistake</p><small>evidence/frozen3-bench-summary.md</small></div>
+      <div class="rc"><b>20 of 20</b><p>bursts stopped at the first reverted copycat; at most 1 copycat landed</p><small>evidence/frozen3-burst-verify.csv</small></div>
+      <div class="rc"><b>500 / 500</b><p>gate callback legs joined to their Lasna <code>react()</code> across 846 triple rows; 0 <code>CallbackFailure</code></p><small>evidence/frozen3-triples.csv</small></div>
+      <div class="rc"><b>2 s / 3 s</b><p>on-chain cross-check, p50 / p95: Unichain block timestamps from the mint block to the gate's <code>Paused</code> block</p><small>evidence/frozen3-bench-summary.md</small></div>
+    </div>
+    <div class="tbl"><table>
+      <caption class="label" style="text-align:left;caption-side:top;padding-bottom:4px">Paired control, 5 runs per arm, same attack</caption>
+      <thead><tr><th scope="col">Arm</th><th scope="col">Copycats landed</th><th scope="col">tUSD issued per run</th><th scope="col">Collateral released</th></tr></thead>
+      <tbody>
+        <tr><td>Unguarded copy of route A</td><td class="n">6</td><td class="n">3,500</td><td class="n">500 (succeeded)</td></tr>
+        <tr><td>Guarded by Ledgerlock</td><td class="n">1</td><td class="n">1,000</td><td class="n">0 (reverted)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub" style="margin-top:14px">The arms use different copycat schedules, so issuance illustrates the effect rather than a like-for-like rate. Tests: <span data-tests>110 contract tests and 29 reactive-kit Solidity tests (100% lines, statements, branches and functions on <code>src/</code> and the kit), 80 TypeScript unit tests at 100%, and one property test that checks 262,144 random queue steps</span>.</p>
+  </div>
+</section>
+
+<section id="reproduce" aria-labelledby="h-rep">
+  <div class="wrap">
+    <p class="label">Real path first</p>
+    <h2 id="h-rep" class="disp">Reproduce</h2>
+    <p class="lab">Re-check the live runs on-chain (public RPC reads, no keys):</p>
+<pre><code>git clone --recurse-submodules https://github.com/edycutjong/ledgerlock.git && cd ledgerlock
+pnpm install
+pnpm burst:verify     <span class="c"># re-reads the 25 burst rows (20 headline + 5 paired control) from the chains</span>
+pnpm bench:summary    <span class="c"># regenerates every number above from evidence/frozen3-bench-runs.csv</span></code></pre>
+    <p class="lab">Re-run the attack bench live on your own deployment (funded testnet keys, about 25 lREACT):</p>
+<pre><code>export LEDGERLOCK_ENV=~/.config/&lt;you&gt;/testnet.env   <span class="c"># deployer key + RPC URLs, outside the repo</span>
+INSTANCE=mine script/core-deploy.sh
+script/bench-all.sh mine                              <span class="c"># 100 legit + 100 attacks, resumable</span></code></pre>
+    <p class="lab">CI / deterministic replay (Reactive Test Lib, no network):</p>
+<pre><code>forge test && FOUNDRY_PROFILE=kit forge test && pnpm test:coverage</code></pre>
+  </div>
+</section>
+
+<section id="limits" aria-labelledby="h-lim">
+  <div class="wrap">
+    <p class="label">What it does not do</p>
+    <h2 id="h-lim" class="disp">Honest limits</h2>
+    <ul class="limits">
+      <li><b>The first unbacked mint is lost.</b> Ledgerlock limits the loss to the mints that land inside the measured pause window; it does not prevent the first one.</li>
+      <li><b>Both routes are ours.</b> Route A is our own fixture bridge with a reproduced Nomad-class bug; route B is our own Hyperlane warp route, delivered by our own <code>Mailbox.process</code> because the public relayer did not deliver within 6 minutes.</li>
+      <li><b>If Lasna stops, the guard is blind,</b> and nothing pages the operator: a latched route stays shut until someone looks at the <code>IncidentLatched</code> and <code>GateUnreachable</code> events.</li>
+    </ul>
+    <p class="sub" style="margin-top:12px">All nine limits are in the <a href="https://github.com/edycutjong/ledgerlock#readme">README</a>.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-links">
+  <div class="wrap">
+    <h2 id="h-links" class="disp">Links</h2>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/edycutjong/ledgerlock">Repository</a>
+      <a class="btn" href="./">Landing page</a>
+      <a class="btn" href="pitch/">Pitch deck</a>
+      <a class="btn" href="status/">Live status page</a>
+      <a class="btn" href="https://github.com/edycutjong/ledgerlock/blob/main/DEMO.md">DEMO.md</a>
+      <a class="btn" href="https://github.com/edycutjong/ledgerlock/tree/main/evidence">evidence/</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="wrap">
+  <footer>
+    <span>Ledgerlock · MIT · testnet only</span>
+    <a href="https://github.com/edycutjong/ledgerlock/blob/main/JUDGE.md">JUDGE.md</a>
+    <a href="https://dorahacks.io/hackathon/reactive-omni-buildathon/detail">Reactive Omni Buildathon</a>
+    <a class="ver" href="https://github.com/edycutjong/ledgerlock/releases/latest" title="Latest release"><span data-release>v0.1.0</span> · contract e425c78</a>
+  </footer>
+</div>
+<script src="assets/release.js" defer></script>
+</body>
+</html>

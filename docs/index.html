@@ -227,6 +227,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 footer{border-top:1px solid var(--rule);margin-top:64px;padding:22px 0 0;display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13.5px;color:var(--muted)}
 footer a{color:var(--muted)}
 footer .ver{font-family:var(--font-data);margin-left:auto}
+footer a.ver:hover{color:var(--ink)}
 @media (max-width:900px){
   .nav nav a.opt{display:none}
   .boxes{grid-template-columns:1fr}
@@ -273,6 +274,7 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
       <a href="#honest">Honest limits</a>
       <a href="#faq">FAQ</a>
       <a href="pitch/">Pitch deck</a>
+      <a href="judge">For judges</a>
       <a class="btn" href="https://github.com/edycutjong/ledgerlock">GitHub</a>
     </nav>
   </div>
@@ -286,6 +288,7 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
     <p class="lede rise d3">Picture Maya running a lock-and-mint bridge from Base to Unichain: neither chain can see the other's book. One Reactive contract on Lasna reads both; when a mint has no lock behind it, it shuts both ends. On our labelled fixture bridge: seen in <b>3.873 s</b> (p50), both gates shut by <b>8.245 s</b> (p95) over <b>100</b> attack runs, and <b>0 of 80</b> in-order transfers paused.</p>
     <div class="ctas rise d4">
       <a class="btn primary" href="https://github.com/edycutjong/ledgerlock">GitHub repo</a>
+      <a class="btn" href="judge">For judges: 30-second path</a>
       <a class="btn" href="pitch/">Pitch deck</a>
       <a class="btn" href="status/">Live status page</a>
     </div>
@@ -495,6 +498,7 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
     <h2 id="h-fin" class="disp">Read the register yourself</h2>
     <div class="ctas">
       <a class="btn primary" href="https://github.com/edycutjong/ledgerlock">GitHub repo</a>
+      <a class="btn" href="judge">For judges: 30-second path</a>
       <a class="btn" href="pitch/">Pitch deck</a>
       <a class="btn" href="status/">Live status page</a>
     </div>
@@ -508,7 +512,7 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
       <a href="https://github.com/edycutjong/ledgerlock/blob/main/DEMO.md">DEMO.md</a>
       <a href="https://github.com/edycutjong/ledgerlock/tree/main/evidence">evidence/</a>
       <a href="https://dorahacks.io/hackathon/reactive-omni-buildathon/detail">Reactive Omni Buildathon</a>
-      <span class="ver">v0.1.0 · contract e425c78</span>
+      <a class="ver" href="https://github.com/edycutjong/ledgerlock/releases/latest" title="Latest release"><span data-release>v0.1.0</span> · contract e425c78</a>
     </footer>
   </div>
 </section>
@@ -579,5 +583,6 @@ Suite result: ok. 83 passed; 0 failed; 0 skipped<span class="cursor"></span></pr
   }
 })();
 </script>
+<script src="assets/release.js" defer></script>
 </body>
 </html>
