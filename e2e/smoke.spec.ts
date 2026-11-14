@@ -21,7 +21,7 @@ test.describe("smoke: every page loads clean with no keys and no wallet", () => 
 
   test("landing carries the social card and the headline numbers", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /og\.png$/);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /og-image\.png$/);
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
     await expect(page.locator(".lede")).toContainText("8.245 s");
     await expect(page.locator(".lede")).toContainText("0 of 80");

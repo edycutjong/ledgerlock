@@ -194,7 +194,7 @@ jobs:
       - name: Every stage passed; the artifact pages.yml deploys is complete
         run: |
           set -euo pipefail
-          for f in index.html judge.html pitch/index.html status/index.html status/data/status.json assets/og.png; do
+          for f in index.html judge.html pitch/index.html status/index.html status/data/status.json assets/og-image.png assets/icon.svg assets/brand/readme-hero-animated.svg; do
             test -s "_site/$f" || { echo "::error::missing _site/$f"; exit 1; }
           done
           echo "Stages 1-5 green on ${GITHUB_SHA}; pages.yml deploys this commit next."

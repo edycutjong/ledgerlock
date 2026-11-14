@@ -1,8 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ledgerlock">
-  <rect width="64" height="64" rx="12" fill="#182019"/>
-  <rect x="5" y="5" width="54" height="54" rx="8" fill="none" stroke="#34402F" stroke-width="2"/>
-  <rect x="9" y="22" width="11" height="20" rx="2" fill="none" stroke="#EAE3CC" stroke-width="3"/>
-  <rect x="44" y="22" width="11" height="20" rx="2" fill="none" stroke="#EAE3CC" stroke-width="3"/>
-  <line x1="20" y1="32" x2="44" y2="32" stroke="#EAE3CC" stroke-width="3"/>
-  <circle cx="32" cy="32" r="7" fill="#F1DE9C" stroke="#182019" stroke-width="3"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Ledgerlock — a bridge route paused at both ends: two gates shut across one line, both section lamps red">
+  <!-- Ledgerlock mark: the line-blocked frame of the track diagram: one line, two gates, two section lamps.
+       One cream track; a gate bar across it at each end (Base left, Unichain right); between them the two section lamps
+       lit red (the line-blocked token) either side of the brass Lasna interlock. At 16px it reduces to three shapes: two bars and a red dash,
+       the pause sign the verb names. Self-plated so it holds on GitHub light (#ffffff) and dark (#0d1117). -->
+  <defs>
+    <linearGradient id="ll-sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color:var(--ink, #EAE3CC); stop-opacity:0.07"/>
+      <stop offset="0.45" style="stop-color:var(--ink, #EAE3CC); stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="ll-bar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color:#F6F0DC"/>
+      <stop offset="0.5" style="stop-color:var(--ink, #EAE3CC)"/>
+      <stop offset="1" style="stop-color:var(--primary, #F1DE9C)"/>
+    </linearGradient>
+    <linearGradient id="ll-lamp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color:#F26A4F"/>
+      <stop offset="0.55" style="stop-color:var(--accent, #E4412A)"/>
+      <stop offset="1" style="stop-color:#B92E1C"/>
+    </linearGradient>
+    <radialGradient id="ll-halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" style="stop-color:var(--accent, #E4412A); stop-opacity:0.42"/>
+      <stop offset="1" style="stop-color:var(--accent, #E4412A); stop-opacity:0"/>
+    </radialGradient>
+    <filter id="ll-glow" x="150" y="190" width="212" height="132" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <!-- enamel plate + engraving -->
+  <rect x="16" y="16" width="480" height="480" rx="112" style="fill:var(--bg-base, #182019)"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#ll-sheen)"/>
+  <rect x="42" y="42" width="428" height="428" rx="88" fill="none" style="stroke:var(--rule, #34402F)" stroke-width="6"/>
+  <g style="fill:var(--brass, #B8914A)">
+    <circle cx="86" cy="86" r="7"/><circle cx="426" cy="86" r="7"/><circle cx="86" cy="426" r="7"/><circle cx="426" cy="426" r="7"/>
+  </g>
+
+  <!-- red halo behind the blocked section -->
+  <ellipse cx="256" cy="256" rx="150" ry="96" fill="url(#ll-halo)"/>
+
+  <!-- the line, outside the gates -->
+  <g style="stroke:var(--ink, #EAE3CC)" stroke-width="22" stroke-linecap="round">
+    <line x1="78" y1="256" x2="168" y2="256"/>
+    <line x1="344" y1="256" x2="434" y2="256"/>
+  </g>
+
+  <!-- section lamps, lit red: Base half and Unichain half -->
+  <g filter="url(#ll-glow)" style="fill:var(--accent, #E4412A)" opacity="0.85">
+    <rect x="206" y="240" width="44" height="32" rx="8"/>
+    <rect x="262" y="240" width="44" height="32" rx="8"/>
+  </g>
+  <rect x="206" y="240" width="44" height="32" rx="8" fill="url(#ll-lamp)"/>
+  <rect x="262" y="240" width="44" height="32" rx="8" fill="url(#ll-lamp)"/>
+  <!-- Lasna interlock: brass, between the two lamps -->
+  <rect x="249" y="249" width="14" height="14" rx="2" transform="rotate(45 256 256)" style="fill:var(--brass, #B8914A)"/>
+
+  <!-- the two gates, shut across the line -->
+  <rect x="140" y="138" width="56" height="236" rx="28" fill="url(#ll-bar)"/>
+  <rect x="316" y="138" width="56" height="236" rx="28" fill="url(#ll-bar)"/>
+  <!-- gate target discs (red only because the gate is shut) -->
+  <g style="fill:var(--accent, #E4412A); stroke:var(--bg-base, #182019)" stroke-width="5">
+    <circle cx="168" cy="256" r="14"/>
+    <circle cx="344" cy="256" r="14"/>
+  </g>
 </svg>
