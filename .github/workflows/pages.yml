@@ -20,12 +20,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -40,6 +37,15 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+
+  # A separate job, as in GitHub's Pages starter: the artifact is complete and listable before deploy-pages looks for it.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5
       - name: Live check (landing, /judge, deck, status page)
