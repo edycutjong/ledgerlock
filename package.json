@@ -5,7 +5,12 @@
   "license": "MIT",
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
-    "test:ts": "tsx --test packages/reactive-kit/ts/*.test.ts",
+    "test:ts": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:sol": "forge test && FOUNDRY_PROFILE=kit forge test",
+    "coverage:sol": "bash script/coverage-gate.sh",
+    "e2e": "playwright test",
+    "lighthouse": "npx --yes @lhci/cli@0.16.1 autorun",
     "triples": "tsx scripts/spike-triples.ts",
     "triples:core": "tsx scripts/triples.ts",
     "bench": "script/bench-all.sh frozen3",
@@ -16,9 +21,12 @@
     "routeb": "tsx scripts/routeb.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^5.1.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "viem": "^2.21.0"
