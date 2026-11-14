@@ -268,7 +268,8 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .final{padding:96px 0 40px;background:radial-gradient(50% 70% at 50% 0%,color-mix(in srgb,var(--before) 8%,transparent),transparent 70%),var(--bg)}
 .final h2{font-size:clamp(48px,7vw,96px);margin:0 0 18px;max-width:16ch}
 .addr{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font:400 14px/1.5 var(--font-body);margin:30px 0 0;color:var(--muted)}
-.addr b{color:var(--ink);font-weight:400;word-break:break-all;font-family:var(--font-data);font-size:13px}
+.addr a{color:var(--ink);font-weight:400;word-break:break-all;font-family:var(--font-data);font-size:13px;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--before) 40%,transparent);text-underline-offset:4px;transition:color .2s,text-decoration-color .2s;justify-self:start}
+.addr a:hover{color:var(--before);text-decoration-color:var(--before)}.addr .arr{margin-left:6px;color:var(--muted);transition:color .2s,transform .2s;display:inline-block}.addr a:hover .arr{color:var(--before);transform:translate(2px,-2px)}
 footer{border-top:1px solid var(--rule);margin-top:64px;padding:22px 0 0;display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13.5px;color:var(--muted)}
 footer a{color:var(--muted);transition:color .15s,text-decoration-color .15s}
 footer .ver{font-family:var(--font-data);margin-left:auto}
@@ -398,7 +399,7 @@ footer a:hover{color:var(--ink)}
   .limits li{grid-template-columns:1fr;gap:6px}
   .dots.dots-d{display:none}.dots.dots-m{display:block}
   .addr{grid-template-columns:1fr;gap:2px}
-  .addr b{margin-bottom:10px}
+  .addr a{margin-bottom:10px}
   .event{font-size:11px}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
@@ -486,9 +487,9 @@ footer a:hover{color:var(--ink)}
 <text x="600" y="290" class="mono md " data-base="mono md" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
 <text x="600" y="316" class="mono xs" text-anchor="middle">Reactive Lasna testnet · chain 5318007</text>
 </svg>
-<svg class="ll-svg ll-tab" viewBox="0 0 820 340" aria-hidden="true" focusable="false">
+<svg class="ll-svg ll-tab" viewBox="0 0 820 392" aria-hidden="true" focusable="false">
 <defs><filter id="llt-glow" x="150" y="160" width="520" height="160" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="9"/></filter>
-<filter id="llt-soft" x="0" y="0" width="820" height="340" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="3"/></filter></defs>
+<filter id="llt-soft" x="0" y="0" width="820" height="392" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="3"/></filter></defs>
 <text x="410" y="24" class="lg st" text-anchor="middle">LASNA · ONE REACTIVE CONTRACT</text>
 <path class="dial-arc" d="M348,104 A62,62 0 0 1 472,104"/>
 <line class="tk tk-c" x1="364.9" y1="78" x2="355.4" y2="72.5"/><line class="tk" x1="410" y1="52" x2="410" y2="41"/><line class="tk tk-r" x1="455.1" y1="78" x2="464.6" y2="72.5"/>
@@ -513,12 +514,12 @@ footer a:hover{color:var(--ink)}
 <rect class="ll-box" x="10" y="206" width="150" height="68" rx="8"/><rect class="ll-box" x="660" y="206" width="150" height="68" rx="8"/>
 <text x="85" y="232" class="mono sm m" data-base="mono sm" text-anchor="middle" data-slot="b1">carry-home</text><text x="85" y="263" class="lg bx r" data-base="lg bx" text-anchor="middle" data-slot="b2">REVERTED</text>
 <text x="735" y="232" class="mono sm m" data-base="mono sm" text-anchor="middle" data-slot="u1">copycat</text><text x="735" y="263" class="lg bx r" data-base="lg bx" text-anchor="middle" data-slot="u2">REVERTED</text>
-<text x="85" y="297" class="mono xs" text-anchor="middle">testnet · chain 84532</text>
-<text x="735" y="297" class="mono xs" text-anchor="middle">testnet · chain 1301</text>
-<text x="200" y="303" class="lg gl" text-anchor="middle">GATE B</text><text x="620" y="303" class="lg gl" text-anchor="middle">GATE U</text>
-<text x="200" y="327" class="mono st2 r" data-base="mono st2" text-anchor="middle" data-slot="sb">paused +4.651 s</text><text x="620" y="327" class="mono st2 r" data-base="mono st2" text-anchor="middle" data-slot="su">paused +5.341 s</text>
-<text x="410" y="290" class="mono md " data-base="mono md" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
-<text x="410" y="316" class="mono xs" text-anchor="middle">Lasna testnet · chain 5318007</text>
+<text x="85" y="295" class="mono xs" text-anchor="middle">testnet · chain 84532</text>
+<text x="735" y="295" class="mono xs" text-anchor="middle">testnet · chain 1301</text>
+<text x="200" y="310" class="lg gl" text-anchor="middle">GATE B</text><text x="620" y="310" class="lg gl" text-anchor="middle">GATE U</text>
+<text x="200" y="334" class="mono st2 r" data-base="mono st2" text-anchor="middle" data-slot="sb">paused +4.651 s</text><text x="620" y="334" class="mono st2 r" data-base="mono st2" text-anchor="middle" data-slot="su">paused +5.341 s</text>
+<text x="410" y="362" class="mono md " data-base="mono md" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
+<text x="410" y="382" class="mono xs" text-anchor="middle">Lasna testnet · chain 5318007</text>
 </svg>
 <svg class="ll-svg ll-phone" viewBox="0 0 360 332" aria-hidden="true" focusable="false">
 <defs><filter id="llp-glow-p" x="40" y="160" width="280" height="60" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="6"/></filter></defs>
@@ -737,9 +738,9 @@ Ran 6 test suites in 4.66s (13.92s CPU time): 113 tests passed, 0 failed, 0 skip
       <a class="btn" href="status/">Status page (testnet)</a>
     </div>
     <div class="addr" aria-label="Route A contracts, all on testnets">
-      <span>LedgerlockReactive · Lasna testnet</span><b>0x1484bdBF890f3097069C95Dc55EB6C6BF9039Ff9</b>
-      <span>Gate B · Base Sepolia</span><b>0xE77A8068882d157bE15bcd6CfbD6D93703E7634d</b>
-      <span>Gate U · Unichain Sepolia</span><b>0x6533d804Ef6D70765b981931083Fd332D4F78ef1</b>
+      <span>LedgerlockReactive · Lasna testnet</span><a href="https://lasna.reactscan.net/address/0x1484bdBF890f3097069C95Dc55EB6C6BF9039Ff9" rel="noopener" title="Open on Reactscan (testnet explorer)">0x1484bdBF890f3097069C95Dc55EB6C6BF9039Ff9<span class="arr" aria-hidden="true">↗</span></a>
+      <span>Gate B · Base Sepolia</span><a href="https://sepolia.basescan.org/address/0xE77A8068882d157bE15bcd6CfbD6D93703E7634d" rel="noopener" title="Open on Basescan (testnet explorer)">0xE77A8068882d157bE15bcd6CfbD6D93703E7634d<span class="arr" aria-hidden="true">↗</span></a>
+      <span>Gate U · Unichain Sepolia</span><a href="https://sepolia.uniscan.xyz/address/0x6533d804Ef6D70765b981931083Fd332D4F78ef1" rel="noopener" title="Open on Uniscan (testnet explorer)">0x6533d804Ef6D70765b981931083Fd332D4F78ef1<span class="arr" aria-hidden="true">↗</span></a>
     </div>
     <footer>
       <span>Ledgerlock · MIT · testnets only, no mainnet deployment</span>
