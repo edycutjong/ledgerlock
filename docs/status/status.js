@@ -50,9 +50,10 @@ function track(label, sub, gb, gu, req, boxes) {
   const word = split ? { cls: "warn", word: "split: one gate shut" } : s;
   const lamp = (open) => (open === null ? "" : open ? "clear" : "blocked");
   const rail = (open) => (open === null ? "" : open ? "clear" : "blocked");
+  const tl = (open) => (open === null ? "" : open ? "c" : "r"); // the two track lamps beside the state word: gate B, gate U
   const g = (n, open) => `<div class="needle"><span class="lamp ${lamp(open)}"></span><span>${n}: ${open === null ? (PENDING ? "reading…" : "live read failed") : open ? "OPEN" : "SHUT"}</span></div>`;
   return `<div class="route"><div><div class="eyebrow">${esc(sub)}</div><h3 class="disp">${esc(label)}</h3></div>
-  <div class="state ${word.cls}" aria-live="polite">${word.word}</div>
+  <div class="state ${word.cls}" aria-live="polite"><span class="tl" aria-hidden="true"><b class="${tl(gb)}"></b><b class="${tl(gu)}"></b></span>${word.word}</div>
   <div class="track"><div class="box"><h4>Base Sepolia</h4>${g("gate B", gb)}<div class="muted" style="font-size:14px">${esc(boxes.base)}</div><div class="rail ${rail(gb)}"></div></div>
   <div class="box mid"><h4>Lasna</h4><div class="muted" style="font-size:14px">${esc(boxes.mid)}</div><div class="rail"></div></div>
   <div class="box"><h4>Unichain Sepolia</h4>${g("gate U", gu)}<div class="muted" style="font-size:14px">${esc(boxes.uni)}</div><div class="rail ${rail(gu)}"></div></div></div></div>`;
@@ -89,8 +90,9 @@ function render(d, lv) {
   $("incident").innerHTML = inc ? `<div class="cards">
     <div class="stat"><div class="k">t0 · attacking mint mined</div><div class="v">0.0 s</div>${link(1301, inc.mint_tx)}</div>
     <div class="stat"><div class="k">t1 · Lasna react seen</div><div class="v">+${fmt(inc.detection_s)} s</div>${link(5318007, inc.lasna_tx)}</div>
-    <div class="stat"><div class="k">t2 · gate U Paused</div><div class="v">+${fmt(inc.pause_u_s)} s</div>${link(1301, inc.gate_u_tx)}</div>
-    <div class="stat"><div class="k">t3 · gate B Paused</div><div class="v">+${fmt(inc.pause_b_s)} s</div>${link(84532, inc.gate_b_tx)}</div></div>
+    ${[["gate U", inc.pause_u_s, 1301, inc.gate_u_tx], ["gate B", inc.pause_b_s, 84532, inc.gate_b_tx]]
+      .sort((x, y) => x[1] - y[1]) // time order: whichever gate's chain included its callback first
+      .map(([g, s, chain, tx], i) => `<div class="stat"><div class="k">t${i + 2} · ${g} Paused</div><div class="v">+${fmt(s)} s</div>${link(chain, tx)}</div>`).join("")}</div>
     <p class="muted">Run ${esc(inc.id)} (${esc(inc.kind)}). ±${d.summary ? d.summary.poll_ms : 400} ms poll. ${inc.fired !== null ? `Copycats fired ${inc.fired} · landed before the pause ${inc.landed} · reverted GatePaused ${inc.fired - inc.landed}. Exposure ${inc.exposure_tusd} tUSD.` : "Single attacking mint, no copycats."}</p>
     <p class="note"><b>ACTION</b> after a pause: rotate the relayer key, seize the unbacked mints listed by the guard's Mismatch events, then owner calls resolve().</p>` : '<p class="empty">not measured yet</p>';
 
@@ -138,13 +140,13 @@ function render(d, lv) {
   const c = d.control;
   if (c) {
     const sum = (x) => x.reduce((a, b) => a + b, 0);
-    $("numbers").insertAdjacentHTML("afterbegin", `<h3 class="disp" style="font-size:30px;margin:10px 0">Paired control: with and without the guard</h3><div class="scroll"><table><thead><tr><th>arm</th><th>runs</th><th>unauthorized tUSD issued per run</th><th>collateral released to the attacker per run (tUSD)</th><th>carry-home release</th></tr></thead><tbody>
+    $("numbers").insertAdjacentHTML("afterbegin", `<h3 class="disp" style="font-size:30px;margin:10px 0">Paired control: with and without the guard</h3><div class="scroll" tabindex="0" role="region" aria-label="Paired control table, scrollable"><table><thead><tr><th>arm</th><th>runs</th><th>unauthorized tUSD issued per run</th><th>collateral released to the attacker per run (tUSD)</th><th>carry-home release</th></tr></thead><tbody>
       <tr><td>A0 · CONTROL · UNGUARDED · FIXTURE</td><td>${c.a0.runs}</td><td>${sum(c.a0.issued_per_run) / c.a0.runs}</td><td>${sum(c.a0.released_per_run) / c.a0.runs}</td><td>${esc([...new Set(c.a0.carry_home)].join(", "))}</td></tr>
       <tr><td>A · guarded by Ledgerlock · FIXTURE</td><td>${c.a.runs}</td><td>${sum(c.a.issued_per_run) / c.a.runs}</td><td>${sum(c.a.released_per_run) / c.a.runs}</td><td>${esc([...new Set(c.a.carry_home)].join(", "))}</td></tr></tbody></table></div><p class="muted">Both arms: one forged 500 tUSD mint, then copycat mints, then a forged 500 tUSD release on Base. A0 sends a fixed 6 copycats (nothing ever reverts, so its issuance is set by that choice and is illustrative); on A the loop sends one copycat per confirmed receipt until the first GatePaused revert, so the guarded column is the measurement. Runs: bu-021..025 (A) and a0-001..005 (A0).</p>`);
   }
   if (d.routeBRuns && d.routeBRuns.drills.length) {
     const dr = d.routeBRuns.drills;
-    $("numbers").insertAdjacentHTML("beforeend", `<h3 class="disp" style="font-size:30px;margin:18px 0 6px">Route B drills (labelled owner drills, no attack staged)</h3><div class="scroll"><table><thead><tr><th>drill</th><th>gate U paused</th><th>gate B paused</th><th>transfer sent during the pause</th><th>Lasna</th><th>delivered after resolve()</th></tr></thead><tbody>${dr.map((r) => `<tr><td>${esc(r.id)}</td><td>+${fmt(r.pause_u_s)} s ${link(1301, r.pause_u_tx)}</td><td>+${fmt(r.pause_b_s)} s ${link(84532, r.pause_b_tx)}</td><td>${esc(r.held)} ${link(1301, r.held_tx)}</td><td>${link(5318007, r.pause_lasna_tx)}</td><td>${link(1301, r.delivered_tx)}</td></tr>`).join("")}</tbody></table></div>`);
+    $("numbers").insertAdjacentHTML("beforeend", `<h3 class="disp" style="font-size:30px;margin:18px 0 6px">Route B drills (labelled owner drills, no attack staged)</h3><div class="scroll" tabindex="0" role="region" aria-label="Route B drills table, scrollable"><table><thead><tr><th>drill</th><th>gate U paused</th><th>gate B paused</th><th>transfer sent during the pause</th><th>Lasna</th><th>delivered after resolve()</th></tr></thead><tbody>${dr.map((r) => `<tr><td>${esc(r.id)}</td><td>+${fmt(r.pause_u_s)} s ${link(1301, r.pause_u_tx)}</td><td>+${fmt(r.pause_b_s)} s ${link(84532, r.pause_b_tx)}</td><td>${esc(r.held)} ${link(1301, r.held_tx)}</td><td>${link(5318007, r.pause_lasna_tx)}</td><td>${link(1301, r.delivered_tx)}</td></tr>`).join("")}</tbody></table></div>`);
   }
   const last = d.incident;
   $("verify").innerHTML = (last ? `<p><b>Verify:</b> the latest pause loop's four hashes: mint ${link(1301, last.mint_tx)} → Lasna ${link(5318007, last.lasna_tx)} → gate U ${link(1301, last.gate_u_tx)} · gate B ${link(84532, last.gate_b_tx)}. No setup needed.</p>` : "") +

@@ -215,16 +215,16 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
     <p class="label">Real path first</p>
     <h2 id="h-rep" class="disp">Reproduce</h2>
     <p class="lab">Re-check the live runs on-chain (public RPC reads, no keys):</p>
-<pre><code>git clone --recurse-submodules https://github.com/edycutjong/ledgerlock.git && cd ledgerlock
+<pre tabindex="0"><code>git clone --recurse-submodules https://github.com/edycutjong/ledgerlock.git && cd ledgerlock
 pnpm install
 pnpm burst:verify     <span class="c"># re-reads the 25 burst rows (20 headline + 5 paired control) from the chains</span>
 pnpm bench:summary    <span class="c"># regenerates the latency, false-pause and burst numbers from evidence/frozen3-bench-runs.csv</span></code></pre>
     <p class="lab">Re-run the attack bench live on your own deployment (funded testnet keys, about 25 lREACT):</p>
-<pre><code>export LEDGERLOCK_ENV=~/.config/&lt;you&gt;/testnet.env   <span class="c"># deployer key + RPC URLs, outside the repo</span>
+<pre tabindex="0"><code>export LEDGERLOCK_ENV=~/.config/&lt;you&gt;/testnet.env   <span class="c"># deployer key + RPC URLs, outside the repo</span>
 INSTANCE=mine script/core-deploy.sh
 script/bench-all.sh mine                              <span class="c"># 100 legit + 100 attacks, resumable</span></code></pre>
     <p class="lab">CI / deterministic replay (Reactive Test Lib, no network):</p>
-<pre><code>forge test && FOUNDRY_PROFILE=kit forge test && pnpm test:coverage</code></pre>
+<pre tabindex="0"><code>forge test && FOUNDRY_PROFILE=kit forge test && pnpm test:coverage</code></pre>
   </div>
 </section>
 

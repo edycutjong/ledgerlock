@@ -12,6 +12,14 @@ test.describe("status page", () => {
     await expect(hashes.first()).toHaveAttribute("href", /^https:\/\/(sepolia\.uniscan\.xyz|sepolia\.basescan\.org|lasna\.reactscan\.net)\/tx\/0x[0-9a-f]{64}$/);
   });
 
+  test("the last attack run's cards read in time order", async ({ page }) => {
+    await page.goto("/status/");
+    const secs = await page.locator("#incident .stat .v").allTextContents();
+    expect(secs.length).toBe(4);
+    const n = secs.map((t) => parseFloat(t.replace("+", "")));
+    expect([...n].sort((a, b) => a - b)).toEqual(n);
+  });
+
   test("route A's live gate state resolves to a definite word within 10 s", async ({ page }) => {
     await page.goto("/status/");
     await expect(page.locator("#routes")).toContainText(/line clear|line blocked|pause not confirmed|live read failed/, { timeout: 12_000 });
