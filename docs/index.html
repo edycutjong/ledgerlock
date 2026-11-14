@@ -713,13 +713,18 @@ Ran 6 test suites in 4.66s (13.92s CPU time): 113 tests passed, 0 failed, 0 skip
     if (anim && e.fu) ring("fu");
     if (anim && e.fb) ring("fb");
   };
-  const rows = (R) => R.rows.map((r) => '<li data-at="' + r.at + '"><span class="t">' + r.t + '</span><span class="ch">' + r.chain + '</span><span class="what">' + r.what + '</span><a class="tx" href="' + r.url + '">' + r.tx + "</a></li>").join("");
+  const span = (cls, html) => { const e = document.createElement("span"); e.className = cls; e.innerHTML = html; return e; };
+  const rows = (R) => reg.replaceChildren(...R.rows.map((r) => {
+    const li = document.createElement("li"), a = document.createElement("a");
+    li.dataset.at = r.at; a.className = "tx"; a.href = r.url; a.textContent = r.tx;
+    li.append(span("t", r.t), span("ch", r.chain), span("what", r.what), a); return li;
+  }));
   const mark = (t) => reg.querySelectorAll("li").forEach((li) => li.classList.toggle("on", +li.dataset.at <= t));
   const stop = () => { timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(raf); };
   const select = (k) => tabs.forEach((b) => { const on = b.dataset.run === k; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; if (on) regp.setAttribute("aria-labelledby", b.id); });
   const play = (k, anim) => {
     stop(); cur = k; const R = RUNS[k];
-    select(k); lab.textContent = R.label; reg.innerHTML = rows(R);
+    select(k); lab.textContent = R.label; rows(R);
     fig.classList.remove("fu", "fb"); instant(); apply(R.pre, false); void fig.getBoundingClientRect();
     const done = () => { if (touched) live.textContent = R.id + ": " + nbT.textContent + ", " + nbS.textContent + "."; };
     if (!anim || reduce) { R.events.forEach((e) => apply(e, false)); clock.textContent = fmt(R.end); mark(Infinity); done(); return; }
