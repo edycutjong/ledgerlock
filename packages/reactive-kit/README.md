@@ -1,6 +1,6 @@
 # reactive-kit
 
-> **Provenance:** copied unchanged from the same author's Heirloom repo (`packages/reactive-kit/`), written during the Reactive Omni Buildathon (Nov 2026), MIT. Ledgerlock vendors it rather than importing across repos; Ledgerlock-specific code lives in `src/`.
+> **Provenance:** copied from the same author's Heirloom repo (`packages/reactive-kit/`; identical apart from line-wrapping in the two `src/test` harness files, kit tests are this repo's own versions), written during the Reactive Omni Buildathon (Nov 2026), MIT. Ledgerlock vendors it rather than importing across repos; Ledgerlock-specific code lives in `src/`.
 
 Small, MIT-licensed building blocks for **Reactive Network Omni** projects (`reactive-lib-omni`), written for Heirloom
 and meant to be copied into other repos as-is (keep this README and `LICENSE` with it).

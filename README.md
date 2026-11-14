@@ -37,7 +37,7 @@ A reactive contract on Reactive Lasna keeps a ledger per route from the logs of 
 
 - a `Minted` with no matching `Locked` pauses **both** gates from the same `react()`, via two callbacks;
 - a matching `Locked` arriving inside the window `W` (60 s on our routes, set per route) reopens them automatically;
-- locks and matched mints trigger no callback at all.
+- a lock that arrives before its mint, and the mint that matches it, trigger no callback at all; only a lock that clears an unmatched mint sends the resume callbacks.
 
 Each gate is a small contract that flips the bridge's own pause switch. **Why Omni:** a guard on Base never sees `Minted`, and a guard on Unichain never sees `Locked`; one Lasna contract reads both (no off-chain watcher; we did not measure a baseline). The claim we make is deliberately narrow: **loss ≤ the mints that land inside the measured pause window.** Ledgerlock does not stop the first unbacked mint.
 
@@ -113,7 +113,7 @@ Lasna's `react()` is polled on a different RPC than the gates, so its first-seen
 | Forged keys pause once, then latch | one forger cannot make the guard spend callbacks per mint | `:234` |
 | A plausible forged nonce holds the route shut until the owner resolves | fail closed, never silently reopen | `:385` |
 | Gate rejects spoofed callbacks | only the proxy-delivered request from our contract can pause | `:646` |
-| Spoofed `CallbackFailure` logs ignored | any Lasna contract could otherwise forge failure logs for our gates (found in our multi-model review of the contract) | `:1126` |
+| Spoofed `CallbackFailure` logs ignored | any Lasna contract could otherwise forge failure logs for our gates (found in our adversarial review rounds) | `:1126` |
 | Nomad-class release without burn pauses both | the release-direction replay (fixture) | `:773` |
 | Callback failure retries once, then ends in `GateUnreachable` | a dead gate is visible, not silent | `:510`, `:527` |
 | Accumulator overflow pauses instead of reverting `react()` | a revert would blind the guard | `:1067` |
@@ -153,7 +153,7 @@ pnpm typecheck && pnpm test:coverage            # 80 TypeScript unit tests (reac
 pnpm e2e                                        # Playwright: landing, /judge, deck, status page, release tag, 375/768/1440 px
 ```
 
-Every push and pull request runs a six-stage pipeline (`.github/workflows/ci.yml`):
+Every push to main and every pull request runs a six-stage pipeline (`.github/workflows/ci.yml`):
 
 | Stage | What runs |
 |---|---|
@@ -164,14 +164,14 @@ Every push and pull request runs a six-stage pipeline (`.github/workflows/ci.yml
 | 5 · Performance | Lighthouse CI (advisory) |
 | 6 · Deploy gate | main only, needs every stage; `pages.yml` then deploys `docs/` |
 
-CodeQL scans the TypeScript and the workflows; Dependabot (grouped, monthly, majors and `lib/` submodules excluded so the deployed bytecode keeps matching the source), secret scanning and push protection are on. The coverage work added tests only: `git diff e425c78 -- src packages/reactive-kit/src` is empty, so the frozen3 contracts still match this source.
+CodeQL scans the TypeScript and the workflows; Dependabot (grouped, monthly; npm major bumps excluded; no submodule ecosystem, so `lib/` stays pinned and the deployed bytecode keeps matching the source), secret scanning and push protection are on. The coverage work added tests only: `git diff e425c78 -- src packages/reactive-kit/src` is empty, so the frozen3 contracts still match this source.
 
 ## 📁 Project Structure
 
 | Path | What |
 |---|---|
 | `src/` | `LedgerlockReactive.sol`, `Gate.sol`, `DrillBeacon.sol`, `fixture/` (route A), `probe/` |
-| `packages/reactive-kit/` | shared Omni building blocks; the Solidity and TypeScript sources are copied unchanged from the same author's Heirloom repo (MIT; see its README), the tests beside them were added here |
+| `packages/reactive-kit/` | shared Omni building blocks; copied from the same author's Heirloom repo (MIT; see its README), identical apart from line-wrapping in the two `src/test` harness files; the kit tests are this repo's own versions |
 | `script/`, `scripts/` | deploy and trigger shell scripts; bench, summary and join scripts |
 | `evidence/` | committed raw rows from live runs; start with `evidence/README.md` |
 | `docs/` | landing page (`index.html`), judge page (`judge.html`), pitch deck (`pitch/`), read-only status page (`status/`), architecture diagram |
