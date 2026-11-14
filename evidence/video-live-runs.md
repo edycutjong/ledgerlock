@@ -39,3 +39,14 @@ The Lasna `react()` (block 8279221) carries two callbacks on Reactscan: https://
 
 `lf-101` is an earlier take of the same kind (lock 6 s after the mint, `pause_seconds` 5.0); it is kept as a
 real row, and the video shows `lf-104`.
+
+## How the video uses these rows
+
+- The video opens with `bu-101` replayed at real speed from the observer seconds in its table (labelled "replay" on screen): the clock
+  starts at the mint, gate B flips at 2.210 s, the Lasna `react()` lights at 3.139 s, and gate U (both gates shut) at 7.986 s. It then cuts
+  to the same run on camera: the harness's own terminal output (`evidence/video-live-oncamera.log`) next to the status page, with only the
+  script start-up sped up (×4, labelled).
+- The callback shot shows the Lasna `react()` on Reactscan: its two callbacks' destination transactions are the gate U and gate B
+  `Paused` transactions in the table. The block-order shot is the receipts paragraph above (67756408 → 67756410, the copycat's
+  `GatePaused` revert at tx index 2), and the carry-home shot is the reverted forged release.
+- The closing card lists the four hashes of the loop (mint, `react()`, gate U, gate B) from the same table.
