@@ -43,9 +43,10 @@ test.describe("landing: the track-lamp panel and its three committed runs", () =
     }
   });
 
-  // One panel geometry per width, each drawn for that width (wide > 960 px, tablet 701-960, phone <= 700), and the bench
-  // plot redrawn for a phone so its p50 / p95 markers are on screen without sideways scrolling.
-  for (const [width, geo, plot] of [[1440, "ll-wide", "dots-d"], [768, "ll-tab", "dots-d"], [390, "ll-phone", "dots-m"]] as const) {
+  // One panel geometry per width, each drawn for that width (wide > 960 px, tablet 701-960, phone <= 700), and one bench
+  // plot per width band (>= 1100, 821-1099, 561-820, <= 560 px), so its p50 / p95 markers are on screen without sideways
+  // scrolling and no label renders below 11 px (the 1100-unit plot drew 5.6 px axis labels at 561 px).
+  for (const [width, geo, plot] of [[1440, "ll-wide", "dots-d"], [1024, "ll-wide", "dots-l"], [900, "ll-tab", "dots-l"], [768, "ll-tab", "dots-s"], [561, "ll-phone", "dots-s"], [390, "ll-phone", "dots-m"]] as const) {
     test(`at ${width}px the panel shows ${geo} and the bench shows ${plot}, markers on screen`, async ({ page }) => {
       test.skip(test.info().project.name !== "chromium", "viewports are explicit; run once");
       await page.setViewportSize({ width, height: 900 });
@@ -59,6 +60,11 @@ test.describe("landing: the track-lamp panel and its three committed runs", () =
       expect(off).toEqual([]);
       await expect(page.locator(`.dots.${plot} .pct`)).toContainText("p95 8.245 s");
       await expect(page.locator(`.dots.${plot} circle.hero`)).toHaveCount(1);
+      const minPx = await page.locator(`.dots.${plot}`).evaluate((svg) => {
+        const k = svg.getBoundingClientRect().width / (svg as SVGSVGElement).viewBox.baseVal.width;
+        return Math.min(...[...svg.querySelectorAll("text")].map((t) => parseFloat(getComputedStyle(t).fontSize) * k));
+      });
+      expect(minPx).toBeGreaterThanOrEqual(11);
     });
   }
 
