@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 
 gate() {
   local label="$1" profile="$2" exclude="$3" out
-  out=$(FOUNDRY_PROFILE="$profile" forge coverage --report summary --no-match-coverage "$exclude" 2>&1) || {
+  out=$(FOUNDRY_PROFILE="$profile" "${FORGE:-forge}" coverage --report summary --no-match-coverage "$exclude" 2>&1) || {
     echo "$out"; echo "::error::forge coverage failed ($label)"; return 1; }
   echo "$out" | grep -E '^\| [^-]'
   local total n

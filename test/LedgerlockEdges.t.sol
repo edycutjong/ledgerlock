@@ -173,7 +173,53 @@ contract LedgerlockEdgesTest is OmniReactiveTest {
         assertFalse(failRetried, "retry budget untouched");
     }
 
+    function test_short_callback_failure_payload_is_observed_but_never_retried() public {
+        // any reactive contract can make the proxy fail a call to our gate with arbitrary calldata: a payload too short
+        // to carry an epoch word decodes as epoch 0 (react() never reverts on it) and cannot match an owed request
+        deliver(_M(1, alice, 1e18)); // pause epoch 1 owed on both gates
+        sys.takeRequests();
+        bytes[2] memory shorts = [abi.encodeWithSelector(Gate.pause.selector, address(rsc), R), bytes("")];
+        for (uint256 i; i < 2; i++) {
+            IReactive.LogRecord memory f = _log(UNI, PROXY_U, CF_T0, uint160(address(gateU)), 0, 0);
+            f.data = abi.encode(shorts[i]);
+            vm.expectEmit(address(rsc));
+            emit LedgerlockReactive.Observed(R, LedgerlockReactive.Side.FAIL, 0, bytes32(f.txHash));
+            assertEq(deliver(f), 1, "reaches react() through the target-filtered subscription");
+        }
+        assertEq(sys.takeRequests().length, 0, "no retry");
+        (bool owed,,,,, bool failRetried,,,) = rsc.acks(R, 0);
+        assertTrue(owed);
+        assertFalse(failRetried, "retry budget untouched");
+    }
+
     // ================================================================== adapter decoding
+
+    function test_route_without_recipient_topic_matches_on_key_and_amount_only() public {
+        // recipientTopic 0 = recipient not checked (a bridge that does not index it): both sides decode it as address(0)
+        Gate gb = new Gate(address(proxy), address(rsc), address(this));
+        Gate gu = new Gate(address(proxy), address(rsc), address(this));
+        onChain(address(gb), BASE);
+        onChain(address(gu), UNI);
+        address lb = makeAddr("lb4");
+        address mt = makeAddr("mt4");
+        LedgerlockReactive.Route memory rt = _routeA(lb, mt, address(gb), address(gu));
+        rt.recipientTopic = 0;
+        uint256 r4 = rsc.addRoute(rt, _t0A());
+
+        assertEq(feed(_log(BASE, lb, LOCKED_T0, 5, uint160(alice), 100e18)).length, 0);
+        assertEq(feed(_log(UNI, mt, MINTED_T0, 5, uint160(bob), 100e18)).length, 0, "other topic2: still matched");
+        (, address srcTo,, bool consumed,,,) = rsc.slots(r4, 0, 5);
+        assertEq(srcTo, address(0));
+        assertTrue(consumed);
+
+        // the amount is still checked: a mint of another amount on a locked key pauses and latches
+        feed(_log(BASE, lb, LOCKED_T0, 7, uint160(alice), 100e18));
+        IReactive.LogRecord memory m = _log(UNI, mt, MINTED_T0, 7, uint160(alice), 99e18);
+        vm.expectEmit(address(rsc));
+        emit LedgerlockReactive.Mismatch(r4, LedgerlockReactive.Side.MINT, 7, 99e18, address(0), bytes32(m.txHash), 1);
+        assertEq(feed(m).length, 2);
+        assertEq(uint8(rsc.getState(r4).cause), uint8(LedgerlockReactive.Cause.REPEAT));
+    }
 
     function test_adapter_reads_key_from_topic3_and_recipient_from_topic1() public {
         // a bridge shaped like Event(address indexed to, uint32 indexed domain, uint256 indexed nonce, uint256 amount)
@@ -279,6 +325,26 @@ contract LedgerlockEdgesTest is OmniReactiveTest {
         assertEq(feed(_log(UNI, syn, SENT_T0, BASE, uint160(alice), 10e18)).length, 0);
         assertEq(feed(_log(BASE, col, RECV_T0, UNI, uint160(alice), 10e18)).length, 0);
         _assertOpen(r2, 0);
+    }
+
+    function test_supply_saturated_burned_total_counts_as_a_release_deficit() public {
+        // a burned total at uint256 max blinds the release invariant (no release total can exceed it), so the deficit
+        // view counts it as max: resolve() refuses without acceptDeficit, which rebases it to the released total
+        (uint256 r2, address col, address syn) = _addSupplyRoute();
+        uint256 max = type(uint256).max;
+        assertEq(feed(_log(UNI, syn, SENT_T0, BASE, uint160(thief), max)).length, 0); // burn: fits, no violation
+        assertEq(feed(_log(BASE, col, RECV_T0, UNI, uint160(thief), 500e18)).length, 0, "invariant blind");
+        (,,,,, uint256 def, uint256 defRel) = rsc.routeState(r2);
+        assertEq(def, 0);
+        assertEq(defRel, max, "a saturated burned total hides any release deficit: it counts as one");
+        vm.expectRevert(abi.encodeWithSelector(LedgerlockReactive.Deficit.selector, 0, max));
+        rsc.resolve(r2, 1, false);
+
+        rsc.resolve(r2, 1, true);
+        assertEq(rsc.getState(r2).burnedTotal, 500e18, "rebased to the released total");
+        (,,,,,, defRel) = rsc.routeState(r2);
+        assertEq(defRel, 0);
+        assertEq(feed(_log(BASE, col, RECV_T0, UNI, uint160(thief), 1e18)).length, 2, "invariant live again");
     }
 
     // ================================================================== pending-queue head
