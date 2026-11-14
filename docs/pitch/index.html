@@ -13,6 +13,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ledgerlock · pitch deck</title>
+<meta name="description" content="Ledgerlock pitch deck, ten slides: a mint on Unichain with no lock on Base trips one react() on Lasna and both bridge gates shut by 8.245 s (p95 of 100 testnet attacks); 0 of 80 legit transfers paused.">
+<link rel="canonical" href="https://edycutjong.github.io/ledgerlock/pitch/">
 <link rel="icon" href="../assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
@@ -98,6 +100,11 @@ em{font-style:normal;color:var(--before)}
 .lamp{position:relative;width:60px;height:60px;border-radius:50%;border:7px solid var(--bg);background:var(--rule);box-shadow:0 0 0 2px var(--rule)}
 .lamp.red{background:var(--after);box-shadow:0 0 0 2px var(--rule),0 0 40px color-mix(in srgb,var(--after) 75%,transparent);animation:pulse 1.4s ease-in-out 3}
 .quote{font:400 128px/.95 var(--font-display);text-transform:uppercase;margin:0;max-width:24ch}
+.loss{display:grid;grid-template-columns:auto 1fr;gap:56px;align-items:center;margin:auto 0}
+.loss b{font:400 220px/.85 var(--font-display);color:var(--after);letter-spacing:.01em;text-shadow:0 0 50px color-mix(in srgb,var(--after) 40%,transparent)}
+.loss p{margin:0;font-size:50px;line-height:1.3;max-width:20ch;color:color-mix(in srgb,var(--ink) 90%,var(--bg))}
+.loss p em{color:var(--after-text)}
+.wide-shot{margin-top:auto;box-shadow:0 30px 70px -40px #000}
 /* books */
 .books{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:auto;border-top:3px solid var(--rule)}
 .books div{padding:56px 48px 0 0}
@@ -167,8 +174,9 @@ svg.flow .m{font-family:var(--font-body);text-transform:none;fill:var(--muted)}
 .ll-svg .md{font-size:15.5px;fill:var(--ink)}
 .ll-svg .st2{font-size:15.5px;fill:var(--muted)}
 .ll-svg .gl{font-size:20px;fill:var(--muted)}
-.ll-phone .st{font-size:15px}.ll-phone .stn{font-size:17px}.ll-phone .bx{font-size:21px}
-.ll-phone .sm{font-size:12.5px}.ll-phone .st2{font-size:12.5px}
+.ll-phone .st{font-size:15px}.ll-phone .stn{font-size:18px}.ll-phone .bx{font-size:21px}
+.ll-phone .sm{font-size:12.5px}.ll-phone .st2{font-size:12.5px}.ll-phone .xs{font-size:10.5px}
+.ll-svg .plate{stroke:var(--rule);stroke-width:1}
 .ll-svg text.r{fill:var(--after-text)}
 .ll-svg text.c{fill:var(--before)}
 .ll-svg text.m{fill:var(--muted)}
@@ -180,6 +188,7 @@ svg.flow .m{font-family:var(--font-body);text-transform:none;fill:var(--muted)}
 .ll-panel[data-dial=blocked] .tk-r{stroke:var(--after)}
 .ll-svg .needle{transform-box:view-box;transform-origin:600px 104px;transform:rotate(-60deg);transition:transform .6s cubic-bezier(.3,1.4,.5,1)}
 .ll-phone .needle{transform-origin:180px 80px}
+.ll-tab .needle{transform-origin:410px 104px}
 .ll-svg .needle line{stroke:var(--ink);stroke-width:4;stroke-linecap:round;transition:stroke .3s}
 .ll-svg .hub{fill:var(--brass)}
 .ll-panel[data-dial=train] .needle,.ll-panel[data-dial=pending] .needle{transform:rotate(0deg)}
@@ -250,12 +259,22 @@ body.overview .stage{position:static;transform:none!important;width:auto;height:
 body.overview .slide{display:flex;position:relative;inset:auto;width:1920px;height:1080px;zoom:.2;cursor:pointer;outline:6px solid transparent}
 body.overview .slide.on{outline-color:var(--brass)}
 body.overview .chrome{display:none}
+.rotate{display:none}
+@media (max-width:600px) and (orientation:portrait){
+  .rotate{display:flex;flex-direction:column;align-items:center;gap:10px;position:fixed;left:16px;right:16px;bottom:max(22px,env(safe-area-inset-bottom));z-index:3;text-align:center;font:400 15px/1.45 var(--font-body);color:var(--muted)}
+  .rotate b{font:400 30px/1 var(--font-display);text-transform:uppercase;letter-spacing:.03em;color:var(--ink)}
+  .rotate svg{width:54px;height:54px;fill:none;stroke:var(--before);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .rotate svg .ph{animation:tilt 2.6s var(--ease) infinite;transform-origin:27px 27px}
+  .rotate a{display:inline-block;margin-top:2px;padding:10px 14px;border:1px solid var(--rule);border-radius:3px;color:var(--ink);text-decoration:none;font-weight:700;font-size:14px;transition:border-color .15s,color .15s}
+  .rotate a:hover{border-color:var(--before);color:var(--before)}
+  @keyframes tilt{0%,30%{transform:rotate(0)}55%,85%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+}
 @page{size:16in 9in;margin:0}
 @media print{
   html,body{overflow:visible;height:auto;background:var(--bg)}
   .stage{position:static;transform:none!important;width:auto;height:auto}
   .slide{display:flex!important;position:relative;inset:auto;width:1920px;height:1080px;zoom:.8;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid}
-  .chrome,.notes-panel,.speaker-notes{display:none!important}
+  .chrome,.notes-panel,.speaker-notes,.rotate{display:none!important}
   .pulse,.lamp.red{animation:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
@@ -263,6 +282,7 @@ body.overview .chrome{display:none}
 <noscript><style>html,body{overflow:auto;height:auto}.stage{position:static;transform:none;width:auto;height:auto}.slide{display:flex;position:relative;width:1920px;height:1080px;zoom:.5}</style></noscript>
 </head>
 <body>
+<main id="main" aria-label="Ledgerlock pitch deck, 10 slides">
 <div class="stage" id="stage">
 
 <section class="slide on cover2" aria-label="1 of 10, cover">
@@ -318,7 +338,7 @@ body.overview .chrome{display:none}
   <p class="label">One rule · three committed runs · route A, testnet</p>
   <h2 class="disp" style="margin-bottom:0">Same contract, <em>three outcomes</em></h2>
   <div class="tris">
-<div class="tri"><p class="tri-h"><span>Forged mint</span><code>bu-015</code></p><div class="ll-panel" data-gb="shut" data-gu="shut" data-dial="blocked" data-cbb="1" data-cbu="1" data-cbk="pause" data-lm="1" data-ll="0"><svg class="ll-svg ll-phone ll-tri" viewBox="0 0 360 300" aria-hidden="true" focusable="false">
+<div class="tri"><p class="tri-h"><span>Forged mint</span><code>bu-015</code></p><div class="ll-panel" data-gb="shut" data-gu="shut" data-dial="blocked" data-cbb="1" data-cbu="1" data-cbk="pause" data-lm="1" data-ll="0"><svg class="ll-svg ll-phone ll-tri" viewBox="0 0 360 332" aria-hidden="true" focusable="false">
 <defs><filter id="llp-glow-tbu" x="40" y="160" width="280" height="60" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="6"/></filter></defs>
 <text x="180" y="18" class="lg st" text-anchor="middle">LASNA</text>
 <path class="dial-arc" d="M140,80 A40,40 0 0 1 220,80"/>
@@ -337,14 +357,17 @@ body.overview .chrome{display:none}
 <path class="arc arc-u" pathLength="100" d="M187,84 C230,96 290,122 314,158"/>
 <g class="ll-gate gate-b"><rect class="ll-bar" x="40" y="180" width="8" height="20" rx="4"/><circle class="dot" cx="44" cy="190" r="4"/><circle class="ring" cx="44" cy="190" r="12"/></g>
 <g class="ll-gate gate-u"><rect class="ll-bar" x="312" y="180" width="8" height="20" rx="4"/><circle class="dot" cx="316" cy="190" r="4"/><circle class="ring" cx="316" cy="190" r="12"/></g>
-<text x="14" y="148" class="lg stn" text-anchor="start">BASE SEPOLIA</text>
-<text x="346" y="148" class="lg stn" text-anchor="end">UNICHAIN SEPOLIA</text>
-<text x="180" y="224" class="mono sm " data-base="mono sm" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
-<text x="14" y="248" class="mono sm m" data-base="mono sm" text-anchor="start" data-slot="b1">carry-home</text><text x="14" y="270" class="lg bx r" data-base="lg bx" text-anchor="start" data-slot="b2">REVERTED</text>
-<text x="346" y="248" class="mono sm m" data-base="mono sm" text-anchor="end" data-slot="u1">copycat</text><text x="346" y="270" class="lg bx r" data-base="lg bx" text-anchor="end" data-slot="u2">REVERTED</text>
-<text x="14" y="292" class="mono st2 r" data-base="mono st2" text-anchor="start" data-slot="sb">paused +4.651 s</text><text x="346" y="292" class="mono st2 r" data-base="mono st2" text-anchor="end" data-slot="su">paused +5.341 s</text>
+<text x="180" y="221" class="mono sm " data-base="mono sm" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
+<line class="plate" x1="14" y1="234" x2="346" y2="234"/>
+<text x="14" y="252" class="lg stn" text-anchor="start">BASE SEPOLIA</text>
+<text x="346" y="252" class="lg stn" text-anchor="end">UNICHAIN SEPOLIA</text>
+<text x="14" y="266" class="mono xs" text-anchor="start">gate B · testnet 84532</text>
+<text x="346" y="266" class="mono xs" text-anchor="end">testnet 1301 · gate U</text>
+<text x="14" y="285" class="mono sm m" data-base="mono sm" text-anchor="start" data-slot="b1">carry-home</text><text x="14" y="307" class="lg bx r" data-base="lg bx" text-anchor="start" data-slot="b2">REVERTED</text>
+<text x="346" y="285" class="mono sm m" data-base="mono sm" text-anchor="end" data-slot="u1">copycat</text><text x="346" y="307" class="lg bx r" data-base="lg bx" text-anchor="end" data-slot="u2">REVERTED</text>
+<text x="14" y="327" class="mono st2 r" data-base="mono st2" text-anchor="start" data-slot="sb">paused +4.651 s</text><text x="346" y="327" class="mono st2 r" data-base="mono st2" text-anchor="end" data-slot="su">paused +5.341 s</text>
 </svg></div><div class="nb" data-nbk="blocked"><span class="nb-t">Line blocked</span></div></div>
-<div class="tri"><p class="tri-h"><span>Lock arrives late</span><code>lf-009</code></p><div class="ll-panel" data-gb="open" data-gu="open" data-dial="clear" data-cbb="1" data-cbu="1" data-cbk="resume" data-lm="1" data-ll="1"><svg class="ll-svg ll-phone ll-tri" viewBox="0 0 360 300" aria-hidden="true" focusable="false">
+<div class="tri"><p class="tri-h"><span>Lock arrives late</span><code>lf-009</code></p><div class="ll-panel" data-gb="open" data-gu="open" data-dial="clear" data-cbb="1" data-cbu="1" data-cbk="resume" data-lm="1" data-ll="1"><svg class="ll-svg ll-phone ll-tri" viewBox="0 0 360 332" aria-hidden="true" focusable="false">
 <defs><filter id="llp-glow-tlf" x="40" y="160" width="280" height="60" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="6"/></filter></defs>
 <text x="180" y="18" class="lg st" text-anchor="middle">LASNA</text>
 <path class="dial-arc" d="M140,80 A40,40 0 0 1 220,80"/>
@@ -363,14 +386,17 @@ body.overview .chrome{display:none}
 <path class="arc arc-u" pathLength="100" d="M187,84 C230,96 290,122 314,158"/>
 <g class="ll-gate gate-b"><rect class="ll-bar" x="40" y="180" width="8" height="20" rx="4"/><circle class="dot" cx="44" cy="190" r="4"/><circle class="ring" cx="44" cy="190" r="12"/></g>
 <g class="ll-gate gate-u"><rect class="ll-bar" x="312" y="180" width="8" height="20" rx="4"/><circle class="dot" cx="316" cy="190" r="4"/><circle class="ring" cx="316" cy="190" r="12"/></g>
-<text x="14" y="148" class="lg stn" text-anchor="start">BASE SEPOLIA</text>
-<text x="346" y="148" class="lg stn" text-anchor="end">UNICHAIN SEPOLIA</text>
-<text x="180" y="224" class="mono sm " data-base="mono sm" text-anchor="middle" data-slot="mid">lock matched · 2 resume callbacks</text>
-<text x="14" y="248" class="mono sm m" data-base="mono sm" text-anchor="start" data-slot="b1">lock · key 89</text><text x="14" y="270" class="lg bx " data-base="lg bx" text-anchor="start" data-slot="b2">500 tUSD</text>
-<text x="346" y="248" class="mono sm m" data-base="mono sm" text-anchor="end" data-slot="u1">mint +0.000 s</text><text x="346" y="270" class="lg bx " data-base="lg bx" text-anchor="end" data-slot="u2">500 tUSD</text>
-<text x="14" y="292" class="mono st2 c" data-base="mono st2" text-anchor="start" data-slot="sb">reopened +15.056 s</text><text x="346" y="292" class="mono st2 c" data-base="mono st2" text-anchor="end" data-slot="su">reopened +16.479 s</text>
+<text x="180" y="221" class="mono sm " data-base="mono sm" text-anchor="middle" data-slot="mid">lock matched · 2 resume callbacks</text>
+<line class="plate" x1="14" y1="234" x2="346" y2="234"/>
+<text x="14" y="252" class="lg stn" text-anchor="start">BASE SEPOLIA</text>
+<text x="346" y="252" class="lg stn" text-anchor="end">UNICHAIN SEPOLIA</text>
+<text x="14" y="266" class="mono xs" text-anchor="start">gate B · testnet 84532</text>
+<text x="346" y="266" class="mono xs" text-anchor="end">testnet 1301 · gate U</text>
+<text x="14" y="285" class="mono sm m" data-base="mono sm" text-anchor="start" data-slot="b1">lock · key 89</text><text x="14" y="307" class="lg bx " data-base="lg bx" text-anchor="start" data-slot="b2">500 tUSD</text>
+<text x="346" y="285" class="mono sm m" data-base="mono sm" text-anchor="end" data-slot="u1">mint +0.000 s</text><text x="346" y="307" class="lg bx " data-base="lg bx" text-anchor="end" data-slot="u2">500 tUSD</text>
+<text x="14" y="327" class="mono st2 c" data-base="mono st2" text-anchor="start" data-slot="sb">reopened +15.056 s</text><text x="346" y="327" class="mono st2 c" data-base="mono st2" text-anchor="end" data-slot="su">reopened +16.479 s</text>
 </svg></div><div class="nb" data-nbk="clear"><span class="nb-t">Line clear</span></div></div>
-<div class="tri"><p class="tri-h"><span>In order</span><code>ls-015</code></p><div class="ll-panel" data-gb="open" data-gu="open" data-dial="clear" data-cbb="0" data-cbu="0" data-cbk="pause" data-lm="1" data-ll="1"><svg class="ll-svg ll-phone ll-tri" viewBox="0 0 360 300" aria-hidden="true" focusable="false">
+<div class="tri"><p class="tri-h"><span>In order</span><code>ls-015</code></p><div class="ll-panel" data-gb="open" data-gu="open" data-dial="clear" data-cbb="0" data-cbu="0" data-cbk="pause" data-lm="1" data-ll="1"><svg class="ll-svg ll-phone ll-tri" viewBox="0 0 360 332" aria-hidden="true" focusable="false">
 <defs><filter id="llp-glow-tls" x="40" y="160" width="280" height="60" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="6"/></filter></defs>
 <text x="180" y="18" class="lg st" text-anchor="middle">LASNA</text>
 <path class="dial-arc" d="M140,80 A40,40 0 0 1 220,80"/>
@@ -389,12 +415,15 @@ body.overview .chrome{display:none}
 <path class="arc arc-u" pathLength="100" d="M187,84 C230,96 290,122 314,158"/>
 <g class="ll-gate gate-b"><rect class="ll-bar" x="40" y="180" width="8" height="20" rx="4"/><circle class="dot" cx="44" cy="190" r="4"/><circle class="ring" cx="44" cy="190" r="12"/></g>
 <g class="ll-gate gate-u"><rect class="ll-bar" x="312" y="180" width="8" height="20" rx="4"/><circle class="dot" cx="316" cy="190" r="4"/><circle class="ring" cx="316" cy="190" r="12"/></g>
-<text x="14" y="148" class="lg stn" text-anchor="start">BASE SEPOLIA</text>
-<text x="346" y="148" class="lg stn" text-anchor="end">UNICHAIN SEPOLIA</text>
-<text x="180" y="224" class="mono sm " data-base="mono sm" text-anchor="middle" data-slot="mid">react() +6.678 s · 0 callbacks</text>
-<text x="14" y="248" class="mono sm m" data-base="mono sm" text-anchor="start" data-slot="b1">lock · key 15</text><text x="14" y="270" class="lg bx " data-base="lg bx" text-anchor="start" data-slot="b2">25 tUSD</text>
-<text x="346" y="248" class="mono sm m" data-base="mono sm" text-anchor="end" data-slot="u1">mint +0.000 s</text><text x="346" y="270" class="lg bx " data-base="lg bx" text-anchor="end" data-slot="u2">25 tUSD</text>
-<text x="14" y="292" class="mono st2 m" data-base="mono st2" text-anchor="start" data-slot="sb">open · no callback</text><text x="346" y="292" class="mono st2 m" data-base="mono st2" text-anchor="end" data-slot="su">open · no callback</text>
+<text x="180" y="221" class="mono sm " data-base="mono sm" text-anchor="middle" data-slot="mid">react() +6.678 s · 0 callbacks</text>
+<line class="plate" x1="14" y1="234" x2="346" y2="234"/>
+<text x="14" y="252" class="lg stn" text-anchor="start">BASE SEPOLIA</text>
+<text x="346" y="252" class="lg stn" text-anchor="end">UNICHAIN SEPOLIA</text>
+<text x="14" y="266" class="mono xs" text-anchor="start">gate B · testnet 84532</text>
+<text x="346" y="266" class="mono xs" text-anchor="end">testnet 1301 · gate U</text>
+<text x="14" y="285" class="mono sm m" data-base="mono sm" text-anchor="start" data-slot="b1">lock · key 15</text><text x="14" y="307" class="lg bx " data-base="lg bx" text-anchor="start" data-slot="b2">25 tUSD</text>
+<text x="346" y="285" class="mono sm m" data-base="mono sm" text-anchor="end" data-slot="u1">mint +0.000 s</text><text x="346" y="307" class="lg bx " data-base="lg bx" text-anchor="end" data-slot="u2">25 tUSD</text>
+<text x="14" y="327" class="mono st2 m" data-base="mono st2" text-anchor="start" data-slot="sb">open · no callback</text><text x="346" y="327" class="mono st2 m" data-base="mono st2" text-anchor="end" data-slot="su">open · no callback</text>
 </svg></div><div class="nb" data-nbk="clear"><span class="nb-t">Line clear</span></div></div>
   </div>
   <aside class="speaker-notes" data-note="Three real runs from the same bench. A forged mint shuts both gates and they stay shut until the owner resolves it. A real transfer whose lock our script sent 8 seconds late pauses, then reopens by itself after 10.2 seconds. A transfer in order costs no callback at all."></aside>
@@ -404,7 +433,7 @@ body.overview .chrome{display:none}
 <section class="slide" aria-label="3 of 10, the problem">
   <p class="label">Two boxes, no interlock</p>
   <h2 class="disp">Each chain keeps <em>half the book</em></h2>
-  <p class="body" style="margin:auto 0;font-size:52px">Nomad: about $190M lost to copycat replays in roughly 2.5 hours.</p>
+  <div class="loss"><b>$190M</b><p>Nomad: about $190M lost to <em>copycat replays</em> in roughly 2.5 hours.</p></div>
   <div class="books">
     <div><h3>Base sees</h3><p><b>Locked</b> · collateral in</p></div>
     <div><h3>Unichain sees</h3><p><b>Minted</b> · tokens out</p></div>
@@ -414,14 +443,10 @@ body.overview .chrome{display:none}
 </section>
 
 <section class="slide" aria-label="4 of 10, the solution">
-  <div class="split" style="grid-template-columns:.62fr 1.38fr;gap:56px">
-    <div>
-      <p class="label">One instrument, both ends</p>
-      <h2 class="disp">One contract reads <em>both</em></h2>
-      <p class="body">A Reactive Omni contract on Lasna keeps both books and pauses both gates when they disagree.</p>
-    </div>
-    <div class="frame"><img src="../assets/status-route-a.png" loading="lazy" decoding="async" width="2024" height="478" alt="Status page, route A fixture bridge: LINE CLEAR, gate B and gate U open"></div>
-  </div>
+  <p class="label">One instrument, both ends</p>
+  <h2 class="disp">One contract reads <em>both</em></h2>
+  <p class="body" style="max-width:44ch">A Reactive Omni contract on Lasna keeps both books and pauses both gates when they disagree.</p>
+  <div class="frame wide-shot"><img src="../assets/status-route-a.png" loading="lazy" decoding="async" width="2024" height="478" alt="Status page, route A fixture bridge: LINE CLEAR, gate B and gate U open"></div>
   <aside class="speaker-notes" data-note="No off-chain watcher: the decision and both pause callbacks come from one react(). This is our status page reading live testnet."></aside>
   <div class="foot"><span>LEDGERLOCK</span><span class="ver" data-release>v0.5.0</span></div>
 </section>
@@ -455,14 +480,14 @@ body.overview .chrome{display:none}
   <p class="label">Status page · last non-control attack run</p>
   <h2 class="disp" style="font-size:112px;margin-bottom:28px">Four timestamps, <em>four hashes</em></h2>
   <div class="callouts">
-    <div class="frame" style="padding:28px"><img src="../assets/status-inc.png" width="2356" height="750" alt="Status page, last non-control attack run ap-020: mint at 0 s, Lasna react seen +3.5 s, gate U Paused +8.2 s, gate B Paused +7.1 s, each with a transaction link"></div>
+    <div class="frame" style="padding:28px"><img src="../assets/status-inc.png" width="2168" height="750" alt="Status page, last non-control attack run ap-020, in time order: mint at 0 s, Lasna react seen +3.5 s, gate B Paused +7.1 s, gate U Paused +8.2 s, each with a transaction link"></div>
     <span class="co" style="left:16.1%;top:37.4%">1</span><span class="co" style="left:40.8%;top:37.4%">2</span><span class="co" style="left:65.5%;top:37.4%">3</span><span class="co" style="left:90.1%;top:37.4%">4</span>
   </div>
   <ul class="legend row4">
     <li><span>1</span>mint mined</li>
     <li><span>2</span>react() seen</li>
-    <li><span>3</span>gate U Paused</li>
-    <li><span>4</span>gate B Paused</li>
+    <li><span>3</span>gate B Paused</li>
+    <li><span>4</span>gate U Paused</li>
   </ul>
   <aside class="speaker-notes" data-note="The status page reads public RPCs, no wallet. This capture is run ap-020, a plausible-key forgery. Each hash under a timestamp opens an explorer."></aside>
   <div class="foot"><span>LEDGERLOCK</span><span class="ver" data-release>v0.5.0</span></div>
@@ -525,8 +550,12 @@ body.overview .chrome{display:none}
 </section>
 
 </div>
+</main>
+<aside aria-label="Deck position and speaker notes">
 <div class="chrome" id="count">01 / 10</div>
 <div class="notes-panel" id="notes" aria-live="polite"></div>
+<p class="rotate"><svg viewBox="0 0 54 54" aria-hidden="true"><g class="ph"><rect x="17" y="6" width="20" height="42" rx="4"/><path d="M24 42h6"/></g></svg><b>Turn your phone sideways</b>The deck is 16:9. Swipe left or right to change slides, or read the same story as a page.<a href="../">Open the page version</a></p>
+</aside>
 <script>
 (() => {
   const slides = [...document.querySelectorAll(".slide")], stage = document.getElementById("stage");

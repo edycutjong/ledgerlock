@@ -6,6 +6,7 @@
 <title>Ledgerlock: when the books disagree, the line blocks itself</title>
 <meta name="description" content="One Reactive contract reads Base locks and Unichain mints, and pauses both ends of a bridge when a mint has no lock: p95 8.245 s over 100 testnet attacks.">
 <meta name="author" content="Edy Cu">
+<link rel="canonical" href="https://edycutjong.github.io/ledgerlock/">
 <meta name="theme-color" content="#182019">
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
@@ -52,15 +53,15 @@
 html{overflow-x:clip;scroll-behavior:smooth;scrollbar-color:var(--rule) var(--bg);-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--font-body)}
 ::selection{background:var(--before);color:var(--bg)}
-a{color:var(--before);text-decoration-thickness:1px;text-underline-offset:3px}
-a:hover{color:var(--ink)}
+a{color:var(--before);text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:color-mix(in srgb,currentColor 55%,transparent);transition:color .15s,text-decoration-color .15s,background-color .15s}
+a:hover{color:var(--ink);text-decoration-color:currentColor}
 :focus-visible{outline:2px solid var(--before);outline-offset:3px;border-radius:2px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 clamp(18px,4vw,48px)}
 .disp{font-family:var(--font-display);font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95;margin:0}
 code{font-family:var(--font-data);font-size:.9em}
 .label{font:700 12px/1.4 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.skip{position:absolute;left:-999px;top:8px;background:var(--before);color:var(--bg);padding:8px 12px;z-index:9}
+.skip{position:absolute;left:-999px;top:8px;background:var(--before);color:var(--bg);padding:8px 12px;z-index:9;transition:background-color .15s}
 .skip:focus{left:8px}
 /* nav */
 header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
@@ -81,7 +82,7 @@ header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg
 .btn.primary:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .nav .btn{padding:8px 14px}
 /* hero */
-.hero{position:relative;padding:22px 0 56px;overflow:hidden;border-bottom:1px solid var(--rule)}
+.hero{position:relative;padding:16px 0 56px;overflow:hidden;border-bottom:1px solid var(--rule)}
 .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
   background:
    radial-gradient(46% 38% at 50% 74%,color-mix(in srgb,var(--after) 7%,transparent),transparent 70%),
@@ -96,18 +97,19 @@ header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg
 @keyframes breathe{50%{opacity:.45}}
 .event{font:400 12px/1 var(--font-data);color:var(--muted);text-decoration:none;border:1px solid var(--rule);padding:8px 11px;border-radius:99px;transition:color .2s,border-color .2s}
 .event:hover{color:var(--ink);border-color:var(--muted)}
-.hero h1{font-size:clamp(50px,6.7vw,96px);margin:16px 0 16px}
+.hero h1{font-size:clamp(50px,min(6.7vw,10.6vh),96px);margin:12px 0 14px}
 .hero h1 em{font-style:normal;color:var(--before);text-shadow:0 0 30px color-mix(in srgb,var(--before) 35%,transparent)}
-.hero-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px 40px;align-items:start}
-.lede{max-width:62ch;font-size:18px;color:color-mix(in srgb,var(--ink) 86%,var(--bg));margin:0}
+.hero-row{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:20px 36px;align-items:start}
+.lede{max-width:72ch;font-size:18px;color:color-mix(in srgb,var(--ink) 86%,var(--bg));margin:0}
 .lede b{color:var(--ink)}
 .ctas{display:flex;flex-wrap:wrap;gap:10px}
 .hero .ctas{justify-content:flex-end}
+@media (min-width:1021px){.hero .ctas{display:grid;grid-template-columns:auto auto auto;gap:8px;padding-top:4px}.hero .ctas .primary{grid-column:1/-1;padding:13px 18px;font-size:15px}.hero .ctas .btn:not(.primary){padding:10px 9px;font-size:13px;white-space:nowrap}}
 .rise{animation:rise .8s var(--ease) both}
 .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.28s}.d4{animation-delay:.4s}.d5{animation-delay:.55s}
 @keyframes rise{from{transform:translateY(14px);opacity:.01}to{transform:none;opacity:1}}
 /* the instrument: signature element (the track lamp) */
-.board{position:relative;margin:26px 0 0;border:1px solid color-mix(in srgb,var(--ink) 14%,var(--rule));border-radius:14px;
+.board{position:relative;margin:22px 0 0;border:1px solid color-mix(in srgb,var(--ink) 14%,var(--rule));border-radius:14px;
   background:linear-gradient(180deg,color-mix(in srgb,var(--ink) 3%,transparent),transparent 40%),var(--bg-panel);
   box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 10%,transparent) inset,0 30px 80px -30px #000,0 0 0 6px color-mix(in srgb,black 25%,var(--bg));
   padding:18px clamp(14px,2.6vw,30px) 18px;transition:box-shadow .5s}
@@ -136,14 +138,15 @@ header.nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg
 .ph2{position:absolute;inset:6px 6px auto 6px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;pointer-events:none}
 .ph2 .label{max-width:30ch}
 .ph2 .ll-clock{text-align:left;min-width:0}
-.ll-svg.ll-phone{display:none}
+.ll-svg.ll-phone,.ll-svg.ll-tab{display:none}
+@media (min-width:961px) and (max-width:1180px){.ph2 .nb-s{max-width:36ch;text-wrap:balance}}
 .ll-reg{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--rule);font-size:14.5px}
 .ll-reg li{display:grid;grid-template-columns:11ch 14ch minmax(0,1fr) auto;gap:4px 16px;align-items:baseline;padding:9px 6px;border-bottom:1px solid color-mix(in srgb,var(--rule) 70%,transparent);opacity:.3;transition:opacity .35s,background .2s}
 .ll-reg li.on{opacity:1}
 .ll-reg li:hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
 .ll-reg .t{font:600 13.5px/1.4 var(--font-data);color:var(--before)}
 .ll-reg .ch{font-size:13px;color:var(--muted)}
-.ll-reg .tx{font:400 13px/1.4 var(--font-data)}
+.ll-reg .tx{font:400 13px/1.4 var(--font-data);transition:color .15s,text-decoration-color .15s}
 .board figcaption{font-size:13px;color:var(--muted);margin:12px 6px 0;max-width:100ch}
 /* receipts */
 .receipts{background:var(--panel);border-bottom:1px solid var(--rule)}
@@ -177,13 +180,22 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .reg-note{font-size:13.5px;color:var(--muted);margin:12px 0 0;max-width:90ch}
 /* numbers */
 .numbers{background:linear-gradient(180deg,var(--deep),var(--bg) 70%)}
-.dots{width:100%;height:auto;display:block}
-.dots-wrap{overflow-x:auto;position:relative}
+.dots{width:100%;height:auto;display:block;overflow:visible}
+.dots.dots-m{display:none}
+.dots-wrap{position:relative}
 .dots .axis line{stroke:var(--muted);stroke-width:1}
 .dots .axis text{font:400 12px var(--font-data);fill:var(--muted);text-anchor:middle}
 .dots .pct line{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 4}
 .dots .pct text{font:600 13px var(--font-data);fill:var(--ink)}
 .dots .pts circle{fill:var(--before);opacity:.9}
+.dots .pts circle.hero{fill:var(--after);opacity:1}
+.dots .hero-mark .ring{fill:none;stroke:var(--after);stroke-width:1.6}
+.dots .hero-mark path{fill:none;stroke:var(--after);stroke-width:1;opacity:.85}
+.dots .hero-mark text{font:400 12px var(--font-data);fill:var(--after-text)}
+.dots-m .hero-mark text{font-size:11px}
+.dots.armed .hero-mark{opacity:0}
+.dots.play .hero-mark{animation:fadein .5s 1.7s both}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
 .dots.armed .pts circle{opacity:0;transform:translateY(-60px)}
 .dots.play .pts circle{animation:drop .5s var(--ease) both;animation-delay:calc(var(--i) * 14ms)}
 @keyframes drop{from{opacity:0;transform:translateY(-60px)}to{opacity:.9;transform:none}}
@@ -258,7 +270,7 @@ section.s h2{font-size:clamp(44px,6vw,80px);margin:10px 0 16px;max-width:22ch}
 .addr{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font:400 14px/1.5 var(--font-body);margin:30px 0 0;color:var(--muted)}
 .addr b{color:var(--ink);font-weight:400;word-break:break-all;font-family:var(--font-data);font-size:13px}
 footer{border-top:1px solid var(--rule);margin-top:64px;padding:22px 0 0;display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13.5px;color:var(--muted)}
-footer a{color:var(--muted)}
+footer a{color:var(--muted);transition:color .15s,text-decoration-color .15s}
 footer .ver{font-family:var(--font-data);margin-left:auto}
 footer a:hover{color:var(--ink)}
 /* track-lamp panel: shared by the landing hero and the deck (state lives in data-* on .ll-panel) */
@@ -274,8 +286,9 @@ footer a:hover{color:var(--ink)}
 .ll-svg .md{font-size:15.5px;fill:var(--ink)}
 .ll-svg .st2{font-size:15.5px;fill:var(--muted)}
 .ll-svg .gl{font-size:20px;fill:var(--muted)}
-.ll-phone .st{font-size:15px}.ll-phone .stn{font-size:17px}.ll-phone .bx{font-size:21px}
-.ll-phone .sm{font-size:12.5px}.ll-phone .st2{font-size:12.5px}
+.ll-phone .st{font-size:15px}.ll-phone .stn{font-size:18px}.ll-phone .bx{font-size:21px}
+.ll-phone .sm{font-size:12.5px}.ll-phone .st2{font-size:12.5px}.ll-phone .xs{font-size:10.5px}
+.ll-svg .plate{stroke:var(--rule);stroke-width:1}
 .ll-svg text.r{fill:var(--after-text)}
 .ll-svg text.c{fill:var(--before)}
 .ll-svg text.m{fill:var(--muted)}
@@ -287,6 +300,7 @@ footer a:hover{color:var(--ink)}
 .ll-panel[data-dial=blocked] .tk-r{stroke:var(--after)}
 .ll-svg .needle{transform-box:view-box;transform-origin:600px 104px;transform:rotate(-60deg);transition:transform .6s cubic-bezier(.3,1.4,.5,1)}
 .ll-phone .needle{transform-origin:180px 80px}
+.ll-tab .needle{transform-origin:410px 104px}
 .ll-svg .needle line{stroke:var(--ink);stroke-width:4;stroke-linecap:round;transition:stroke .3s}
 .ll-svg .hub{fill:var(--brass)}
 .ll-panel[data-dial=train] .needle,.ll-panel[data-dial=pending] .needle{transform:rotate(0deg)}
@@ -330,8 +344,13 @@ footer a:hover{color:var(--ink)}
   .hero-row{grid-template-columns:1fr}
   .hero .ctas{justify-content:flex-start}
 }
+@media (max-width:960px){
+  .ll-svg.ll-wide{display:none}.ll-svg.ll-tab{display:block}
+  .ph2{position:static;padding:0 6px 4px}
+  .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;margin:0}
+  .tab .o .long{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
 @media (max-width:900px){
-  .ll-svg.ll-wide{display:none}.ll-svg.ll-phone{display:block}
   .receipts .wrap{grid-template-columns:1fr 1fr}
   .rc{padding:26px 16px}
   .rc:nth-child(3){border-left:0;padding-left:0}
@@ -346,6 +365,7 @@ footer a:hover{color:var(--ink)}
   .il-col-h{margin-top:10px}
 }
 @media (max-width:700px){
+  .ll-svg.ll-tab{display:none}.ll-svg.ll-phone{display:block;max-width:460px;margin:0 auto}
   .hero-row{display:contents}
   .hero h1{order:1}.hero .board{order:2;margin-top:6px}.hero .lede{order:3;margin-top:26px}.hero .ctas{order:4;margin-top:18px}
   .hero-top{order:0}
@@ -376,7 +396,7 @@ footer a:hover{color:var(--ink)}
   section.s{padding:68px 0}
   .row{grid-template-columns:10ch 1fr 8ch;font-size:13px}
   .limits li{grid-template-columns:1fr;gap:6px}
-  .dots{min-width:720px}
+  .dots.dots-d{display:none}.dots.dots-m{display:block}
   .addr{grid-template-columns:1fr;gap:2px}
   .addr b{margin-bottom:10px}
   .event{font-size:11px}
@@ -418,7 +438,7 @@ footer a:hover{color:var(--ink)}
         <a class="btn primary" href="judge">For judges: the 30-second path</a>
         <a class="btn" href="https://github.com/edycutjong/ledgerlock">GitHub repo</a>
         <a class="btn" href="pitch/">Pitch deck</a>
-        <a class="btn" href="status/">Status page (testnet)</a>
+        <a class="btn" href="status/">Testnet status</a>
       </div>
     </div>
 <figure class="ll-panel board rise d5" id="panel" data-gb="shut" data-gu="shut" data-dial="blocked" data-cbb="1" data-cbu="1" data-cbk="pause" data-lm="1" data-ll="0" aria-labelledby="panel-cap">
@@ -466,7 +486,41 @@ footer a:hover{color:var(--ink)}
 <text x="600" y="290" class="mono md " data-base="mono md" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
 <text x="600" y="316" class="mono xs" text-anchor="middle">Reactive Lasna testnet · chain 5318007</text>
 </svg>
-<svg class="ll-svg ll-phone" viewBox="0 0 360 300" aria-hidden="true" focusable="false">
+<svg class="ll-svg ll-tab" viewBox="0 0 820 340" aria-hidden="true" focusable="false">
+<defs><filter id="llt-glow" x="150" y="160" width="520" height="160" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="9"/></filter>
+<filter id="llt-soft" x="0" y="0" width="820" height="340" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="3"/></filter></defs>
+<text x="410" y="24" class="lg st" text-anchor="middle">LASNA · ONE REACTIVE CONTRACT</text>
+<path class="dial-arc" d="M348,104 A62,62 0 0 1 472,104"/>
+<line class="tk tk-c" x1="364.9" y1="78" x2="355.4" y2="72.5"/><line class="tk" x1="410" y1="52" x2="410" y2="41"/><line class="tk tk-r" x1="455.1" y1="78" x2="464.6" y2="72.5"/>
+<g class="needle"><line x1="410" y1="104" x2="410" y2="56"/></g><circle class="hub" cx="410" cy="104" r="7"/>
+<line class="drop" x1="410" y1="114" x2="410" y2="230"/>
+<path class="log log-m" pathLength="100" d="M660,216 C600,196 540,50 478,92"/>
+<path class="log log-l" pathLength="100" d="M160,216 C220,196 280,50 342,92"/>
+<g class="glow-b" filter="url(#llt-glow)"><rect x="218" y="228" width="184" height="24" rx="10"/></g>
+<g class="glow-u" filter="url(#llt-glow)"><rect x="418" y="228" width="184" height="24" rx="10"/></g>
+<line class="rail" x1="160" y1="240" x2="660" y2="240"/>
+<rect class="ll-lamp ll-lamp-b" x="222" y="233" width="176" height="14" rx="6"/>
+<rect class="ll-lamp ll-lamp-u" x="422" y="233" width="176" height="14" rx="6"/>
+<rect class="diamond" x="404" y="234" width="12" height="12" rx="2" transform="rotate(45 410 240)"/>
+<path class="arc arc-b arc-glow" pathLength="100" d="M402,108 C350,124 230,150 202,198" filter="url(#llt-soft)"/>
+<path class="arc arc-u arc-glow" pathLength="100" d="M418,108 C470,124 590,150 618,198" filter="url(#llt-soft)"/>
+<path class="arc arc-b" pathLength="100" d="M402,108 C350,124 230,150 202,198"/>
+<path class="arc arc-u" pathLength="100" d="M418,108 C470,124 590,150 618,198"/>
+<g class="ll-gate gate-b"><rect class="ll-bar" x="195" y="228" width="10" height="24" rx="5"/><circle class="dot" cx="200" cy="240" r="5"/><circle class="ring" cx="200" cy="240" r="16"/></g>
+<g class="ll-gate gate-u"><rect class="ll-bar" x="615" y="228" width="10" height="24" rx="5"/><circle class="dot" cx="620" cy="240" r="5"/><circle class="ring" cx="620" cy="240" r="16"/></g>
+<text x="85" y="192" class="lg stn" text-anchor="middle">BASE SEPOLIA</text>
+<text x="735" y="192" class="lg stn" text-anchor="middle">UNICHAIN SEPOLIA</text>
+<rect class="ll-box" x="10" y="206" width="150" height="68" rx="8"/><rect class="ll-box" x="660" y="206" width="150" height="68" rx="8"/>
+<text x="85" y="232" class="mono sm m" data-base="mono sm" text-anchor="middle" data-slot="b1">carry-home</text><text x="85" y="263" class="lg bx r" data-base="lg bx" text-anchor="middle" data-slot="b2">REVERTED</text>
+<text x="735" y="232" class="mono sm m" data-base="mono sm" text-anchor="middle" data-slot="u1">copycat</text><text x="735" y="263" class="lg bx r" data-base="lg bx" text-anchor="middle" data-slot="u2">REVERTED</text>
+<text x="85" y="297" class="mono xs" text-anchor="middle">testnet · chain 84532</text>
+<text x="735" y="297" class="mono xs" text-anchor="middle">testnet · chain 1301</text>
+<text x="200" y="303" class="lg gl" text-anchor="middle">GATE B</text><text x="620" y="303" class="lg gl" text-anchor="middle">GATE U</text>
+<text x="200" y="327" class="mono st2 r" data-base="mono st2" text-anchor="middle" data-slot="sb">paused +4.651 s</text><text x="620" y="327" class="mono st2 r" data-base="mono st2" text-anchor="middle" data-slot="su">paused +5.341 s</text>
+<text x="410" y="290" class="mono md " data-base="mono md" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
+<text x="410" y="316" class="mono xs" text-anchor="middle">Lasna testnet · chain 5318007</text>
+</svg>
+<svg class="ll-svg ll-phone" viewBox="0 0 360 332" aria-hidden="true" focusable="false">
 <defs><filter id="llp-glow-p" x="40" y="160" width="280" height="60" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="6"/></filter></defs>
 <text x="180" y="18" class="lg st" text-anchor="middle">LASNA</text>
 <path class="dial-arc" d="M140,80 A40,40 0 0 1 220,80"/>
@@ -485,12 +539,15 @@ footer a:hover{color:var(--ink)}
 <path class="arc arc-u" pathLength="100" d="M187,84 C230,96 290,122 314,158"/>
 <g class="ll-gate gate-b"><rect class="ll-bar" x="40" y="180" width="8" height="20" rx="4"/><circle class="dot" cx="44" cy="190" r="4"/><circle class="ring" cx="44" cy="190" r="12"/></g>
 <g class="ll-gate gate-u"><rect class="ll-bar" x="312" y="180" width="8" height="20" rx="4"/><circle class="dot" cx="316" cy="190" r="4"/><circle class="ring" cx="316" cy="190" r="12"/></g>
-<text x="14" y="148" class="lg stn" text-anchor="start">BASE SEPOLIA</text>
-<text x="346" y="148" class="lg stn" text-anchor="end">UNICHAIN SEPOLIA</text>
-<text x="180" y="224" class="mono sm " data-base="mono sm" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
-<text x="14" y="248" class="mono sm m" data-base="mono sm" text-anchor="start" data-slot="b1">carry-home</text><text x="14" y="270" class="lg bx r" data-base="lg bx" text-anchor="start" data-slot="b2">REVERTED</text>
-<text x="346" y="248" class="mono sm m" data-base="mono sm" text-anchor="end" data-slot="u1">copycat</text><text x="346" y="270" class="lg bx r" data-base="lg bx" text-anchor="end" data-slot="u2">REVERTED</text>
-<text x="14" y="292" class="mono st2 r" data-base="mono st2" text-anchor="start" data-slot="sb">paused +4.651 s</text><text x="346" y="292" class="mono st2 r" data-base="mono st2" text-anchor="end" data-slot="su">paused +5.341 s</text>
+<text x="180" y="221" class="mono sm " data-base="mono sm" text-anchor="middle" data-slot="mid">one react() +4.249 s · 2 callbacks</text>
+<line class="plate" x1="14" y1="234" x2="346" y2="234"/>
+<text x="14" y="252" class="lg stn" text-anchor="start">BASE SEPOLIA</text>
+<text x="346" y="252" class="lg stn" text-anchor="end">UNICHAIN SEPOLIA</text>
+<text x="14" y="266" class="mono xs" text-anchor="start">gate B · testnet 84532</text>
+<text x="346" y="266" class="mono xs" text-anchor="end">testnet 1301 · gate U</text>
+<text x="14" y="285" class="mono sm m" data-base="mono sm" text-anchor="start" data-slot="b1">carry-home</text><text x="14" y="307" class="lg bx r" data-base="lg bx" text-anchor="start" data-slot="b2">REVERTED</text>
+<text x="346" y="285" class="mono sm m" data-base="mono sm" text-anchor="end" data-slot="u1">copycat</text><text x="346" y="307" class="lg bx r" data-base="lg bx" text-anchor="end" data-slot="u2">REVERTED</text>
+<text x="14" y="327" class="mono st2 r" data-base="mono st2" text-anchor="start" data-slot="sb">paused +4.651 s</text><text x="346" y="327" class="mono st2 r" data-base="mono st2" text-anchor="end" data-slot="su">paused +5.341 s</text>
 </svg>
 </div>
 <div id="ll-regp" role="tabpanel" aria-labelledby="tab-bu"><ol class="ll-reg">
@@ -527,9 +584,9 @@ footer a:hover{color:var(--ink)}
         <div class="frame">
           <div class="chrome"><i></i><i></i><i></i><span>ledgerlock / status · testnet</span></div>
           <img src="assets/status-routes.png" width="2356" height="1396" alt="Status page: route A fixture bridge and route B Hyperlane warp route, both LINE CLEAR, every gate open, guard reserve in lREACT and gate balances in ETH" loading="lazy">
-          <img src="assets/status-inc.png" width="2356" height="750" alt="Status page, last non-control attack run ap-020: mint at 0 s, Lasna react seen at +3.5 s, gate U Paused at +8.2 s, gate B Paused at +7.1 s, each with its transaction hash" loading="lazy">
+          <img src="assets/status-inc.png" width="2168" height="750" alt="Status page, last non-control attack run ap-020, in time order: mint at 0 s, Lasna react seen at +3.5 s, gate B Paused at +7.1 s, gate U Paused at +8.2 s, each with its transaction hash" loading="lazy">
         </div>
-        <p class="shot-cap">The status page on live testnet RPCs, captured 13 Nov 2026 (UTC). Its last non-control attack run is ap&#8209;020.</p>
+        <p class="shot-cap">The status page on live testnet RPCs, captured 13 Nov 2026 (UTC); the attack-run strip, rendered from committed rows, re-captured 14 Nov. Its last non-control attack run is ap&#8209;020.</p>
       </div>
       <div class="term" id="term">
 <pre><span class="c"># every bench number on this page, from evidence/frozen3-bench-runs.csv</span>
@@ -549,10 +606,17 @@ Ran 6 test suites in 4.66s (13.92s CPU time): 113 tests passed, 0 failed, 0 skip
     <p class="label">Scene 02 · The bench</p>
     <h2 id="h-num" class="disp">A hundred attacks, one dot each</h2>
     <p class="intro">Seconds from the forged mint until both gates had shut: 60 forged keys, 20 plausible keys, 20 bursts. Nothing excluded.</p>
-    <div class="dots-wrap" role="region" aria-label="Dot plot: seconds until both gates shut, 100 attack runs" tabindex="0"><svg class="dots" viewBox="0 0 1100 254" role="img" aria-labelledby="dots-t"><title id="dots-t">100 attack runs: seconds from the forged mint to both gates shut. p50 5.92 s, p95 8.245 s, max 10.97 s.</title>
+    <div class="dots-wrap"><svg class="dots dots-d" viewBox="0 0 1100 254" role="img" aria-labelledby="dots-t"><title id="dots-t">100 attack runs: seconds from the forged mint to both gates shut. p50 5.92 s, p95 8.245 s, max 10.97 s. Ringed: bu-015, the run the panel replays, 5.341 s.</title>
 <g class="axis"><line x1="40" y1="216.0" x2="1060" y2="216.0"/><line x1="40.0" y1="216.0" x2="40.0" y2="222.0"/><text x="40.0" y="238.0">0 s</text><line x1="210.0" y1="216.0" x2="210.0" y2="222.0"/><text x="210.0" y="238.0">2 s</text><line x1="380.0" y1="216.0" x2="380.0" y2="222.0"/><text x="380.0" y="238.0">4 s</text><line x1="550.0" y1="216.0" x2="550.0" y2="222.0"/><text x="550.0" y="238.0">6 s</text><line x1="720.0" y1="216.0" x2="720.0" y2="222.0"/><text x="720.0" y="238.0">8 s</text><line x1="890.0" y1="216.0" x2="890.0" y2="222.0"/><text x="890.0" y="238.0">10 s</text><line x1="1060.0" y1="216.0" x2="1060.0" y2="222.0"/><text x="1060.0" y="238.0">12 s</text></g>
 <g class="pct"><line x1="543.2" y1="10" x2="543.2" y2="216.0"/><text x="537.2" y="20" text-anchor="end">both shut p50 5.92 s</text><line x1="740.8" y1="10" x2="740.8" y2="216.0"/><text x="746.8" y="20">p95 8.245 s</text></g>
-<g class="pts"><circle cx="369.0" cy="208.0" r="3.2"><title>3.851 s</title></circle><circle cx="425.0" cy="208.0" r="3.2"><title>4.494 s</title></circle><circle cx="439.0" cy="208.0" r="3.2"><title>4.656 s</title></circle><circle cx="446.0" cy="208.0" r="3.2"><title>4.81 s</title></circle><circle cx="453.0" cy="208.0" r="3.2"><title>4.824 s</title></circle><circle cx="460.0" cy="208.0" r="3.2"><title>4.913 s</title></circle><circle cx="460.0" cy="200.8" r="3.2"><title>4.914 s</title></circle><circle cx="460.0" cy="193.6" r="3.2"><title>4.918 s</title></circle><circle cx="460.0" cy="186.4" r="3.2"><title>4.931 s</title></circle><circle cx="460.0" cy="179.2" r="3.2"><title>4.937 s</title></circle><circle cx="460.0" cy="172.0" r="3.2"><title>4.938 s</title></circle><circle cx="460.0" cy="164.8" r="3.2"><title>4.942 s</title></circle><circle cx="460.0" cy="157.6" r="3.2"><title>4.947 s</title></circle><circle cx="467.0" cy="208.0" r="3.2"><title>4.989 s</title></circle><circle cx="467.0" cy="200.8" r="3.2"><title>5.005 s</title></circle><circle cx="467.0" cy="193.6" r="3.2"><title>5.015 s</title></circle><circle cx="481.0" cy="208.0" r="3.2"><title>5.151 s</title></circle><circle cx="495.0" cy="208.0" r="3.2"><title>5.331 s</title></circle><circle cx="495.0" cy="200.8" r="3.2"><title>5.332 s</title></circle><circle cx="495.0" cy="193.6" r="3.2"><title>5.341 s</title></circle><circle cx="509.0" cy="208.0" r="3.2"><title>5.478 s</title></circle><circle cx="509.0" cy="200.8" r="3.2"><title>5.552 s</title></circle><circle cx="516.0" cy="208.0" r="3.2"><title>5.623 s</title></circle><circle cx="530.0" cy="208.0" r="3.2"><title>5.789 s</title></circle><circle cx="530.0" cy="200.8" r="3.2"><title>5.791 s</title></circle><circle cx="537.0" cy="208.0" r="3.2"><title>5.812 s</title></circle><circle cx="537.0" cy="200.8" r="3.2"><title>5.842 s</title></circle><circle cx="537.0" cy="193.6" r="3.2"><title>5.866 s</title></circle><circle cx="537.0" cy="186.4" r="3.2"><title>5.882 s</title></circle><circle cx="537.0" cy="179.2" r="3.2"><title>5.886 s</title></circle><circle cx="537.0" cy="172.0" r="3.2"><title>5.887 s</title></circle><circle cx="544.0" cy="208.0" r="3.2"><title>5.891 s</title></circle><circle cx="544.0" cy="200.8" r="3.2"><title>5.891 s</title></circle><circle cx="544.0" cy="193.6" r="3.2"><title>5.893 s</title></circle><circle cx="544.0" cy="186.4" r="3.2"><title>5.895 s</title></circle><circle cx="544.0" cy="179.2" r="3.2"><title>5.898 s</title></circle><circle cx="544.0" cy="172.0" r="3.2"><title>5.899 s</title></circle><circle cx="544.0" cy="164.8" r="3.2"><title>5.9 s</title></circle><circle cx="544.0" cy="157.6" r="3.2"><title>5.9 s</title></circle><circle cx="544.0" cy="150.4" r="3.2"><title>5.901 s</title></circle><circle cx="544.0" cy="143.2" r="3.2"><title>5.903 s</title></circle><circle cx="544.0" cy="136.0" r="3.2"><title>5.905 s</title></circle><circle cx="544.0" cy="128.8" r="3.2"><title>5.906 s</title></circle><circle cx="544.0" cy="121.6" r="3.2"><title>5.907 s</title></circle><circle cx="544.0" cy="114.4" r="3.2"><title>5.907 s</title></circle><circle cx="544.0" cy="107.2" r="3.2"><title>5.908 s</title></circle><circle cx="544.0" cy="100.0" r="3.2"><title>5.909 s</title></circle><circle cx="544.0" cy="92.8" r="3.2"><title>5.917 s</title></circle><circle cx="544.0" cy="85.6" r="3.2"><title>5.917 s</title></circle><circle cx="544.0" cy="78.4" r="3.2"><title>5.92 s</title></circle><circle cx="544.0" cy="71.2" r="3.2"><title>5.921 s</title></circle><circle cx="544.0" cy="64.0" r="3.2"><title>5.921 s</title></circle><circle cx="544.0" cy="56.8" r="3.2"><title>5.924 s</title></circle><circle cx="544.0" cy="49.6" r="3.2"><title>5.924 s</title></circle><circle cx="544.0" cy="42.4" r="3.2"><title>5.924 s</title></circle><circle cx="544.0" cy="35.2" r="3.2"><title>5.926 s</title></circle><circle cx="572.0" cy="208.0" r="3.2"><title>6.26 s</title></circle><circle cx="572.0" cy="200.8" r="3.2"><title>6.272 s</title></circle><circle cx="572.0" cy="193.6" r="3.2"><title>6.276 s</title></circle><circle cx="572.0" cy="186.4" r="3.2"><title>6.28 s</title></circle><circle cx="572.0" cy="179.2" r="3.2"><title>6.287 s</title></circle><circle cx="572.0" cy="172.0" r="3.2"><title>6.289 s</title></circle><circle cx="572.0" cy="164.8" r="3.2"><title>6.29 s</title></circle><circle cx="572.0" cy="157.6" r="3.2"><title>6.291 s</title></circle><circle cx="572.0" cy="150.4" r="3.2"><title>6.294 s</title></circle><circle cx="572.0" cy="143.2" r="3.2"><title>6.296 s</title></circle><circle cx="579.0" cy="208.0" r="3.2"><title>6.304 s</title></circle><circle cx="579.0" cy="200.8" r="3.2"><title>6.304 s</title></circle><circle cx="579.0" cy="193.6" r="3.2"><title>6.305 s</title></circle><circle cx="579.0" cy="186.4" r="3.2"><title>6.306 s</title></circle><circle cx="579.0" cy="179.2" r="3.2"><title>6.308 s</title></circle><circle cx="579.0" cy="172.0" r="3.2"><title>6.308 s</title></circle><circle cx="579.0" cy="164.8" r="3.2"><title>6.31 s</title></circle><circle cx="579.0" cy="157.6" r="3.2"><title>6.319 s</title></circle><circle cx="621.0" cy="208.0" r="3.2"><title>6.843 s</title></circle><circle cx="677.0" cy="208.0" r="3.2"><title>7.504 s</title></circle><circle cx="705.0" cy="208.0" r="3.2"><title>7.86 s</title></circle><circle cx="719.0" cy="208.0" r="3.2"><title>7.982 s</title></circle><circle cx="719.0" cy="200.8" r="3.2"><title>8.002 s</title></circle><circle cx="726.0" cy="208.0" r="3.2"><title>8.06 s</title></circle><circle cx="740.0" cy="208.0" r="3.2"><title>8.206 s</title></circle><circle cx="740.0" cy="200.8" r="3.2"><title>8.216 s</title></circle><circle cx="740.0" cy="193.6" r="3.2"><title>8.219 s</title></circle><circle cx="740.0" cy="186.4" r="3.2"><title>8.228 s</title></circle><circle cx="740.0" cy="179.2" r="3.2"><title>8.229 s</title></circle><circle cx="740.0" cy="172.0" r="3.2"><title>8.229 s</title></circle><circle cx="740.0" cy="164.8" r="3.2"><title>8.231 s</title></circle><circle cx="740.0" cy="157.6" r="3.2"><title>8.234 s</title></circle><circle cx="740.0" cy="150.4" r="3.2"><title>8.236 s</title></circle><circle cx="740.0" cy="143.2" r="3.2"><title>8.238 s</title></circle><circle cx="740.0" cy="136.0" r="3.2"><title>8.24 s</title></circle><circle cx="740.0" cy="128.8" r="3.2"><title>8.24 s</title></circle><circle cx="740.0" cy="121.6" r="3.2"><title>8.241 s</title></circle><circle cx="740.0" cy="114.4" r="3.2"><title>8.243 s</title></circle><circle cx="740.0" cy="107.2" r="3.2"><title>8.245 s</title></circle><circle cx="740.0" cy="100.0" r="3.2"><title>8.246 s</title></circle><circle cx="740.0" cy="92.8" r="3.2"><title>8.246 s</title></circle><circle cx="740.0" cy="85.6" r="3.2"><title>8.253 s</title></circle><circle cx="887.0" cy="208.0" r="3.2"><title>9.978 s</title></circle><circle cx="971.0" cy="208.0" r="3.2"><title>10.97 s</title></circle></g></svg></div>
+<g class="pts"><circle cx="369.0" cy="208.0" r="3.2"><title>bu-004 · 3.851 s</title></circle><circle cx="425.0" cy="208.0" r="3.2"><title>bu-008 · 4.494 s</title></circle><circle cx="439.0" cy="208.0" r="3.2"><title>bu-002 · 4.656 s</title></circle><circle cx="446.0" cy="208.0" r="3.2"><title>bu-016 · 4.81 s</title></circle><circle cx="453.0" cy="208.0" r="3.2"><title>bu-012 · 4.824 s</title></circle><circle cx="460.0" cy="208.0" r="3.2"><title>bu-007 · 4.913 s</title></circle><circle cx="460.0" cy="200.8" r="3.2"><title>bu-014 · 4.914 s</title></circle><circle cx="460.0" cy="193.6" r="3.2"><title>bu-013 · 4.918 s</title></circle><circle cx="460.0" cy="186.4" r="3.2"><title>bu-009 · 4.931 s</title></circle><circle cx="460.0" cy="179.2" r="3.2"><title>bu-019 · 4.937 s</title></circle><circle cx="460.0" cy="172.0" r="3.2"><title>bu-010 · 4.938 s</title></circle><circle cx="460.0" cy="164.8" r="3.2"><title>bu-006 · 4.942 s</title></circle><circle cx="460.0" cy="157.6" r="3.2"><title>bu-011 · 4.947 s</title></circle><circle cx="467.0" cy="208.0" r="3.2"><title>af-050 · 4.989 s</title></circle><circle cx="467.0" cy="200.8" r="3.2"><title>af-059 · 5.005 s</title></circle><circle cx="467.0" cy="193.6" r="3.2"><title>af-021 · 5.015 s</title></circle><circle cx="481.0" cy="208.0" r="3.2"><title>af-006 · 5.151 s</title></circle><circle cx="495.0" cy="208.0" r="3.2"><title>bu-020 · 5.331 s</title></circle><circle cx="495.0" cy="200.8" r="3.2"><title>bu-003 · 5.332 s</title></circle><circle cx="495.0" cy="193.6" r="3.2" class="hero"><title>bu-015 · 5.341 s</title></circle><circle cx="509.0" cy="208.0" r="3.2"><title>af-003 · 5.478 s</title></circle><circle cx="509.0" cy="200.8" r="3.2"><title>af-036 · 5.552 s</title></circle><circle cx="516.0" cy="208.0" r="3.2"><title>ap-001 · 5.623 s</title></circle><circle cx="530.0" cy="208.0" r="3.2"><title>af-020 · 5.789 s</title></circle><circle cx="530.0" cy="200.8" r="3.2"><title>af-060 · 5.791 s</title></circle><circle cx="537.0" cy="208.0" r="3.2"><title>af-019 · 5.812 s</title></circle><circle cx="537.0" cy="200.8" r="3.2"><title>af-035 · 5.842 s</title></circle><circle cx="537.0" cy="193.6" r="3.2"><title>af-011 · 5.866 s</title></circle><circle cx="537.0" cy="186.4" r="3.2"><title>af-045 · 5.882 s</title></circle><circle cx="537.0" cy="179.2" r="3.2"><title>af-049 · 5.886 s</title></circle><circle cx="537.0" cy="172.0" r="3.2"><title>af-055 · 5.887 s</title></circle><circle cx="544.0" cy="208.0" r="3.2"><title>af-014 · 5.891 s</title></circle><circle cx="544.0" cy="200.8" r="3.2"><title>af-032 · 5.891 s</title></circle><circle cx="544.0" cy="193.6" r="3.2"><title>af-058 · 5.893 s</title></circle><circle cx="544.0" cy="186.4" r="3.2"><title>af-002 · 5.895 s</title></circle><circle cx="544.0" cy="179.2" r="3.2"><title>af-048 · 5.898 s</title></circle><circle cx="544.0" cy="172.0" r="3.2"><title>af-016 · 5.899 s</title></circle><circle cx="544.0" cy="164.8" r="3.2"><title>af-009 · 5.9 s</title></circle><circle cx="544.0" cy="157.6" r="3.2"><title>af-024 · 5.9 s</title></circle><circle cx="544.0" cy="150.4" r="3.2"><title>af-038 · 5.901 s</title></circle><circle cx="544.0" cy="143.2" r="3.2"><title>af-046 · 5.903 s</title></circle><circle cx="544.0" cy="136.0" r="3.2"><title>af-012 · 5.905 s</title></circle><circle cx="544.0" cy="128.8" r="3.2"><title>af-030 · 5.906 s</title></circle><circle cx="544.0" cy="121.6" r="3.2"><title>af-028 · 5.907 s</title></circle><circle cx="544.0" cy="114.4" r="3.2"><title>af-029 · 5.907 s</title></circle><circle cx="544.0" cy="107.2" r="3.2"><title>af-039 · 5.908 s</title></circle><circle cx="544.0" cy="100.0" r="3.2"><title>af-041 · 5.909 s</title></circle><circle cx="544.0" cy="92.8" r="3.2"><title>af-040 · 5.917 s</title></circle><circle cx="544.0" cy="85.6" r="3.2"><title>af-043 · 5.917 s</title></circle><circle cx="544.0" cy="78.4" r="3.2"><title>af-052 · 5.92 s</title></circle><circle cx="544.0" cy="71.2" r="3.2"><title>af-005 · 5.921 s</title></circle><circle cx="544.0" cy="64.0" r="3.2"><title>af-056 · 5.921 s</title></circle><circle cx="544.0" cy="56.8" r="3.2"><title>af-008 · 5.924 s</title></circle><circle cx="544.0" cy="49.6" r="3.2"><title>af-053 · 5.924 s</title></circle><circle cx="544.0" cy="42.4" r="3.2"><title>af-057 · 5.924 s</title></circle><circle cx="544.0" cy="35.2" r="3.2"><title>af-007 · 5.926 s</title></circle><circle cx="572.0" cy="208.0" r="3.2"><title>af-037 · 6.26 s</title></circle><circle cx="572.0" cy="200.8" r="3.2"><title>af-013 · 6.272 s</title></circle><circle cx="572.0" cy="193.6" r="3.2"><title>af-017 · 6.276 s</title></circle><circle cx="572.0" cy="186.4" r="3.2"><title>af-027 · 6.28 s</title></circle><circle cx="572.0" cy="179.2" r="3.2"><title>af-018 · 6.287 s</title></circle><circle cx="572.0" cy="172.0" r="3.2"><title>af-004 · 6.289 s</title></circle><circle cx="572.0" cy="164.8" r="3.2"><title>af-047 · 6.29 s</title></circle><circle cx="572.0" cy="157.6" r="3.2"><title>af-022 · 6.291 s</title></circle><circle cx="572.0" cy="150.4" r="3.2"><title>af-015 · 6.294 s</title></circle><circle cx="572.0" cy="143.2" r="3.2"><title>af-042 · 6.296 s</title></circle><circle cx="579.0" cy="208.0" r="3.2"><title>af-034 · 6.304 s</title></circle><circle cx="579.0" cy="200.8" r="3.2"><title>af-054 · 6.304 s</title></circle><circle cx="579.0" cy="193.6" r="3.2"><title>af-033 · 6.305 s</title></circle><circle cx="579.0" cy="186.4" r="3.2"><title>af-010 · 6.306 s</title></circle><circle cx="579.0" cy="179.2" r="3.2"><title>af-026 · 6.308 s</title></circle><circle cx="579.0" cy="172.0" r="3.2"><title>af-051 · 6.308 s</title></circle><circle cx="579.0" cy="164.8" r="3.2"><title>af-044 · 6.31 s</title></circle><circle cx="579.0" cy="157.6" r="3.2"><title>af-025 · 6.319 s</title></circle><circle cx="621.0" cy="208.0" r="3.2"><title>af-023 · 6.843 s</title></circle><circle cx="677.0" cy="208.0" r="3.2"><title>bu-018 · 7.504 s</title></circle><circle cx="705.0" cy="208.0" r="3.2"><title>ap-015 · 7.86 s</title></circle><circle cx="719.0" cy="208.0" r="3.2"><title>bu-005 · 7.982 s</title></circle><circle cx="719.0" cy="200.8" r="3.2"><title>af-001 · 8.002 s</title></circle><circle cx="726.0" cy="208.0" r="3.2"><title>bu-001 · 8.06 s</title></circle><circle cx="740.0" cy="208.0" r="3.2"><title>ap-018 · 8.206 s</title></circle><circle cx="740.0" cy="200.8" r="3.2"><title>ap-014 · 8.216 s</title></circle><circle cx="740.0" cy="193.6" r="3.2"><title>ap-020 · 8.219 s</title></circle><circle cx="740.0" cy="186.4" r="3.2"><title>ap-010 · 8.228 s</title></circle><circle cx="740.0" cy="179.2" r="3.2"><title>ap-007 · 8.229 s</title></circle><circle cx="740.0" cy="172.0" r="3.2"><title>ap-011 · 8.229 s</title></circle><circle cx="740.0" cy="164.8" r="3.2"><title>ap-016 · 8.231 s</title></circle><circle cx="740.0" cy="157.6" r="3.2"><title>ap-008 · 8.234 s</title></circle><circle cx="740.0" cy="150.4" r="3.2"><title>ap-019 · 8.236 s</title></circle><circle cx="740.0" cy="143.2" r="3.2"><title>ap-003 · 8.238 s</title></circle><circle cx="740.0" cy="136.0" r="3.2"><title>ap-002 · 8.24 s</title></circle><circle cx="740.0" cy="128.8" r="3.2"><title>ap-012 · 8.24 s</title></circle><circle cx="740.0" cy="121.6" r="3.2"><title>ap-017 · 8.241 s</title></circle><circle cx="740.0" cy="114.4" r="3.2"><title>ap-006 · 8.243 s</title></circle><circle cx="740.0" cy="107.2" r="3.2"><title>ap-013 · 8.245 s</title></circle><circle cx="740.0" cy="100.0" r="3.2"><title>ap-004 · 8.246 s</title></circle><circle cx="740.0" cy="92.8" r="3.2"><title>ap-009 · 8.246 s</title></circle><circle cx="740.0" cy="85.6" r="3.2"><title>ap-005 · 8.253 s</title></circle><circle cx="887.0" cy="208.0" r="3.2"><title>bu-017 · 9.978 s</title></circle><circle cx="971.0" cy="208.0" r="3.2"><title>af-031 · 10.97 s</title></circle></g>
+<g class="hero-mark" aria-hidden="true"><circle class="ring" cx="495.0" cy="193.6" r="7.4"/><path d="M495.0,186.2 V140.2 H490.0"/><text x="485.0" y="144.4" text-anchor="end">bu-015, the run replayed above: 5.341 s</text></g></svg>
+<svg class="dots dots-m" viewBox="0 0 360 300" role="img" aria-labelledby="dots-tm"><title id="dots-tm">100 attack runs: seconds from the forged mint to both gates shut. p50 5.92 s, p95 8.245 s, max 10.97 s. Ringed: bu-015, the run the panel replays, 5.341 s.</title>
+<g class="axis"><line x1="16" y1="259.3" x2="344" y2="259.3"/><line x1="16.0" y1="259.3" x2="16.0" y2="265.3"/><text x="16.0" y="281.3">0 s</text><line x1="70.7" y1="259.3" x2="70.7" y2="265.3"/><text x="70.7" y="281.3">2 s</text><line x1="125.3" y1="259.3" x2="125.3" y2="265.3"/><text x="125.3" y="281.3">4 s</text><line x1="180.0" y1="259.3" x2="180.0" y2="265.3"/><text x="180.0" y="281.3">6 s</text><line x1="234.7" y1="259.3" x2="234.7" y2="265.3"/><text x="234.7" y="281.3">8 s</text><line x1="289.3" y1="259.3" x2="289.3" y2="265.3"/><text x="289.3" y="281.3">10 s</text><line x1="344.0" y1="259.3" x2="344.0" y2="265.3"/><text x="344.0" y="281.3">12 s</text></g>
+<g class="pct"><line x1="177.8" y1="8" x2="177.8" y2="259.3"/><text x="171.8" y="18" text-anchor="end">both shut p50 5.92 s</text><line x1="241.4" y1="8" x2="241.4" y2="259.3"/><text x="247.4" y="18">p95 8.245 s</text></g>
+<g class="pts"><circle cx="122.4" cy="252.0" r="2.5"></circle><circle cx="139.2" cy="252.0" r="2.5"></circle><circle cx="144.8" cy="252.0" r="2.5"></circle><circle cx="144.8" cy="246.6" r="2.5"></circle><circle cx="150.4" cy="252.0" r="2.5"></circle><circle cx="150.4" cy="246.6" r="2.5"></circle><circle cx="150.4" cy="241.2" r="2.5"></circle><circle cx="150.4" cy="235.8" r="2.5"></circle><circle cx="150.4" cy="230.4" r="2.5"></circle><circle cx="150.4" cy="225.0" r="2.5"></circle><circle cx="150.4" cy="219.6" r="2.5"></circle><circle cx="150.4" cy="214.2" r="2.5"></circle><circle cx="150.4" cy="208.8" r="2.5"></circle><circle cx="150.4" cy="203.4" r="2.5"></circle><circle cx="150.4" cy="198.0" r="2.5"></circle><circle cx="150.4" cy="192.6" r="2.5"></circle><circle cx="156.0" cy="252.0" r="2.5"></circle><circle cx="161.6" cy="252.0" r="2.5"></circle><circle cx="161.6" cy="246.6" r="2.5"></circle><circle cx="161.6" cy="241.2" r="2.5" class="hero"></circle><circle cx="167.2" cy="252.0" r="2.5"></circle><circle cx="167.2" cy="246.6" r="2.5"></circle><circle cx="167.2" cy="241.2" r="2.5"></circle><circle cx="172.8" cy="252.0" r="2.5"></circle><circle cx="172.8" cy="246.6" r="2.5"></circle><circle cx="172.8" cy="241.2" r="2.5"></circle><circle cx="178.4" cy="252.0" r="2.5"></circle><circle cx="178.4" cy="246.6" r="2.5"></circle><circle cx="178.4" cy="241.2" r="2.5"></circle><circle cx="178.4" cy="235.8" r="2.5"></circle><circle cx="178.4" cy="230.4" r="2.5"></circle><circle cx="178.4" cy="225.0" r="2.5"></circle><circle cx="178.4" cy="219.6" r="2.5"></circle><circle cx="178.4" cy="214.2" r="2.5"></circle><circle cx="178.4" cy="208.8" r="2.5"></circle><circle cx="178.4" cy="203.4" r="2.5"></circle><circle cx="178.4" cy="198.0" r="2.5"></circle><circle cx="178.4" cy="192.6" r="2.5"></circle><circle cx="178.4" cy="187.2" r="2.5"></circle><circle cx="178.4" cy="181.8" r="2.5"></circle><circle cx="178.4" cy="176.4" r="2.5"></circle><circle cx="178.4" cy="171.0" r="2.5"></circle><circle cx="178.4" cy="165.6" r="2.5"></circle><circle cx="178.4" cy="160.2" r="2.5"></circle><circle cx="178.4" cy="154.8" r="2.5"></circle><circle cx="178.4" cy="149.4" r="2.5"></circle><circle cx="178.4" cy="144.0" r="2.5"></circle><circle cx="178.4" cy="138.6" r="2.5"></circle><circle cx="178.4" cy="133.2" r="2.5"></circle><circle cx="178.4" cy="127.8" r="2.5"></circle><circle cx="178.4" cy="122.4" r="2.5"></circle><circle cx="178.4" cy="117.0" r="2.5"></circle><circle cx="178.4" cy="111.6" r="2.5"></circle><circle cx="178.4" cy="106.2" r="2.5"></circle><circle cx="178.4" cy="100.8" r="2.5"></circle><circle cx="178.4" cy="95.4" r="2.5"></circle><circle cx="189.6" cy="252.0" r="2.5"></circle><circle cx="189.6" cy="246.6" r="2.5"></circle><circle cx="189.6" cy="241.2" r="2.5"></circle><circle cx="189.6" cy="235.8" r="2.5"></circle><circle cx="189.6" cy="230.4" r="2.5"></circle><circle cx="189.6" cy="225.0" r="2.5"></circle><circle cx="189.6" cy="219.6" r="2.5"></circle><circle cx="189.6" cy="214.2" r="2.5"></circle><circle cx="189.6" cy="208.8" r="2.5"></circle><circle cx="189.6" cy="203.4" r="2.5"></circle><circle cx="189.6" cy="198.0" r="2.5"></circle><circle cx="189.6" cy="192.6" r="2.5"></circle><circle cx="189.6" cy="187.2" r="2.5"></circle><circle cx="189.6" cy="181.8" r="2.5"></circle><circle cx="189.6" cy="176.4" r="2.5"></circle><circle cx="189.6" cy="171.0" r="2.5"></circle><circle cx="189.6" cy="165.6" r="2.5"></circle><circle cx="189.6" cy="160.2" r="2.5"></circle><circle cx="200.8" cy="252.0" r="2.5"></circle><circle cx="223.2" cy="252.0" r="2.5"></circle><circle cx="228.8" cy="252.0" r="2.5"></circle><circle cx="234.4" cy="252.0" r="2.5"></circle><circle cx="234.4" cy="246.6" r="2.5"></circle><circle cx="234.4" cy="241.2" r="2.5"></circle><circle cx="240.0" cy="252.0" r="2.5"></circle><circle cx="240.0" cy="246.6" r="2.5"></circle><circle cx="240.0" cy="241.2" r="2.5"></circle><circle cx="240.0" cy="235.8" r="2.5"></circle><circle cx="240.0" cy="230.4" r="2.5"></circle><circle cx="240.0" cy="225.0" r="2.5"></circle><circle cx="240.0" cy="219.6" r="2.5"></circle><circle cx="240.0" cy="214.2" r="2.5"></circle><circle cx="240.0" cy="208.8" r="2.5"></circle><circle cx="240.0" cy="203.4" r="2.5"></circle><circle cx="240.0" cy="198.0" r="2.5"></circle><circle cx="240.0" cy="192.6" r="2.5"></circle><circle cx="240.0" cy="187.2" r="2.5"></circle><circle cx="240.0" cy="181.8" r="2.5"></circle><circle cx="240.0" cy="176.4" r="2.5"></circle><circle cx="240.0" cy="171.0" r="2.5"></circle><circle cx="240.0" cy="165.6" r="2.5"></circle><circle cx="240.0" cy="160.2" r="2.5"></circle><circle cx="290.4" cy="252.0" r="2.5"></circle><circle cx="318.4" cy="252.0" r="2.5"></circle></g>
+<g class="hero-mark" aria-hidden="true"><circle class="ring" cx="161.6" cy="241.2" r="6.7"/><path d="M161.6,234.5 V162.2 H156.6"/><text x="151.6" y="166.1" text-anchor="end">bu-015 · 5.341 s</text><text x="151.6" y="180.1" text-anchor="end">the run above</text></g></svg>
+</div>
     <p class="dots-cap"><span>detection p50 3.873 s · p95 4.391 s</span><span>gate B p50 3.378 s · p95 7.079 s</span><span>gate U p50 5.917 s · p95 8.245 s</span><span>on-chain check (Unichain block timestamps) p50 2 s · p95 3 s</span></p>
 
     <div class="control" id="control">
@@ -745,8 +809,13 @@ Ran 6 test suites in 4.66s (13.92s CPU time): 113 tests passed, 0 failed, 0 skip
   });
   document.getElementById("ll-replay").addEventListener("click", () => { touched = true; play(cur, true); });
   if (!reduce) {
-    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting) { io.disconnect(); timers.push(setTimeout(() => { if (!touched) play("bu", true); }, 1200)); } }, { threshold: .35 });
-    io.observe(fig);
+    // Autoplay once the instrument is on screen (75 % of the stage, or most of a short window), so the lamps turn red in view.
+    const stage = fig.querySelector(".stage");
+    const io = new IntersectionObserver((es) => {
+      const e = es[0]; if (!e.isIntersecting || (e.intersectionRatio < .75 && e.intersectionRect.height < innerHeight * .6)) return;
+      io.disconnect(); timers.push(setTimeout(() => { if (!touched) play("bu", true); }, 700));
+    }, { threshold: [0, .25, .5, .75, 1] });
+    io.observe(stage);
   }
 
   // Count-ups: the real value is in the markup; animate only when motion is allowed.
@@ -760,12 +829,12 @@ Ran 6 test suites in 4.66s (13.92s CPU time): 113 tests passed, 0 failed, 0 skip
     document.querySelectorAll("[data-count]").forEach((el) => io2.observe(el));
 
     // The hundred dots fall into place once; the control bars grow. Both start from the drawn final state.
-    const dots = document.querySelector(".dots"), ctl = document.getElementById("control");
-    if (dots) {
+    const ctl = document.getElementById("control");
+    document.querySelectorAll(".dots").forEach((dots) => {
       dots.querySelectorAll(".pts circle").forEach((c, i) => c.style.setProperty("--i", i));
       const io4 = new IntersectionObserver((es) => { if (!es[0].isIntersecting) return; io4.disconnect(); dots.classList.add("armed"); void dots.getBoundingClientRect(); dots.classList.add("play"); setTimeout(() => dots.classList.remove("armed", "play"), 2400); }, { threshold: .45 });
       io4.observe(dots);
-    }
+    });
     if (ctl) {
       const io5 = new IntersectionObserver((es) => { if (!es[0].isIntersecting) return; io5.disconnect(); ctl.classList.add("armed"); void ctl.getBoundingClientRect(); requestAnimationFrame(() => ctl.classList.remove("armed")); }, { threshold: .5 });
       io5.observe(ctl);

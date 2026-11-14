@@ -43,6 +43,25 @@ test.describe("landing: the track-lamp panel and its three committed runs", () =
     }
   });
 
+  // One panel geometry per width, each drawn for that width (wide > 960 px, tablet 701-960, phone <= 700), and the bench
+  // plot redrawn for a phone so its p50 / p95 markers are on screen without sideways scrolling.
+  for (const [width, geo, plot] of [[1440, "ll-wide", "dots-d"], [768, "ll-tab", "dots-d"], [390, "ll-phone", "dots-m"]] as const) {
+    test(`at ${width}px the panel shows ${geo} and the bench shows ${plot}, markers on screen`, async ({ page }) => {
+      test.skip(test.info().project.name !== "chromium", "viewports are explicit; run once");
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      await expect(page.locator(`.ll-svg.${geo}`)).toBeVisible();
+      expect(await page.locator(".ll-svg:visible").count()).toBe(1);
+      await expect(page.locator(`.dots.${plot}`)).toBeVisible();
+      expect(await page.locator(".dots:visible").count()).toBe(1);
+      const off = await page.locator(`.dots.${plot} .pct text, .dots.${plot} .hero-mark text`).evaluateAll((ts) =>
+        ts.filter((t) => { const r = t.getBoundingClientRect(); return r.left < 0 || r.right > innerWidth; }).map((t) => t.textContent));
+      expect(off).toEqual([]);
+      await expect(page.locator(`.dots.${plot} .pct`)).toContainText("p95 8.245 s");
+      await expect(page.locator(`.dots.${plot} circle.hero`)).toHaveCount(1);
+    });
+  }
+
   test("the page says testnet, never mainnet deployment", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator(".live")).toHaveText(/testnets/i);
