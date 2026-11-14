@@ -30,6 +30,8 @@ jobs:
         with:
           submodules: recursive
       - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.9.0 # pinned: coverage branch counting changes between Foundry releases
       - run: forge --version
       # Scoped to test/: src/ is byte-for-byte the source of the testnet deployments (a whitespace change alters the
       # metadata hash, so the bytecode would no longer match), and packages/reactive-kit/ is copied unchanged upstream.
@@ -85,6 +87,8 @@ jobs:
         with:
           submodules: recursive
       - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.9.0
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"

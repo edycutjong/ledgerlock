@@ -1,12 +1,11 @@
 name: pages
 
-# Deploys docs/ (landing, /judge, /pitch/, /status/) to GitHub Pages:
-#   - after "CI/CD Pipeline" succeeds on main (Stage 6 is the gate), and
-#   - after "release" finishes, so the stamped release tag is the new one.
-# The latest release tag is stamped into every [data-release] element at build time; the pages also refresh it at runtime.
+# Deploys docs/ (landing, /judge, /pitch/, /status/) to GitHub Pages only after "CI/CD Pipeline" succeeds on main
+# (Stage 6 is the gate). release.yml runs on the same push and finishes long before CI does, so the latest release tag
+# exists by now; it is stamped into every [data-release] element here, and the pages also refresh it at runtime.
 on:
   workflow_run:
-    workflows: ["CI/CD Pipeline", "release"]
+    workflows: ["CI/CD Pipeline"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -54,4 +53,5 @@ jobs:
             done
             echo "/${path} -> ${code}"; [ "$code" = 200 ]
           done
-          curl -sf "${base}judge" | grep -q "data-claim"
+          curl -sf -o judge.html "${base}judge"
+          grep -q "data-claim" judge.html
