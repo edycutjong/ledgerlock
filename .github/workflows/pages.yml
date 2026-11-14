@@ -1,0 +1,57 @@
+name: pages
+
+# Deploys docs/ (landing, /judge, /pitch/, /status/) to GitHub Pages:
+#   - after "CI/CD Pipeline" succeeds on main (Stage 6 is the gate), and
+#   - after "release" finishes, so the stamped release tag is the new one.
+# The latest release tag is stamped into every [data-release] element at build time; the pages also refresh it at runtime.
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline", "release"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0 # tags
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Build the site (release stamp + link check)
+        run: node script/build-site.mjs docs _site
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v5
+      - name: Live check (landing, /judge, deck, status page)
+        run: |
+          set -euo pipefail
+          base="${{ steps.deployment.outputs.page_url }}"
+          for path in "" judge pitch/ status/ status/data/status.json; do
+            for i in 1 2 3 4 5 6; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' "${base}${path}")
+              [ "$code" = 200 ] && break; sleep 10
+            done
+            echo "/${path} -> ${code}"; [ "$code" = 200 ]
+          done
+          curl -sf "${base}judge" | grep -q "data-claim"

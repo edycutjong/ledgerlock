@@ -1,38 +1,196 @@
-name: ci
+name: CI/CD Pipeline
 
+# Six stages:
+#   1 Quality  (contracts + TS kit, parallel) ─┐
+#   2 Security (secrets, slither, audit)      ─┼─> 3 Build (site) ─> 4 E2E ──────────┐
+#                                              │                 └> 5 Performance ──┤ (advisory)
+#                                              └────────────────────────────────────┴─> 6 Deploy Gate (main only, needs all)
+# pages.yml deploys docs/ to GitHub Pages only after this workflow succeeds on main.
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  contracts:
+  # ── STAGE 1 · Quality ──────────────────────────────────────────────
+  contracts-quality:
+    name: "Stage 1 · Contracts (fmt, build, tests, 100% coverage)"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - uses: foundry-rs/foundry-toolchain@v1
-      - name: forge build
+      - run: forge --version
+      # Scoped to test/: src/ is byte-for-byte the source of the testnet deployments (a whitespace change alters the
+      # metadata hash, so the bytecode would no longer match), and packages/reactive-kit/ is copied unchanged upstream.
+      - name: Format check (tests)
+        run: forge fmt --check test/
+      - name: Build (with contract sizes)
         run: forge build --sizes
-      - name: forge test (contracts)
+      - name: Tests (contracts, Reactive Test Lib)
         run: forge test -vv
-      - name: forge test (reactive-kit)
+      - name: Tests (reactive-kit)
         run: FOUNDRY_PROFILE=kit forge test -vv
+      - name: Coverage gate (src/ and packages/reactive-kit/src must be 100% lines, statements, branches, functions)
+        run: bash script/coverage-gate.sh
 
-  scripts:
+  ts-quality:
+    name: "Stage 1 · TypeScript (typecheck, unit tests, 100% coverage)"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm test:ts
+      - name: Type check (kit + bench scripts)
+        run: pnpm typecheck
+      - name: Unit tests with coverage (thresholds 100%)
+        run: pnpm test:coverage
+      - name: Benchmark summary regenerates byte-identically from the committed rows
+        run: |
+          pnpm bench:summary
+          git diff --exit-code -- evidence/frozen3-bench-summary.md evidence/frozen3-bench-summary.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ts-coverage
+          path: coverage/
+          retention-days: 7
+
+  # ── STAGE 2 · Security ─────────────────────────────────────────────
+  secret-scan:
+    name: "Stage 2 · Secret scan"
+    uses: ./.github/workflows/gitleaks.yml
+
+  slither:
+    name: "Stage 2 · Slither (Solidity static analysis)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install slither-analyzer==0.11.5
+      # Fails on any High finding except the two triaged in SECURITY.md ("Static analysis"):
+      # uninitialized-state is the fixture's deliberate Nomad-class bug; reentrancy-eth flags calls to the Reactive system contract.
+      - run: slither . --filter-paths "lib/|test/|script/" --exclude uninitialized-state,reentrancy-eth --fail-high
+
+  dependency-audit:
+    name: "Stage 2 · Dependency audit (pnpm audit)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: pnpm audit --audit-level=high
+
+  # ── STAGE 3 · Build ────────────────────────────────────────────────
+  build:
+    name: "Stage 3 · Build (Pages site: release stamp + link check)"
+    needs: [contracts-quality, ts-quality]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # tags: the site is stamped with the latest release tag
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Build the site into _site/ (every local href/src must resolve)
+        run: node script/build-site.mjs docs _site
+      - uses: actions/upload-artifact@v7
+        with:
+          name: site
+          path: _site/
+          retention-days: 7
+
+  # ── STAGE 4 · E2E ──────────────────────────────────────────────────
+  e2e:
+    name: "Stage 4 · E2E (Playwright: landing, /judge, deck, status)"
+    needs: [build]
+    runs-on: ubuntu-latest
+    env:
+      SITE_DIR: _site
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+          path: _site
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ── STAGE 5 · Performance (advisory) ───────────────────────────────
+  lighthouse:
+    name: "Stage 5 · Lighthouse CI (advisory)"
+    needs: [build]
+    runs-on: ubuntu-latest
+    env:
+      SITE_DIR: _site
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+          path: _site
+      - name: Lighthouse (performance, accessibility, best practices, SEO)
+        continue-on-error: true # advisory: scores are reported, never block
+        run: npx --yes @lhci/cli@0.16.1 autorun
+
+  # ── STAGE 6 · Deploy Gate ──────────────────────────────────────────
+  deploy-gate:
+    name: "Stage 6 · Deploy gate (main only)"
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [contracts-quality, ts-quality, secret-scan, slither, dependency-audit, build, e2e, lighthouse]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+          path: _site
+      - name: Every stage passed; the artifact pages.yml deploys is complete
+        run: |
+          set -euo pipefail
+          for f in index.html judge.html pitch/index.html status/index.html status/data/status.json assets/og.png; do
+            test -s "_site/$f" || { echo "::error::missing _site/$f"; exit 1; }
+          done
+          echo "Stages 1-5 green on ${GITHUB_SHA}; pages.yml deploys this commit next."

@@ -1,15 +1,25 @@
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-  - package-ecosystem: github-actions
-    directory: /
-    schedule:
-      interval: weekly
-  - package-ecosystem: gitsubmodule
+  - package-ecosystem: npm # pnpm-lock.yaml at the root (TS kit, scripts, Playwright)
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      # Major bumps are migrations, not maintenance; they are tested by hand on a branch first.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
+# No gitsubmodule ecosystem on purpose: lib/forge-std, lib/reactive-lib-omni and lib/reactive-test-lib stay pinned to the
+# commits the testnet deployments in evidence/*-addresses.txt were compiled from. Bumping them would make the deployed
+# bytecode and this source disagree.
