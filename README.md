@@ -29,8 +29,8 @@
 
 ## 📸 See it in Action
 
-<p align="center"><img src="docs/assets/broll/attack-both-gates-shut.gif" alt="Live testnet run bu-101: a forged mint with no lock behind it. The harness clock counts from 0.000 s, the Base gate shuts at +2.210 s and Lasna sees the mint at +3.139 s; the real status page goes from LINE CLEAR to SPLIT: ONE GATE SHUT to LINE BLOCKED, and the clock stops in red at 7.986 s with both gates shut" width="830"></p>
-<p align="center"><em>Real testnet run bu-101 (2026-11-13), recorded on camera and sped up ×1.5: the real status page under the bench harness's timings (<code>evidence/video-live-oncamera.log</code>).</em></p>
+<p align="center"><img src="docs/assets/broll/attack-both-gates-shut.gif" alt="Live testnet run bu-101: a forged mint with no lock behind it. The observer clock counts from 0.000 s; the Base gate is first seen shut at +2.210 s and the Lasna react() at +3.139 s; the real status page goes from LINE CLEAR to SPLIT: ONE GATE SHUT to LINE BLOCKED, and the clock stops in red at 7.986 s, the observer's upper bound for both gates shut" width="830"></p>
+<p align="center"><em>Real testnet run bu-101 (2026-11-13), recorded on camera while the bench harness ran, sped up ×1.5: the real status page under the harness's observer times (<code>evidence/video-live-oncamera.log</code>). Those are first sightings through a 400 ms poll, so they are upper bounds and not causal order (Lasna is read on a different RPC); block timestamps put both gates shut at +2 s (<code>evidence/video-live-runs.md</code>).</em></p>
 
 ## 💡 The Problem & Solution
 
@@ -44,8 +44,8 @@ A reactive contract on Reactive Lasna keeps a ledger per route from the logs of 
 - a matching `Locked` arriving inside the window `W` (60 s on our routes, set per route) reopens them automatically;
 - a lock that arrives before its mint, and the mint that matches it, trigger no callback at all; only a lock that clears an unmatched mint sends the resume callbacks.
 
-<p align="center"><img src="docs/assets/broll/legit-transfer-reopens.gif" alt="Live testnet run lf-104: a legitimate mint sent 8 s before its lock. The real status page goes from LINE CLEAR to SPLIT: ONE GATE SHUT to LINE BLOCKED; the lock is mined on Base at +9.577 s, the gates reopen by themselves at +11.374 s (Base) and +13.043 s (Unichain), and the line is clear again; the longest a gate stayed shut was 5.1 s" width="830"></p>
-<p align="center"><em>Real testnet run lf-104 (2026-11-13), a legitimate transfer sent out of order on purpose: its late lock reopens both gates with no human action, sped up ×2.</em></p>
+<p align="center"><img src="docs/assets/broll/legit-transfer-reopens.gif" alt="Live testnet run lf-104: a legitimate mint whose lock is sent 8 s later. The real status page goes from LINE CLEAR to SPLIT: ONE GATE SHUT to LINE BLOCKED; the lock is seen mined on Base at +9.577 s, the gates reopen by themselves at +11.374 s (Base) and +13.043 s (Unichain), and the line is clear again; the longest a gate stayed shut was 5.1 s (gate U, +7.988 s to +13.043 s)" width="830"></p>
+<p align="center"><em>Real testnet run lf-104 (2026-11-13), recorded on camera, sped up ×2: a legitimate transfer whose lock the harness sent 8 s after the mint (seen mined at +9.577 s) reopens both gates with no human action. The big clock counts from the first gate shut (gate B, mint +6.846 s) and the rows from the mint; 5.1 s is gate U's +7.988 s to +13.043 s.</em></p>
 
 Each gate is a small contract that flips the bridge's own pause switch. **Why Omni:** a guard on Base never sees `Minted`, and a guard on Unichain never sees `Locked`; one Lasna contract reads both (no off-chain watcher; we did not measure a baseline). The claim we make is deliberately narrow: **loss ≤ the mints that land inside the measured pause window.** Ledgerlock does not stop the first unbacked mint.
 
@@ -78,7 +78,7 @@ The reactive contract uses the Omni system contract directly (`src/LedgerlockRea
 | `AbstractReactive` / `AbstractCallback` | base contracts for the reactive contract and the gates |
 
 <p align="center"><img src="docs/assets/broll/reactscan-one-react-two-callbacks.gif" alt="The live Reactscan page of run bu-101's react() transaction 0xdd25…cb27 on Lasna: callback #5 to Unichain Sepolia (1301) and callback #6 to Base Sepolia (84532), each on-chain attested and confirmed, with their destination transactions boxed and tagged gate U paused and gate B paused" width="830"></p>
-<p align="center"><em>The live <a href="https://lasna.reactscan.net/tx/0xdd2591adb689809394165bfa5ffbc440ec83553372b4c2f01999a55a790fcb27">Reactscan page</a> of bu-101's <code>react()</code>, captured 2026-11-16: one Lasna transaction, two callbacks; the title, boxes and tags are annotations.</em></p>
+<p align="center"><em>The live <a href="https://lasna.reactscan.net/tx/0xdd2591adb689809394165bfa5ffbc440ec83553372b4c2f01999a55a790fcb27">Reactscan page</a> of bu-101's <code>react()</code>, captured 2026-11-16: one Lasna transaction, two callbacks; the header line, title, boxes and tags are annotations.</em></p>
 
 No off-chain ingestion is used. One behaviour is not in the docs: origin logs are read at the latest block, which the Reactive team told us in their dev Telegram on 8 Nov 2026 (we cannot publish that message here).
 
@@ -99,8 +99,8 @@ Every pause is a triple: origin transaction → Lasna `react()` → gate callbac
 
 ## 📊 Engineering Rigor
 
-<p align="center"><img src="docs/assets/broll/bench-100-attacks.gif" alt="The landing page's bench plot: 100 attack runs fall into place one dot each, seconds from the forged mint until both gates shut, with p50 5.92 s and p95 8.245 s marked, the ringed run bu-015 at 5.341 s, and the leg figures below (detection p50 3.873 s, gate B p50 3.378 s, gate U p50 5.917 s, on-chain check p50 2 s)" width="830"></p>
-<p align="center"><em>The landing page's own plot drawing the 100 committed attack runs (<code>evidence/frozen3-bench-runs.csv</code>) at real speed; the ringed bu-015 is the run its hero panel replays.</em></p>
+<p align="center"><img src="docs/assets/broll/bench-100-attacks.gif" alt="The landing page's bench plot, an animated reveal: 100 attack runs drop in one dot each, seconds from the forged mint until both gates shut, with p50 5.92 s and p95 8.245 s marked, the ringed run bu-015 at 5.341 s, and the leg figures below (detection p50 3.873 s, gate B p50 3.378 s, gate U p50 5.917 s, on-chain check p50 2 s)" width="830"></p>
+<p align="center"><em>The landing page's own animated reveal of the 100 committed attack runs (<code>evidence/frozen3-bench-runs.csv</code>); the falling dots are the page's animation, not timing. Its label "the run replayed above" means the landing page's hero panel, which replays bu-015, not the GIF at the top of this README.</em></p>
 
 | Metric | Value | Source |
 |---|---|---|
