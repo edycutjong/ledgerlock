@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledgerlock architecture</title>
+<meta name="description" content="One LedgerlockReactive contract on Reactive Lasna reads Base Sepolia Locked and Unichain Sepolia Minted logs and pauses a gate on each chain from one react().">
+<!-- Source of docs/architecture.png. Self-contained: inline SVG, fonts from ../status/fonts/ (OFL, shipped with the
+     status page), no network requests. Labels are copied from src/, README.md, docs/index.html,
+     deployments/testnet.json and evidence/. Render: 2x device scale, the <svg> element only
+     (viewBox 960x1164 -> 1920x2328 px). -->
+<style>
+@font-face{font-family:"League Gothic";src:url(../status/fonts/league-gothic-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:block}
+@font-face{font-family:"Libre Franklin";src:url(../status/fonts/libre-franklin-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:block}
+@font-face{font-family:"Libre Franklin";src:url(../status/fonts/libre-franklin-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:block}
+@font-face{font-family:"Chivo Mono";src:url(../status/fonts/chivo-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:block}
+:root{--bg:#182019;--ink:#EAE3CC;--muted:#85907F}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif;padding:24px 16px;display:flex;justify-content:center}
+.frame{width:100%;max-width:960px}
+.diagram-container{width:100%;overflow-x:auto}
+svg{width:100%;min-width:960px;display:block}
+@media print{.diagram-container{overflow-x:visible}svg{min-width:0}}
+</style>
+</head>
+<body>
+<main class="frame">
+<div class="diagram-container">
+<svg viewBox="0 0 960 1164" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ledgerlock-architecture-title ledgerlock-architecture-desc">
+<title id="ledgerlock-architecture-title">Ledgerlock architecture: two books, read by one contract</title>
+<desc id="ledgerlock-architecture-desc">Base Sepolia Locked logs and Unichain Sepolia Minted logs reach one LedgerlockReactive contract on Reactive Lasna, which matches each mint to its lock; a mint with nothing locked makes one react() request two pause callbacks, one to the gate on each chain, and a lock that lands inside the 60-second window sends two resume callbacks.</desc>
+<defs><pattern id="ll-grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#EAE3CC" stroke-opacity="0.035" stroke-width="1"/></pattern><filter id="ll-glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="ll-halo" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="6"/></filter><marker id="ll-a-ink" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto"><path d="M0 0L12 5L0 10z" fill="#EAE3CC"/></marker><marker id="ll-a-red" markerUnits="userSpaceOnUse" markerWidth="13" markerHeight="11" refX="12" refY="5.5" orient="auto"><path d="M0 0L13 5.5L0 11z" fill="#E4412A"/></marker><marker id="ll-a-lamp" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto"><path d="M0 0L12 5L0 10z" fill="#F1DE9C"/></marker><marker id="ll-a-mut" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto"><path d="M0 0L11 4.5L0 9z" fill="#85907F"/></marker></defs>
+<rect width="960" height="1164" fill="#182019"/>
+<rect width="960" height="1164" fill="url(#ll-grid)"/>
+<text x="32" y="40" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="700" fill="#85907F" text-anchor="start" letter-spacing="0.16em">LEDGERLOCK · ARCHITECTURE · TESTNET</text>
+<text x="30" y="110" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="64" fill="#EAE3CC" letter-spacing="0.01em">TWO BOOKS, READ BY <tspan fill="#F1DE9C" filter="url(#ll-glow)">ONE CONTRACT</tspan></text>
+<text x="32" y="142" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="16" font-weight="400" fill="#EAE3CC" text-anchor="start">A guard on Base never sees <tspan font-family="'Chivo Mono','Courier New',monospace">Minted</tspan>, and a guard on Unichain never sees <tspan font-family="'Chivo Mono','Courier New',monospace">Locked</tspan>. One Reactive Omni</text>
+<text x="32" y="164" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="16" font-weight="400" fill="#EAE3CC" text-anchor="start">contract on Lasna reads both, and pauses both ends of the bridge when a mint has no lock behind it.</text>
+<rect x="32" y="176" width="896" height="794" rx="12" fill="rgba(30,38,30,0.55)" stroke="#34402F" stroke-width="1.2"/>
+<g><circle cx="44" cy="188" r="5" fill="#B8914A" opacity="0.85"/><line x1="41" y1="190" x2="47" y2="186" stroke="#182019" stroke-width="1.2"/></g>
+<g><circle cx="916" cy="188" r="5" fill="#B8914A" opacity="0.85"/><line x1="913" y1="190" x2="919" y2="186" stroke="#182019" stroke-width="1.2"/></g>
+<g><circle cx="44" cy="958" r="5" fill="#B8914A" opacity="0.85"/><line x1="41" y1="960" x2="47" y2="956" stroke="#182019" stroke-width="1.2"/></g>
+<g><circle cx="916" cy="958" r="5" fill="#B8914A" opacity="0.85"/><line x1="913" y1="960" x2="919" y2="956" stroke="#182019" stroke-width="1.2"/></g>
+<rect x="48" y="192" width="864" height="360" rx="8" fill="rgba(234,227,204,0.02)" stroke="#34402F" stroke-width="1"/>
+<text x="64" y="223" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="26" font-weight="400" fill="#EAE3CC" text-anchor="start" letter-spacing="0.02em">REACTIVE LASNA</text>
+<text x="198.60000000000002" y="222" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="16" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">5318007</tspan></text>
+<text x="896" y="222" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="end">Reactive Omni · the guard</text>
+<rect x="48" y="672" width="420" height="200" rx="8" fill="rgba(234,227,204,0.02)" stroke="#34402F" stroke-width="1"/>
+<text x="100" y="703" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="26" font-weight="400" fill="#EAE3CC" text-anchor="start" letter-spacing="0.02em">BASE SEPOLIA</text>
+<text x="216.8" y="702" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="16" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">84532</tspan></text>
+<rect x="492" y="672" width="420" height="200" rx="8" fill="rgba(234,227,204,0.02)" stroke="#34402F" stroke-width="1"/>
+<text x="860" y="702" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="16" font-weight="400" fill="#85907F" text-anchor="end"><tspan font-family="'Chivo Mono','Courier New',monospace">1301</tspan></text>
+<text x="811.6" y="703" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="26" font-weight="400" fill="#EAE3CC" text-anchor="end" letter-spacing="0.02em">UNICHAIN SEPOLIA</text>
+<path class="conn log" d="M84,720 V326 Q84,318 92,318 H120" fill="none" stroke="#EAE3CC" stroke-width="2" marker-end="url(#ll-a-ink)"/>
+<path class="conn log" d="M876,720 V326 Q876,318 868,318 H840" fill="none" stroke="#EAE3CC" stroke-width="2" marker-end="url(#ll-a-ink)"/>
+<line class="conn gate" x1="292" y1="784" x2="260" y2="784" stroke="#85907F" stroke-width="2" marker-end="url(#ll-a-mut)"/>
+<line class="conn gate" x1="668" y1="784" x2="700" y2="784" stroke="#85907F" stroke-width="2" marker-end="url(#ll-a-mut)"/>
+<path class="conn track" d="M162,856 V890 Q162,900 172,900 H788 Q798,900 798,890 V858" fill="none" stroke="#85907F" stroke-width="8"/>
+<path d="M162,856 V890 Q162,900 172,900 H788 Q798,900 798,890 V858" fill="none" stroke="#182019" stroke-width="4"/>
+<path d="M791,869 L798,857 L805,869" fill="none" stroke="#85907F" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="120" y="240" width="720" height="296" rx="8" fill="none" stroke="#F1DE9C" stroke-width="5" opacity="0.22" filter="url(#ll-halo)"/>
+<rect x="120" y="240" width="720" height="296" rx="8" fill="#1E261E" stroke="#F1DE9C" stroke-width="2" data-box="rsc"/>
+<text x="144" y="272" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="700" fill="#F1DE9C" text-anchor="start">LedgerlockReactive</text>
+<text x="816" y="271" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="end"><tspan font-family="'Chivo Mono','Courier New',monospace">react()</tspan> reads both books and every gate ack</text>
+<rect x="136" y="286" width="236" height="64" rx="4" fill="#1B231C" stroke="#34402F" stroke-width="1" data-box="book-B"/>
+<line x1="148" y1="321" x2="360" y2="321" stroke="#34402F" stroke-width="0.8" opacity="0.6"/>
+<line x1="148" y1="341" x2="360" y2="341" stroke="#34402F" stroke-width="0.8" opacity="0.6"/>
+<text x="150" y="315" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="21" font-weight="400" fill="#EAE3CC" text-anchor="start" letter-spacing="0.03em">BASE BOOK</text>
+<text x="150" y="338" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">Locked(nonce, to, amount)</tspan></text>
+<rect x="588" y="286" width="236" height="64" rx="4" fill="#1B231C" stroke="#34402F" stroke-width="1" data-box="book-U"/>
+<line x1="600" y1="321" x2="812" y2="321" stroke="#34402F" stroke-width="0.8" opacity="0.6"/>
+<line x1="600" y1="341" x2="812" y2="341" stroke="#34402F" stroke-width="0.8" opacity="0.6"/>
+<text x="602" y="315" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="21" font-weight="400" fill="#EAE3CC" text-anchor="start" letter-spacing="0.03em">UNICHAIN BOOK</text>
+<text x="602" y="338" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">Minted(nonce, to, amount)</tspan></text>
+<line x1="376" y1="330" x2="396" y2="330" stroke="#85907F" stroke-width="1.5" marker-end="url(#ll-a-mut)"/>
+<line x1="584" y1="330" x2="564" y2="330" stroke="#85907F" stroke-width="1.5" marker-end="url(#ll-a-mut)"/>
+<g class="step" data-step="2"><circle cx="430" cy="305" r="12" fill="#EAE3CC"/><text x="430" y="311.5" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="19" fill="#182019" text-anchor="middle">2</text></g>
+<text x="450" y="310" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">matched by</text>
+<text x="480" y="335" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="middle"><tspan font-family="'Chivo Mono','Courier New',monospace">nonce, amount, to</tspan></text>
+<rect x="136" y="364" width="220" height="124" rx="4" fill="#1B231C" stroke="#34402F" stroke-width="1" data-box="cell-in"/>
+<circle cx="156" cy="385" r="9" fill="none" stroke="#34402F" stroke-width="1.5"/>
+<circle cx="156" cy="385" r="5.5" fill="#F1DE9C" filter="url(#ll-glow)"/>
+<text x="172" y="392" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="21" font-weight="400" fill="#EAE3CC" text-anchor="start" letter-spacing="0.03em">IN ORDER</text>
+<text x="148" y="416" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start">Locked, then its Minted:</text>
+<text x="148" y="434" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start">matched. No callback.</text>
+<text x="148" y="456" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">0 callbacks</tspan></text>
+<rect x="370" y="364" width="220" height="124" rx="4" fill="#182019" stroke="none" stroke-width="0"/>
+<rect x="370" y="364" width="220" height="124" rx="4" fill="rgba(228,65,42,0.04)" stroke="#E4412A" stroke-width="1.5" data-box="cell-forged"/>
+<circle cx="390" cy="385" r="9" fill="none" stroke="#34402F" stroke-width="1.5"/>
+<circle cx="390" cy="385" r="5.5" fill="#E4412A" filter="url(#ll-glow)"/>
+<text x="406" y="392" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="21" font-weight="400" fill="#E85E4A" text-anchor="start" letter-spacing="0.03em">FORGED MINT</text>
+<g class="step" data-step="3"><circle cx="568" cy="385" r="12" fill="#EAE3CC"/><text x="568" y="391.5" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="19" fill="#182019" text-anchor="middle">3</text></g>
+<text x="382" y="416" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start">Minted, nothing locked:</text>
+<text x="382" y="434" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start">one <tspan font-family="'Chivo Mono','Courier New',monospace">react()</tspan> pauses both.</text>
+<text x="382" y="456" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#E85E4A" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">requestCallbackV_1_0 ×2</tspan></text>
+<text x="382" y="476" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">latched until <tspan font-family="'Chivo Mono','Courier New',monospace">resolve()</tspan></text>
+<rect x="604" y="364" width="220" height="124" rx="4" fill="#1B231C" stroke="#34402F" stroke-width="1" data-box="cell-lock"/>
+<circle cx="624" cy="385" r="9" fill="none" stroke="#34402F" stroke-width="1.5"/>
+<circle cx="624" cy="385" r="5.5" fill="#F1DE9C" filter="url(#ll-glow)"/>
+<text x="640" y="392" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="21" font-weight="400" fill="#EAE3CC" text-anchor="start" letter-spacing="0.03em">LOCK ARRIVES LATE</text>
+<g class="step" data-step="5"><circle cx="802" cy="385" r="12" fill="#EAE3CC"/><text x="802" y="391.5" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="19" fill="#182019" text-anchor="middle">5</text></g>
+<text x="616" y="416" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start">Its Locked lands inside</text>
+<text x="616" y="434" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start">W = 60 s: both reopen.</text>
+<text x="616" y="456" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">lf-009 · paused 10.2 s</tspan></text>
+<text x="616" y="476" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">no human action</text>
+<line class="conn pause" x1="400" y1="488" x2="400" y2="720" stroke="#E4412A" stroke-width="3" marker-end="url(#ll-a-red)"/>
+<line class="conn pause" x1="560" y1="488" x2="560" y2="720" stroke="#E4412A" stroke-width="3" marker-end="url(#ll-a-red)"/>
+<path class="conn resume" d="M620,488 V504 Q620,512 612,512 H568 a8,8 0 0,0 -16,0 H408 a8,8 0 0,0 -16,0 H316 Q308,512 308,520 V720" fill="none" stroke="#F1DE9C" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ll-a-lamp)"/>
+<line class="conn resume" x1="652" y1="488" x2="652" y2="720" stroke="#F1DE9C" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ll-a-lamp)"/>
+<g class="step" data-step="4"><circle cx="400" cy="566" r="12" fill="#EAE3CC"/><text x="400" y="572.5" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="19" fill="#182019" text-anchor="middle">4</text></g>
+<g class="step" data-step="4"><circle cx="560" cy="566" r="12" fill="#EAE3CC"/><text x="560" y="572.5" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="19" fill="#182019" text-anchor="middle">4</text></g>
+<g class="step" data-step="1"><circle cx="84" cy="566" r="12" fill="#EAE3CC"/><text x="84" y="572.5" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="19" fill="#182019" text-anchor="middle">1</text></g>
+<g class="step" data-step="1"><circle cx="876" cy="566" r="12" fill="#EAE3CC"/><text x="876" y="572.5" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="19" fill="#182019" text-anchor="middle">1</text></g>
+<text x="98" y="610" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">Locked</tspan> via <tspan font-family="'Chivo Mono','Courier New',monospace">subscribe</tspan></text>
+<text x="862" y="610" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="end"><tspan font-family="'Chivo Mono','Courier New',monospace">Minted</tspan> via <tspan font-family="'Chivo Mono','Courier New',monospace">subscribe</tspan></text>
+<text x="480" y="602" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="28" font-weight="400" fill="#EAE3CC" text-anchor="middle"><tspan font-family="'Chivo Mono','Courier New',monospace">8.245 s</tspan></text>
+<text x="480" y="624" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="middle">both gates shut, p95</text>
+<text x="480" y="644" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="middle">100 testnet attacks</text>
+<rect x="64" y="720" width="196" height="136" rx="6" fill="#1B231C" stroke="#85907F" stroke-width="1.2" data-box="lockbox"/>
+<rect x="76" y="732" width="165" height="20" rx="2" fill="none" stroke="#85907F" stroke-width="1"/>
+<text x="83" y="747" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">BRIDGE · LOCK SIDE</tspan></text>
+<text x="76" y="778" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="19" font-weight="700" fill="#EAE3CC" text-anchor="start">LockBox</text>
+<text x="76" y="802" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">lock()</tspan> → <tspan font-family="'Chivo Mono','Courier New',monospace">Locked</tspan></text>
+<text x="76" y="822" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">releases check Gate B</text>
+<rect x="292" y="720" width="160" height="136" rx="6" fill="#1B231C" stroke="#EAE3CC" stroke-width="1.6" data-box="gate-b"/>
+<rect x="304" y="732" width="48" height="20" rx="2" fill="none" stroke="#85907F" stroke-width="1"/>
+<text x="311" y="747" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">GATE</tspan></text>
+<text x="304" y="778" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="19" font-weight="700" fill="#EAE3CC" text-anchor="start">Gate B</text>
+<text x="304" y="802" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">pause()</tspan> <tspan font-family="'Chivo Mono','Courier New',monospace">resume()</tspan></text>
+<text x="304" y="822" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">via callback proxy</text>
+<text x="304" y="842" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">freezes releases</text>
+<rect x="508" y="720" width="160" height="136" rx="6" fill="#1B231C" stroke="#EAE3CC" stroke-width="1.6" data-box="gate-u"/>
+<rect x="520" y="732" width="48" height="20" rx="2" fill="none" stroke="#85907F" stroke-width="1"/>
+<text x="527" y="747" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">GATE</tspan></text>
+<text x="520" y="778" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="19" font-weight="700" fill="#EAE3CC" text-anchor="start">Gate U</text>
+<text x="520" y="802" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">pause()</tspan> <tspan font-family="'Chivo Mono','Courier New',monospace">resume()</tspan></text>
+<text x="520" y="822" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">via callback proxy</text>
+<text x="520" y="842" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">stops mints</text>
+<rect x="700" y="720" width="196" height="136" rx="6" fill="#1B231C" stroke="#85907F" stroke-width="1.2" data-box="minter"/>
+<rect x="712" y="732" width="165" height="20" rx="2" fill="none" stroke="#85907F" stroke-width="1"/>
+<text x="719" y="747" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">BRIDGE · MINT SIDE</tspan></text>
+<text x="712" y="778" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="19" font-weight="700" fill="#EAE3CC" text-anchor="start">Minter</text>
+<text x="712" y="802" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">mint()</tspan> → <tspan font-family="'Chivo Mono','Courier New',monospace">Minted</tspan></text>
+<text x="712" y="822" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">each mint checks Gate U</text>
+<text x="480" y="930" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="21" font-weight="400" fill="#85907F" text-anchor="middle" letter-spacing="0.04em">THE BRIDGE'S OWN PATH: LOCK → MINT</text>
+<text x="480" y="950" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="middle">relayer (route A) or our own <tspan font-family="'Chivo Mono','Courier New',monospace">Mailbox.process</tspan> (route B). Ledgerlock is not in this path.</text>
+<line x1="56.400000000000034" y1="1004" x2="86.40000000000003" y2="1004" stroke="#EAE3CC" stroke-width="2" marker-end="url(#ll-a-ink)"/>
+<text x="96.4" y="1009" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">origin log</text>
+<line x1="190.40000000000003" y1="1004" x2="220.40000000000003" y2="1004" stroke="#E4412A" stroke-width="3" marker-end="url(#ll-a-red)"/>
+<text x="230.4" y="1009" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">pause()</tspan> callback</text>
+<line x1="376.6" y1="1004" x2="406.6" y2="1004" stroke="#F1DE9C" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ll-a-lamp)"/>
+<text x="416.6" y="1009" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start"><tspan font-family="'Chivo Mono','Courier New',monospace">resume()</tspan> callback</text>
+<line x1="571.2" y1="1004" x2="601.2" y2="1004" stroke="#85907F" stroke-width="8"/><line x1="570.2" y1="1004" x2="602.2" y2="1004" stroke="#182019" stroke-width="4"/>
+<text x="611.2" y="1009" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">the bridge's own path</text>
+<g class="step" data-step="1"><circle cx="791.8000000000001" cy="1004" r="12" fill="#EAE3CC"/><text x="791.8000000000001" y="1010.5" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="19" fill="#182019" text-anchor="middle">1</text></g>
+<text x="817.8" y="1009" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">step (README)</text>
+<line x1="32" y1="1022" x2="472" y2="1022" stroke="#34402F" stroke-width="1"/>
+<text x="32" y="1048" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="21" font-weight="400" fill="#EAE3CC" text-anchor="start" letter-spacing="0.03em">ROUTE A · DRAWN ABOVE</text>
+<text x="32" y="1072" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start">Our own fixture bridge, labelled as one, with a</text>
+<text x="32" y="1092" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">Nomad-class release bug reproduced on demand.</text>
+<line x1="488" y1="1022" x2="928" y2="1022" stroke="#34402F" stroke-width="1"/>
+<text x="488" y="1048" font-family="'League Gothic','Alternate Gothic No1 D','Oswald',Impact,sans-serif" font-size="21" font-weight="400" fill="#EAE3CC" text-anchor="start" letter-spacing="0.03em">ROUTE B · HYPERLANE WARP ROUTE</text>
+<text x="488" y="1072" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#EAE3CC" text-anchor="start">Routers deployed by us; each gate pauses a <tspan font-family="'Chivo Mono','Courier New',monospace">PausableIsm</tspan>.</text>
+<text x="488" y="1092" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">Delivered by our own <tspan font-family="'Chivo Mono','Courier New',monospace">Mailbox.process</tspan>; drills, no attack.</text>
+<text x="32" y="1122" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">Sources: <tspan font-family="'Chivo Mono','Courier New',monospace">src/</tspan>, <tspan font-family="'Chivo Mono','Courier New',monospace">deployments/testnet.json</tspan>, <tspan font-family="'Chivo Mono','Courier New',monospace">evidence/frozen3-bench-summary.md</tspan>. Seconds: mint mined →</text>
+<text x="32" y="1142" font-family="'Libre Franklin','Franklin Gothic Book','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#85907F" text-anchor="start">both gates' <tspan font-family="'Chivo Mono','Courier New',monospace">Paused</tspan> seen, on the observer clock (400 ms poll). Testnets only: Lasna, Base Sepolia, Unichain Sepolia.</text>
+</svg>
+</div>
+</main>
+</body>
+</html>
