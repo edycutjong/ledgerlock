@@ -51,15 +51,15 @@ Each gate is a small contract that flips the bridge's own pause switch. **Why Om
 
 ## 🏗️ Architecture & Tech Stack
 
-<img src="docs/architecture.png" alt="Ledgerlock architecture. Base Sepolia's LockBox emits Locked and Unichain Sepolia's Minter emits Minted; both logs reach one LedgerlockReactive contract on Reactive Lasna, which matches each mint to its lock by nonce, amount and recipient. A Minted with nothing locked makes one react() send two pause callbacks, to Gate B on Base and Gate U on Unichain; a matching Locked inside W = 60 s sends two resume callbacks. Route A is our fixture bridge; route B is a Hyperlane warp route delivered by our own Mailbox.process." width="100%">
+<img src="docs/architecture.png" alt="Ledgerlock architecture. Base Sepolia's LockBox emits Locked and Unichain Sepolia's Minter emits Minted; both logs reach one LedgerlockReactive contract on Reactive Lasna, which matches each mint to its lock by nonce, amount and recipient. A Minted with nothing locked makes one react() send two pause callbacks, to Gate B on Base and Gate U on Unichain; a matching Locked inside W = 60 s sends two resume callbacks. Drawn for route A, our fixture bridge." width="100%">
 
 1. The bridge's own traffic: `Locked` on Base Sepolia, `Minted` on Unichain Sepolia. Both logs reach `LedgerlockReactive` on Lasna through `subscribe`.
 2. `react()` matches each `Minted` to a `Locked` by nonce, amount and recipient. A matched pair sends no callback.
 3. A `Minted` with no matching `Locked` makes that same `react()` request two callbacks (`requestCallbackV_1_0` ×2).
-4. Both gates pause, one per chain; while shut, mints and releases revert `GatePaused`. Both were shut by 8.245 s (p95, 100 testnet attacks).
+4. Both gates pause, one per chain (Gate B on Base, Gate U on Unichain); while shut, mints and releases revert `GatePaused`. Both were shut by 8.245 s (p95, 100 testnet attacks; mint mined to both gates' `Paused` seen, observer clock, 400 ms poll).
 5. A matching `Locked` inside `W` (60 s) sends two `resume()` callbacks and both gates reopen. A forged or replayed key latches instead, until the owner's `resolve()`.
 
-Source: `docs/architecture/architecture.html` (inline SVG; the PNG above is its 2× render).
+The diagram draws route A, our fixture bridge (`LockBox` on Base, `Minter` on Unichain). Route B, the Hyperlane warp route we deployed, swaps in Hyperlane's collateral and synthetic routers; each of its gates pauses a `PausableIsm` inside a 2-of-2 aggregation ISM, and its deliveries were made by our own `Mailbox.process`. Source: `docs/architecture/architecture.html` (inline SVG; the PNG above is its 2× render), built from `src/`, `deployments/testnet.json`, `evidence/frozen3-bench-summary.md` and, for the late-lock run `lf-104`, `evidence/video-live-runs.md`.
 
 | Layer | Choice |
 |---|---|
