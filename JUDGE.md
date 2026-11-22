@@ -1,6 +1,6 @@
 # Ledgerlock for judges
 
-Live page: https://edycutjong.github.io/ledgerlock/judge
+Live page: https://ledgerlock.edycu.dev/judge · Demo video (2:43): https://youtu.be/ijFfcDMhkxc
 
 **One Reactive contract reads Base locks and Unichain mints together and pauses a bridge seconds after a mint appears with no lock.**
 

@@ -10,6 +10,7 @@
   [![For Judges](https://img.shields.io/badge/⚖️_For-Judges-e4412a?style=for-the-badge)](https://ledgerlock.edycu.dev/judge)
   [![Live Demo](https://img.shields.io/badge/🚀_Live-Demo-06b6d4?style=for-the-badge)](https://ledgerlock.edycu.dev/)
   [![Pitch Deck](https://img.shields.io/badge/📊_Pitch-Deck-f59e0b?style=for-the-badge)](https://ledgerlock.edycu.dev/pitch/)
+  [![Demo Video](https://img.shields.io/badge/🎬_Demo-Video_2%3A43-ef4444?style=for-the-badge)](https://youtu.be/ijFfcDMhkxc)
   [![Built for Reactive Omni Buildathon](https://img.shields.io/badge/DoraHacks-Reactive_Omni_Buildathon-8b5cf6?style=for-the-badge)](https://dorahacks.io/hackathon/reactive-omni-buildathon/detail)
 
   <br/>
