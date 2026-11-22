@@ -1,4 +1,4 @@
-// Route B runs: a Hyperlane warp route (Base native -> Unichain synthetic) guarded by the same LedgerlockReactive (SUPPLY mode).
+// Route B runs: a Hyperlane warp route (Base native -> Unichain synthetic) guarded by the `frozen` LedgerlockReactive (route 2, SUPPLY mode), not the route A instance.
 // legit  : transferRemote on Base, then OUR Mailbox.process on Unichain right after the dispatch mined (the public relayer did not
 //          deliver, evidence/g2-hyperlane.csv); records dispatch->delivery delay and the order Lasna booked the two events.
 // drill  : DrillBeacon.fire(2) -> Lasna react -> both PausableIsms paused through the real callbacks; a transfer sent during the
@@ -121,6 +121,6 @@ for (let i = 1; i <= N; i++) {
       if (!held) row.note += `; held-process send failed, not a mined revert: ${heldErr}`;
     }
   } catch (e) { row.outcome = "error"; row.note = String(e).slice(0, 140); }
-  appendFileSync(OUT, COLS.map((c) => String(row[c] ?? "").replaceAll(",", ";")).join(",") + "\n");
+  appendFileSync(OUT, COLS.map((c) => String(row[c] ?? "").replaceAll(",", ";").replaceAll('"', "'").replaceAll("\n", " ")).join(",") + "\n");
   console.log(id, row.outcome, row.note ?? "");
 }

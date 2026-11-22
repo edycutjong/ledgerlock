@@ -1,5 +1,5 @@
 // Tx-triple logger: origin (or CRON) tx -> reactive tx -> callback tx, with on-chain timestamps.
-// Joins by data the contracts emit themselves (the RC logs the origin tx hash + a seq; the destination logs the seq),
+// Joins by data the contracts emit themselves (the RC logs the origin tx hash; gate events carry routeId, epoch, originTx and key; seq is positional),
 // so it needs nothing but eth_getLogs on each chain. Output: evidence/triples.csv (rows are never dropped; a re-join of
 // the same react updates its row in place, so a corrected join lands instead of sitting beside the stale one).
 import { existsSync, readFileSync, writeFileSync } from "node:fs";

@@ -90,7 +90,7 @@ No off-chain ingestion is used. One behaviour is not in Reactive's public docs: 
 
 ## ⛓️ Live Deployment
 
-Testnet only; no wallet is needed to verify anything below, every item is a read-only lookup. Route A (`frozen3`, contract commit `e425c78`):
+Testnet only; no wallet is needed to verify anything below, every item is a read-only lookup. Route A (`frozen3`, contract commit `e425c78`; `src/` and the kit sources at `HEAD` are byte-identical to that commit, so the code above is the code behind every route A row):
 
 | Contract | Address |
 |---|---|
@@ -138,7 +138,7 @@ Lasna's `react()` is polled on a different RPC than the gates, so its first-seen
 | Callback failure retries once, then ends in `GateUnreachable` | a dead gate is visible, not silent | `:510`, `:527` |
 | Accumulator overflow pauses instead of reverting `react()` | a revert would blind the guard | `:1067` |
 
-### Honest limits (9)
+### Honest limits
 
 1. If Reactive Lasna stops, Ledgerlock is blind and the bridge runs on its own security. If Base ingestion stops it fails closed; if Unichain ingestion stops, that side fails open until ingestion resumes.
 2. Mints that land before the pause are lost. The guard does not prevent the first one.
@@ -149,6 +149,12 @@ Lasna's `react()` is polled on a different RPC than the gates, so its first-seen
 7. The hop-sensitivity measurement is dropped: two Lasna self-callback requests were never delivered, so no hop rows exist.
 8. Nothing pages the operator. A latched route stays shut until someone looks; the `IncidentLatched` and `GateUnreachable` events are the signals to watch.
 9. Trusted and not covered: the bridge must emit truthful, complete events and check the gate independently of the compromised key; an upgrade that bypasses the gate, routes live before the guard was armed, and a single large mint before the pause are out of scope.
+10. The release direction has no live attack run: the bench forges and fills mints on Unichain only. Release-side matching is covered by tests (`test_reverse_direction_release_before_burn_is_unmatched`, `test_nomad_release_pauses_both`), not by testnet rows.
+11. On the testnet fixture one key is the relayer, the gates' guardian and the reactive contract's owner, so the "stolen relayer key" could also call `resolve()`. A production deployment separates the three (for example, a multisig owner).
+12. After resolving a plausible-nonce attack, the poisoned nonces must be skipped or refunded: `resolve()` marks every pending entry consumed, so a later legitimate transfer at that nonce latches, and the fixture has no refund.
+13. Route B's SUPPLY mode latches on any legitimate reorder (a receive seen before its send); 0 of 10 latched here because every delivery was self-delivered right after dispatch.
+14. A guardian hold or a stuck resume leaves a gate shut while `routeState` reports the route open: read `Gate.isOpen()` as well.
+15. The Cron10 watchdog is evidenced by forge tests only; no live tick shows in `evidence/frozen3-react-gas.csv`.
 
 ## 🚀 Getting Started
 

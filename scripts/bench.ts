@@ -137,7 +137,7 @@ const done = new Set(existsSync(OUT) ? readFileSync(OUT, "utf8").split("\n").sli
 if (!existsSync(OUT)) writeFileSync(OUT, COLS.join(",") + "\n");
 function emit(row: Record<string, unknown>) {
   const full = { instance, poll_ms: POLL_MS, ...row } as Record<string, unknown>;
-  appendFileSync(OUT, COLS.map((c) => String(full[c] ?? "").replaceAll(",", ";")).join(",") + "\n");
+  appendFileSync(OUT, COLS.map((c) => String(full[c] ?? "").replaceAll(",", ";").replaceAll('"', "'").replaceAll("\n", " ")).join(",") + "\n");
   console.log(`${full.run_id} ${full.outcome} ${full.note ?? ""}`.trim());
 }
 const AMOUNTS = [25n, 40n, 100n, 250n, 500n];

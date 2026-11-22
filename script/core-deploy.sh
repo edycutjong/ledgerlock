@@ -17,6 +17,7 @@ COLLATERAL=${COLLATERAL:-100000000000000000000000}   # 100k fixture tUSD (bookke
 OUT=${ADDR_FILE:-evidence/$INSTANCE-addresses.txt}
 LASNA=(--legacy --gas-price 100gwei)   # Lasna: fixed 100 gwei; EIP-1559 headroom overshoots the balance
 
+git diff --quiet HEAD -- src packages/reactive-kit/src || { echo "src/ is dirty: the deployed bytecode would not match COMMIT" >&2; exit 1; }
 forge build >/dev/null
 create() { # rpc contract value args...
   local rpc=$1 c=$2 v=$3 extra=(); shift 3

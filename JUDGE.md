@@ -70,7 +70,7 @@ CI / deterministic replay (Reactive Test Lib, no network): `forge test && FOUNDR
 - **If Lasna stops, the guard is blind**, and nothing pages the operator: a latched route stays shut until someone looks at the
   `IncidentLatched` and `GateUnreachable` events.
 
-All nine limits are in the [README](README.md#honest-limits-9).
+All the limits are in the [README](README.md#honest-limits).
 
 ## Links
 
