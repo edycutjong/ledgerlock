@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/brand/icon-animated.svg" alt="Ledgerlock — pauses a bridge seconds after it mints what was never locked" width="112">
+  <img src="docs/assets/brand/icon-animated.svg" alt="Ledgerlock — pauses a bridge seconds after it mints what was never locked" width="144">
   <h1>Ledgerlock ⛓️‍💥</h1>
   <p><em>Two chains, one book: pause a bridge seconds after it mints what was never locked.</em></p>
   <img src="docs/assets/brand/readme-hero-animated.svg" alt="Ledgerlock — pauses a bridge seconds after it mints what was never locked. Minted on Unichain, never locked on Base: one react() turns both lamps from white to red, shutting both gates." width="100%">
