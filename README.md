@@ -11,6 +11,8 @@
   [![Live Demo](https://img.shields.io/badge/🚀_Live-Demo-06b6d4?style=for-the-badge)](https://ledgerlock.edycu.dev/)
   [![Pitch Deck](https://img.shields.io/badge/📊_Pitch-Deck-f59e0b?style=for-the-badge)](https://ledgerlock.edycu.dev/pitch/)
   [![Demo Video](https://img.shields.io/badge/🎬_Demo-Video_2%3A43-ef4444?style=for-the-badge)](https://youtu.be/ijFfcDMhkxc)
+  [![Write-up on dev.to](https://img.shields.io/badge/✍️_Write--up-dev.to-0a0a0a?style=for-the-badge)](https://dev.to/edycutjong/one-contract-two-chains-both-bridge-gates-shut-within-3-s-p95-block-time-of-a-mint-that-was-1h17)
+  [![Launch thread on X](https://img.shields.io/badge/𝕏_Launch-Thread-000000?style=for-the-badge)](https://x.com/edycutjong/status/2124398692249800857)
   [![Built for Reactive Omni Buildathon](https://img.shields.io/badge/DoraHacks-Reactive_Omni_Buildathon-8b5cf6?style=for-the-badge)](https://dorahacks.io/hackathon/reactive-omni-buildathon/detail)
 
   <br/>
