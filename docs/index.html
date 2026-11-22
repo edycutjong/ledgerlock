@@ -775,6 +775,7 @@ Ran 6 test suites in 4.66s (13.92s CPU time): 113 tests passed, 0 failed, 0 skip
   const reg = fig.querySelector(".ll-reg"), regp = document.getElementById("ll-regp"), lab = fig.querySelector("[data-run-label]"), live = fig.querySelector(".ll-live");
   const tabs = [...fig.querySelectorAll('[role="tab"]')];
   const KEYS = ["gb", "gu", "dial", "cbb", "cbu", "cbk", "lm", "ll"], DRAW = { lm: ".log-m", ll: ".log-l", cbb: ".arc-b", cbu: ".arc-u" };
+  const EXPL = { "lasna.reactscan.net": "https://lasna.reactscan.net", "sepolia.basescan.org": "https://sepolia.basescan.org", "sepolia.uniscan.xyz": "https://sepolia.uniscan.xyz" };
   const fmt = (ms) => "+" + (ms / 1000).toFixed(3) + " s";
   let cur = "bu", timers = [], raf = 0, touched = false;
   const setSlot = (n, [txt, k]) => $$('[data-slot="' + n + '"]').forEach((el) => { el.textContent = txt; el.setAttribute("class", el.dataset.base + (k ? " " + k : "")); });
@@ -793,7 +794,7 @@ Ran 6 test suites in 4.66s (13.92s CPU time): 113 tests passed, 0 failed, 0 skip
   const span = (cls, s) => { const e = document.createElement("span"); e.className = cls; String(s).split(/(<code>[^<]*<\/code>)/).forEach((p) => { const m = /^<code>([^<]*)<\/code>$/.exec(p); if (m) { const c = document.createElement("code"); c.textContent = m[1]; e.append(c); } else if (p) e.append(p); }); return e; };
   const rows = (R) => reg.replaceChildren(...R.rows.map((r) => {
     const li = document.createElement("li"), a = document.createElement("a");
-    li.dataset.at = r.at; a.className = "tx"; if (/^https:\/\//.test(r.url)) a.href = r.url; a.textContent = r.tx;
+    li.dataset.at = r.at; a.className = "tx"; const m = /^https:\/\/([a-z.]+)(\/tx\/0x[0-9a-fA-F]{64})$/.exec(r.url); if (m && EXPL[m[1]]) a.href = EXPL[m[1]] + m[2]; a.textContent = r.tx;
     li.append(span("t", r.t), span("ch", r.chain), span("what", r.what), a); return li;
   }));
   const mark = (t) => reg.querySelectorAll("li").forEach((li) => li.classList.toggle("on", +li.dataset.at <= t));
