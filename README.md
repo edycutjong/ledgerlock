@@ -47,7 +47,7 @@ A reactive contract on Reactive Lasna keeps a ledger per route from the logs of 
 <p align="center"><img src="docs/assets/broll/legit-transfer-reopens.gif" alt="Live testnet run lf-104: a legitimate mint whose lock is sent 8 s later. The real status page goes from LINE CLEAR to SPLIT: ONE GATE SHUT to LINE BLOCKED; the lock is seen mined on Base at +9.577 s, the gates reopen by themselves at +11.374 s (Base) and +13.043 s (Unichain), and the line is clear again; the longest a gate stayed shut was 5.1 s (gate U, +7.988 s to +13.043 s)" width="830"></p>
 <p align="center"><em>Real testnet run lf-104 (2026-11-13), recorded on camera, sped up ×2: a legitimate transfer whose lock the harness sent 8 s after the mint (seen mined at +9.577 s) reopens both gates with no human action. The big clock counts from the first gate shut (gate B, mint +6.846 s) and the rows from the mint; 5.1 s is gate U's +7.988 s to +13.043 s.</em></p>
 
-Each gate is a small contract that flips the bridge's own pause switch. **Why Omni:** a guard on Base never sees `Minted`, and a guard on Unichain never sees `Locked`; one Lasna contract reads both. An off-chain bot could watch both chains too, but it would need a key that can pause the bridge; here the automatic pause needs none: each gate's `pause()` and `resume()` accept only the callback proxy's delivery of this contract's request (`onlyServiceProvider` + `onlyCallbackSender` in `src/Gate.sol`; a guardian key exists only for manual pause). We did not measure an off-chain watcher's latency on the same fixture. The claim we make is deliberately narrow: **loss ≤ the mints that land inside the measured pause window.** Ledgerlock does not stop the first unbacked mint.
+Each gate is a small contract that flips the bridge's own pause switch. **Why Omni:** a guard on Base never sees `Minted`, and a guard on Unichain never sees `Locked`; one Lasna contract reads both. An off-chain bot could watch both chains too, but it would need a key that can pause the bridge; here the automatic pause needs none: each gate's `pause()` and `resume()` accept only the callback proxy's delivery of this contract's request (`onlyServiceProvider` + `onlyCallbackSender` in `src/Gate.sol`); a guardian key exists for a manual pause, for lifting its own hold (it cannot lift an automated pause) and for binding the bridge component once (`setTarget`). We did not measure an off-chain watcher's latency on the same fixture. The claim we make is deliberately narrow: **loss ≤ the mints that land inside the measured pause window.** Ledgerlock does not stop the first unbacked mint.
 
 ## 🏗️ Architecture & Tech Stack
 
@@ -70,7 +70,7 @@ The diagram draws route A, our fixture bridge (`LockBox` on Base, `Minter` on Un
 | Tests | Foundry with the Reactive Test Lib; scripts in TypeScript (viem) |
 | Status page | static, `docs/status/`: reads live gate state and balances from public testnet RPCs, and lists the committed runs |
 
-`tUSD` is the fixture's unit of account (internal bookkeeping, not an ERC-20) and lREACT is Lasna's gas token. Two guard instances: route A is guarded by `frozen3` (the final frozen deployment) and route B by `frozen` (its `PausableIsm` is owned by `frozen`'s gates, which have no ownership transfer). `frozen` (contract commit `388bd2c`) predates four fixes in `frozen3` (`e425c78`): re-sending a failed pause or resume leg, counting `CallbackFailure` only for our own current request, a new epoch for a re-armed cycle, and saturating accumulators; route B's 10 legitimate transfers and 3 drills ran on that older bytecode. Per-route addresses: `deployments/testnet.json`.
+`tUSD` is the fixture's unit of account (internal bookkeeping, not an ERC-20) and lREACT is Lasna's gas token. Two guard instances: route A is guarded by `frozen3` (the final frozen deployment) and route B by `frozen` (its `PausableIsm` is owned by `frozen`'s gates, which have no ownership transfer). `frozen` (contract commit `388bd2c`) predates four `src/` commits that `frozen3` (`e425c78`) includes: re-sending a failed pause or resume leg, counting `CallbackFailure` only for our own current request, a new epoch for a re-armed cycle, saturating accumulators, one binding per (chain, emitter, topic), `setProxy` once per chain, and two SUPPLY-mode fixes (`resolve()` no longer sums the two deficit sides; a saturated source total counts as a deficit); route B's 10 legitimate transfers and 3 drills ran on that older bytecode. Per-route addresses: `deployments/testnet.json`.
 
 ## 🏆 Reactive Omni Integration
 
@@ -151,10 +151,10 @@ Lasna's `react()` is polled on a different RPC than the gates, so its first-seen
 9. Trusted and not covered: the bridge must emit truthful, complete events and check the gate independently of the compromised key; an upgrade that bypasses the gate, routes live before the guard was armed, and a single large mint before the pause are out of scope.
 10. The release direction has no live attack run: the bench forges and fills mints on Unichain only. Release-side matching is covered by tests (`test_reverse_direction_release_before_burn_is_unmatched`, `test_nomad_release_pauses_both`), not by testnet rows.
 11. On the testnet fixture one key is the relayer, the gates' guardian and the reactive contract's owner, so the "stolen relayer key" could also call `resolve()`. A production deployment separates the three (for example, a multisig owner).
-12. After resolving a plausible-nonce attack, the poisoned nonces must be skipped or refunded: `resolve()` marks every pending entry consumed, so a later legitimate transfer at that nonce latches, and the fixture has no refund.
+12. After resolving a plausible-nonce attack, the poisoned nonces must be skipped or refunded: `resolve()` marks every live pending entry consumed, so a later legitimate transfer at that nonce is never matched. On the fixture its mint reverts `NonceUsed` (the lock is stuck, there is no refund, the route stays open); a destination that did mint at that key would latch.
 13. Route B's SUPPLY mode latches on any legitimate reorder (a receive seen before its send); 0 of 10 latched here because every delivery was self-delivered right after dispatch.
 14. A guardian hold or a stuck resume leaves a gate shut while `routeState` reports the route open: read `Gate.isOpen()` as well.
-15. The Cron10 watchdog is evidenced by forge tests only; no live tick shows in `evidence/frozen3-react-gas.csv`.
+15. The Cron10 watchdog's subscribe and unsubscribe ran live (`CronWatch` in 250 `react()` rows of `evidence/frozen3-react-gas.csv`), but its tick-driven re-request has never fired live; that path is covered by forge tests only (`test_isolated_mint_gate_in_debt_failsafe_via_cron`).
 
 ## 🚀 Getting Started
 
@@ -197,7 +197,7 @@ CodeQL scans the TypeScript and the workflows; Dependabot (grouped, monthly; npm
 | Path | What |
 |---|---|
 | `src/` | `LedgerlockReactive.sol`, `Gate.sol`, `DrillBeacon.sol`, `fixture/` (route A), `probe/` |
-| `packages/reactive-kit/` | shared Omni building blocks; copied from the same author's Heirloom repo (MIT; see its README), identical apart from line-wrapping in the two `src/test` harness files; the kit tests are this repo's own versions |
+| `packages/reactive-kit/` | shared Omni building blocks; copied from the same author's Heirloom repo (MIT; see its README), Solidity modules identical, the two `src/test` harness files differ in line-wrapping only, and `ts/latency.ts` and `ts/triples.ts` have since diverged from Heirloom's versions; the kit tests are this repo's own versions |
 | `script/`, `scripts/` | deploy and trigger shell scripts; bench, summary and join scripts |
 | `evidence/` | committed raw rows from live runs; start with `evidence/README.md` |
 | `docs/` | landing page (`index.html`), judge page (`judge.html`), pitch deck (`pitch/`), read-only status page (`status/`), architecture diagram |
