@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ledgerlock: when the books disagree, the line blocks itself</title>
-<meta name="description" content="One Reactive contract reads Base locks and Unichain mints, and pauses both ends of a bridge when a mint has no lock: p95 8.245 s over 100 testnet attacks.">
+<meta name="description" content="One Reactive contract reads Base locks and Unichain mints, and pauses both ends of a bridge when a mint has no lock: both gates' Paused blocks land within 3 s (p95, block timestamps) over 100 testnet attacks.">
 <meta name="author" content="Edy Cu">
 <link rel="canonical" href="https://edycutjong.github.io/ledgerlock/">
 <meta name="theme-color" content="#182019">
@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ledgerlock">
 <meta property="og:title" content="Ledgerlock: when the books disagree, the line blocks itself">
-<meta property="og:description" content="A mint on Unichain with no lock on Base shuts both gates: by 8.245 s (p95), with 0 of 80 legit transfers paused.">
+<meta property="og:description" content="A mint on Unichain with no lock on Base shuts both gates within 3 s by block timestamps (p95 of 100 attacks), with 0 of 80 legit transfers paused.">
 <meta property="og:url" content="https://edycutjong.github.io/ledgerlock/">
 <meta property="og:image" content="https://edycutjong.github.io/ledgerlock/assets/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -24,7 +24,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@edycutjong">
 <meta name="twitter:title" content="Ledgerlock: when the books disagree, the line blocks itself">
-<meta name="twitter:description" content="A mint on Unichain with no lock on Base shuts both gates: by 8.245 s (p95), with 0 of 80 legit transfers paused.">
+<meta name="twitter:description" content="A mint on Unichain with no lock on Base shuts both gates within 3 s by block timestamps (p95 of 100 attacks), with 0 of 80 legit transfers paused.">
 <meta name="twitter:image" content="https://edycutjong.github.io/ledgerlock/assets/og-image.png">
 <meta name="twitter:image:alt" content="Ledgerlock: both bridge gates shut 8.245 s (p95 of 100 testnet attacks) after a mint on Unichain with no lock on Base; 0 of 80 legit transfers paused">
 <link rel="preload" href="status/fonts/league-gothic-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -570,7 +570,7 @@ footer a:hover{color:var(--ink)}
 
 <section class="receipts" aria-label="Measured results">
   <div class="wrap">
-    <div class="rc"><div class="n"><span data-count="8.245" data-dec="3">8.245</span><small>s</small></div><p>both gates shut, p95 of 100 attack runs</p><code>evidence/frozen3-bench-summary.md</code></div>
+    <div class="rc"><div class="n"><span data-count="3" data-dec="0">3</span><small>s</small></div><p>both gates' <code>Paused</code> blocks after the mint's block, p95 of 100 attack runs (block timestamps; a polling observer: 8.245 s)</p><code>evidence/frozen3-bench-summary.md</code></div>
     <div class="rc"><div class="n"><span>0</span><small>of 80</small></div><p>in-order legitimate transfers paused</p><code>evidence/frozen3-bench-summary.md</code></div>
     <div class="rc"><div class="n">≤ 1</div><p>copycat mint landed before the gate shut, in each of 20 burst runs</p><code>evidence/frozen3-bench-runs.csv</code></div>
     <div class="rc"><div class="n"><span data-count="846" data-dec="0">846</span></div><p>triple rows joined from chain logs: 636 origin, 210 owner resolve(); 500 with a gate callback</p><code>evidence/frozen3-triples.csv</code></div>

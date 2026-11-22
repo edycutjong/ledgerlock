@@ -3,7 +3,7 @@
   <h1>Ledgerlock</h1>
   <p><em>Two chains, one book: pause a bridge seconds after it mints what was never locked.</em></p>
   <img src="docs/assets/brand/readme-hero-animated.svg" alt="Ledgerlock — pauses a bridge seconds after it mints what was never locked. Minted on Unichain, never locked on Base: one react() turns both lamps from white to red, shutting both gates." width="100%">
-  <p><b>One Reactive Omni contract on Lasna sees Base <code>Locked</code> and Unichain <code>Minted</code> together, which a contract on either chain cannot.</b> Measured live on our own fixture bridge (observer clock, polled every 400 ms; the on-chain block-timestamp check is p50 2 s / p95 3 s): a mint with no lock is seen on Lasna in <b>3.873 s</b> (p50) and both gates are shut by <b>8.245 s</b> (p95), over 100 attack runs, with <b>0 false pauses in 80</b> legitimate transfers. Regenerate from the committed rows: <code>pnpm bench:summary</code>.</p>
+  <p><b>One Reactive Omni contract on Lasna sees Base <code>Locked</code> and Unichain <code>Minted</code> together, which a contract on either chain cannot.</b> Over 100 forged-mint attacks on our own fixture bridge, both gates' <code>Paused</code> blocks land <b>2 s</b> (p50) and <b>3 s</b> (p95) after the mint's block (block timestamps, whole seconds, two chains' clocks; the Base gate alone p50 1 s). In 20 of 20 bursts the next copycat reverted <code>GatePaused</code>, and <b>0 of 80</b> in-order legitimate transfers paused. Seen by a polling observer through public RPCs (400 ms poll, includes RPC lag): the mint reaches Lasna in 3.9 s (p50) and both gates read shut by 5.9 s (p50) / 8.2 s (p95). Regenerate from the committed rows: <code>pnpm bench:summary</code>.</p>
 
   <br/>
 
@@ -35,7 +35,7 @@
 ## 💡 The Problem & Solution
 
 ### The Problem
-Lock-and-mint bridges fail by minting (or releasing) value that was never backed. When it happens, copycats replay the exploit every block until a human notices. The Nomad bridge lost about $190M this way, over roughly two and a half hours (Rekt, Immunefi; transaction counts are Halborn only). A guard has to see **both** chains, which a contract on one chain cannot do.
+Lock-and-mint bridges fail by minting (or releasing) value that was never backed. When it happens, copycats replay the exploit every block until a human notices. The Nomad bridge lost about $190M this way, over roughly two and a half hours (Rekt, Immunefi). A guard has to see **both** chains, which a contract on one chain cannot do.
 
 ### The Solution
 A reactive contract on Reactive Lasna keeps a ledger per route from the logs of both sides: `Locked` on Base Sepolia, `Minted` on Unichain Sepolia (and `Burned` / `Released` for the way back). The logic is inverted so the common case costs nothing:
@@ -47,7 +47,7 @@ A reactive contract on Reactive Lasna keeps a ledger per route from the logs of 
 <p align="center"><img src="docs/assets/broll/legit-transfer-reopens.gif" alt="Live testnet run lf-104: a legitimate mint whose lock is sent 8 s later. The real status page goes from LINE CLEAR to SPLIT: ONE GATE SHUT to LINE BLOCKED; the lock is seen mined on Base at +9.577 s, the gates reopen by themselves at +11.374 s (Base) and +13.043 s (Unichain), and the line is clear again; the longest a gate stayed shut was 5.1 s (gate U, +7.988 s to +13.043 s)" width="830"></p>
 <p align="center"><em>Real testnet run lf-104 (2026-11-13), recorded on camera, sped up ×2: a legitimate transfer whose lock the harness sent 8 s after the mint (seen mined at +9.577 s) reopens both gates with no human action. The big clock counts from the first gate shut (gate B, mint +6.846 s) and the rows from the mint; 5.1 s is gate U's +7.988 s to +13.043 s.</em></p>
 
-Each gate is a small contract that flips the bridge's own pause switch. **Why Omni:** a guard on Base never sees `Minted`, and a guard on Unichain never sees `Locked`; one Lasna contract reads both (no off-chain watcher; we did not measure a baseline). The claim we make is deliberately narrow: **loss ≤ the mints that land inside the measured pause window.** Ledgerlock does not stop the first unbacked mint.
+Each gate is a small contract that flips the bridge's own pause switch. **Why Omni:** a guard on Base never sees `Minted`, and a guard on Unichain never sees `Locked`; one Lasna contract reads both. An off-chain bot could watch both chains too, but it would need a key that can pause the bridge; here the automatic pause needs none: each gate's `pause()` and `resume()` accept only the callback proxy's delivery of this contract's request (`onlyServiceProvider` + `onlyCallbackSender` in `src/Gate.sol`; a guardian key exists only for manual pause). We did not measure an off-chain watcher's latency on the same fixture. The claim we make is deliberately narrow: **loss ≤ the mints that land inside the measured pause window.** Ledgerlock does not stop the first unbacked mint.
 
 ## 🏗️ Architecture & Tech Stack
 
@@ -68,9 +68,9 @@ The diagram draws route A, our fixture bridge (`LockBox` on Base, `Minter` on Un
 | Route A | our own fixture bridge (`src/fixture/LockBox.sol`, `Minter.sol`), labelled as a fixture, with a Nomad-class release bug reproduced on demand |
 | Route B | a Hyperlane warp route we deployed (`PausableIsm` = Hyperlane's pausable interchain security module) (Base collateral → Unichain synthetic) with a `PausableIsm` behind the gate; deliveries were made by **our own `Mailbox.process`**, because the public relayer did not deliver within 6 minutes |
 | Tests | Foundry with the Reactive Test Lib; scripts in TypeScript (viem) |
-| Status page | static, `docs/status/`, reads the committed rows |
+| Status page | static, `docs/status/`: reads live gate state and balances from public testnet RPCs, and lists the committed runs |
 
-`tUSD` is the fixture's unit of account (internal bookkeeping, not an ERC-20) and lREACT is Lasna's gas token. Two guard instances: route A is guarded by `frozen3` (the final frozen deployment) and route B by `frozen` (its `PausableIsm` is owned by `frozen`'s gates, which have no ownership transfer). Per-route addresses: `deployments/testnet.json`.
+`tUSD` is the fixture's unit of account (internal bookkeeping, not an ERC-20) and lREACT is Lasna's gas token. Two guard instances: route A is guarded by `frozen3` (the final frozen deployment) and route B by `frozen` (its `PausableIsm` is owned by `frozen`'s gates, which have no ownership transfer). `frozen` (contract commit `388bd2c`) predates four fixes in `frozen3` (`e425c78`): re-sending a failed pause or resume leg, counting `CallbackFailure` only for our own current request, a new epoch for a re-armed cycle, and saturating accumulators; route B's 10 legitimate transfers and 3 drills ran on that older bytecode. Per-route addresses: `deployments/testnet.json`.
 
 ## 🏆 Reactive Omni Integration
 
@@ -86,7 +86,7 @@ The reactive contract uses the Omni system contract directly (`src/LedgerlockRea
 <p align="center"><img src="docs/assets/broll/reactscan-one-react-two-callbacks.gif" alt="The live Reactscan page of run bu-101's react() transaction 0xdd25…cb27 on Lasna: callback #5 to Unichain Sepolia (1301) and callback #6 to Base Sepolia (84532), each on-chain attested and confirmed, with their destination transactions boxed and tagged gate U paused and gate B paused" width="830"></p>
 <p align="center"><em>The live <a href="https://lasna.reactscan.net/tx/0xdd2591adb689809394165bfa5ffbc440ec83553372b4c2f01999a55a790fcb27">Reactscan page</a> of bu-101's <code>react()</code>, captured 2026-11-16: one Lasna transaction, two callbacks; the header line, title, boxes and tags are annotations.</em></p>
 
-No off-chain ingestion is used. One behaviour is not in the docs: origin logs are read at the latest block, which the Reactive team told us in their dev Telegram on 8 Nov 2026 (we cannot publish that message here).
+No off-chain ingestion is used. One behaviour is not in Reactive's public docs: origin logs are read at the latest block, which the Reactive team told us in their dev Telegram on 8 Nov 2026 (we cannot publish that message here).
 
 ## ⛓️ Live Deployment
 
@@ -120,7 +120,7 @@ Every pause is a triple: origin transaction → Lasna `react()` → gate callbac
 | False pauses, strict legitimate transfers | 0 of 80 | same |
 | Forced fill-before-deposit pauses (lock sent 2–20 s after the mint, by design) | n=19, p50 15.2 s, p95 23.1 s (1 of 20 left out, no duration) | same |
 | Recovery (seize + resolve + both gates reopened) | p50 14.593 s · p95 15.345 s (n=100) | same |
-| Burst runs | 20 of 20 stopped at the first reverted copycat; at most 1 copycat landed | same; `evidence/frozen3-burst-verify.csv` |
+| Burst runs | 20 of 20 stopped at the first reverted copycat; at most 1 copycat landed (the harness stops at the first revert; a faster attacker lands more mints in the same window) | same; `evidence/frozen3-burst-verify.csv` |
 | Paired control (5 runs per arm) | unguarded: 6 copycats landed, 3,500 tUSD issued, 500 tUSD of collateral released; guarded: 1 copycat landed, 1,000 tUSD issued, release reverted | `evidence/a0-control-runs.csv`, `evidence/frozen3-bench-runs.csv` (`bu-021`..`bu-025`) |
 
 Lasna's `react()` is polled on a different RPC than the gates, so its first-seen time can trail the gate it triggered: the Base gate was seen before the Lasna `react()` in 66 of 100 runs, while block timestamps never invert (0 of 100). We attribute this to Lasna RPC visibility lag, which we did not measure separately; the block-timestamp row is the causal check. Latencies are first-seen times through public RPCs on one observer clock (poll every 400 ms plus RPC delay), not on-chain block times. The on-chain cross-check, whole-second Unichain block timestamps from the mint block to the gate's `Paused` block, is p50 2 s · p95 3 s. The guarded and unguarded control arms use different copycat schedules, so their issuance figures illustrate the effect and are not a like-for-like rate.

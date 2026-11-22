@@ -161,12 +161,12 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
           <a class="tx bad" href="https://sepolia.uniscan.xyz/tx/0x4bfe94f268205f7918c3396c6b76ca21f60ebd5c800cc138516650d238f8a84e" rel="noopener"><span>Unichain</span>0x4bfe94f2…a84e</a></p>
       </li>
       <li>
-        <p class="step-t">One <code>react()</code> on Lasna sees it, seen 3.175 s after the mint was mined.</p>
+        <p class="step-t">One <code>react()</code> on Lasna sees it and requests both pause callbacks in one transaction.</p>
         <p class="step-d">The same transaction emits two <code>CallbackRequest</code> logs, one per gate.<br>
           <a class="tx" href="https://lasna.reactscan.net/tx/0xbacbf5a0da2c6adf9e89f0b950dd078e707459bfbc916794826f627a03059068" rel="noopener"><span>Lasna</span>0xbacbf5a0…9068</a></p>
       </li>
       <li>
-        <p class="step-t">Both gates are paused: Base at 2.184 s, Unichain at 8.062 s (observer clock).</p>
+        <p class="step-t">Both gates are paused, by block timestamps 1 s (Base) and 2 s (Unichain) after the mint's block; a polling observer saw them at 2.184 s and 8.062 s.</p>
         <p class="step-d">Block timestamps: mint 1794595469, gate B 1794595470, gate U 1794595471. The Base gate is seen before the Lasna transaction, which we attribute to Lasna RPC visibility lag (not measured separately); block timestamps never invert.<br>
           <a class="tx" href="https://sepolia.basescan.org/tx/0x5eacdc824b92a2c83498d64e7511dd97fb9fb3a340f1baa4f24417b351a14303" rel="noopener"><span>Gate B · Base</span>0x5eacdc82…4303</a>
           <a class="tx" href="https://sepolia.uniscan.xyz/tx/0x60f4bcba2e0bbd4c2d26f2e02855e27ab5c6103c200b73b5588427970c25f3c4" rel="noopener"><span>Gate U · Unichain</span>0x60f4bcba…f3c4</a></p>
@@ -192,7 +192,7 @@ footer .ver{font-family:var(--font-data);margin-left:auto}
     <h2 id="h-rc" class="disp">Receipt</h2>
     <div class="receipts">
       <div class="rc"><b>3.873 s</b><p>p50 from the forged mint being mined to Lasna's <code>react()</code> being seen (p95 4.391 s, n=100)</p><small>evidence/frozen3-bench-summary.md</small></div>
-      <div class="rc"><b>8.245 s</b><p>p95 until both gates are seen shut (p50 5.92 s) over 100 attack runs</p><small>evidence/frozen3-bench-runs.csv</small></div>
+      <div class="rc"><b>3 s</b><p>p95 from the mint's block to both gates' <code>Paused</code> blocks (p50 2 s; block timestamps) over 100 attack runs; a polling observer reads both shut by 8.245 s (p95)</p><small>evidence/frozen3-bench-runs.csv</small></div>
       <div class="rc"><b>0 of 80</b><p>strict legitimate transfers paused by mistake</p><small>evidence/frozen3-bench-summary.md</small></div>
       <div class="rc"><b>20 of 20</b><p>bursts stopped at the first reverted copycat; at most 1 copycat landed</p><small>evidence/frozen3-burst-verify.csv</small></div>
       <div class="rc"><b>500 / 500</b><p>gate callback legs joined to their Lasna <code>react()</code> across 846 triple rows; 0 <code>CallbackFailure</code></p><small>evidence/frozen3-triples.csv</small></div>

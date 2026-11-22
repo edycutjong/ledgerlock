@@ -9,6 +9,7 @@
 - false pauses on strict legit: 0 of 80
 - forced fill-before-deposit pause seconds: n=19 p50 15.2 s · p95 23.1 s · max 23.1 s (1 of 20 left out, no duration: lf-019; see the row note)
 - same-chain check, whole-second Unichain block timestamps (mint block → gate U Paused block): n=100 p50 2 s · p95 3 s · max 3 s
+- cross-chain sequencer clocks, whole seconds (Unichain mint block → Base gate B Paused block): n=100 p50 1 s · p95 2 s · max 2 s; both gates shut (the later of the two Paused blocks): n=100 p50 2 s · p95 3 s · max 3 s; two sequencers' clocks, so allow about ±1 s (Lasna blocks are stamped up to 1 s before their origin block, so no mint → react leg is given)
 - recovery (seize + resolve + both gates reopened): n=100 p50 14.593 s · p95 15.345 s · max 21.321 s (successful recoveries only; 0 of 100 attack rows left out: recovery not ok); recovery failures: 0
 - burst exposure: 20 runs: every run stopped before the 30-copycat cap (0 reached the cap); 20/20 stopped at the first reverted copycat mined after the gate U Paused tx (burst-verify: 20/20; gate U receipt holds this run's Paused event 20/20); replaying the stopping copycat at its block reverts GatePaused 20/20; copycats landed p50 1 · p95 1 · max 1
 - burst carry-home release on Base: reverted 20 of 20 rows

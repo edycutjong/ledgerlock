@@ -10,15 +10,17 @@ read-only explorer link. Route A is our own fixture bridge, labelled as one.
 ## The 30-second path
 
 Run `bu-021` on the final deployment `frozen3` (contract commit `e425c78`): a forged mint of 500 tUSD on Unichain Sepolia with no lock
-behind it on Base.
+behind it on Base. (The video shows runs `bu-101` and `lf-104`, the landing page replays `bu-015`; all are rows of the same bench.)
+Route A stays armed through judging: a heartbeat sends a legitimate transfer every 6 hours (`evidence/frozen3-heartbeat-runs.csv`).
 
 1. **The forged mint lands on Unichain Sepolia** (block 67743041): a `Minted` with no matching `Locked` on Base.
    [`0x4bfe94f2…a84e`](https://sepolia.uniscan.xyz/tx/0x4bfe94f268205f7918c3396c6b76ca21f60ebd5c800cc138516650d238f8a84e)
-2. **One `react()` on Lasna sees it**, seen 3.175 s after the mint was mined; the same transaction emits two `CallbackRequest` logs, one per gate.
+2. **One `react()` on Lasna sees it**; the same transaction emits two `CallbackRequest` logs, one per gate.
    [`0xbacbf5a0…9068`](https://lasna.reactscan.net/tx/0xbacbf5a0da2c6adf9e89f0b950dd078e707459bfbc916794826f627a03059068)
-3. **Both gates are paused**: Base at 2.184 s, Unichain at 8.062 s (observer clock). Block timestamps: mint 1794595469, gate B 1794595470,
-   gate U 1794595471. Gate B is seen before the Lasna transaction, which we attribute to Lasna RPC visibility lag (not measured
-   separately); block timestamps never invert.
+3. **Both gates are paused**, by block timestamps 1 s (Base) and 2 s (Unichain) after the mint's block: mint 1794595469, gate B 1794595470,
+   gate U 1794595471. On Unichain's 1 s blocks the gate lands two blocks after the forged mint (67743041 → 67743043). A polling observer
+   saw Base at 2.184 s and Unichain at 8.062 s, and saw gate B before the Lasna transaction (public-RPC visibility lag); block timestamps
+   never invert.
    Gate B [`0x5eacdc82…4303`](https://sepolia.basescan.org/tx/0x5eacdc824b92a2c83498d64e7511dd97fb9fb3a340f1baa4f24417b351a14303) ·
    Gate U [`0x60f4bcba…f3c4`](https://sepolia.uniscan.xyz/tx/0x60f4bcba2e0bbd4c2d26f2e02855e27ab5c6103c200b73b5588427970c25f3c4) (block 67743043)
 4. **The next copycat reverts `GatePaused`** (block 67743044) and **the release on Base reverts too**. Exposure: 1,000 tUSD (the forged mint

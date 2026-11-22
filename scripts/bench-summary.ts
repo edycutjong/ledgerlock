@@ -72,6 +72,10 @@ const summary = {
   latency_from_mint_mined: { all_attacks: lat(okAttacks, "mint_mined_ms"), forged: lat(okAttacks.filter((r) => r.kind === "attack_forged"), "mint_mined_ms"), plausible: lat(okAttacks.filter((r) => r.kind === "attack_plausible"), "mint_mined_ms"), burst: lat(burst.filter((r) => r.outcome === "ok"), "mint_mined_ms") },
   latency_from_mint_sent: lat(okAttacks, "mint_sent_ms"),
   block_timestamp_pause_gate_u_s: q(okAttacks.map((r) => n(r.gate_u_block_ts) - n(r.mint_block_ts))),
+  // cross-chain legs compare two sequencers' whole-second clocks (Unichain mint block vs Base gate block); Lasna's own block
+  // timestamps run up to 1 s behind the origin block (mint -> react deltas are -1..0 s), so no Lasna leg is published
+  block_timestamp_pause_gate_b_s: q(okAttacks.map((r) => n(r.gate_b_block_ts) - n(r.mint_block_ts))),
+  block_timestamp_both_gates_s: q(okAttacks.map((r) => Math.max(n(r.gate_b_block_ts), n(r.gate_u_block_ts)) - n(r.mint_block_ts))),
   false_positives: {
     legit_strict_runs: strict.length, legit_strict_false_pauses: strict.filter((r) => r.false_pause === "1").length,
     forced_runs: forced.length, forced_pause_seconds: q(forced.map((r) => n(r.pause_seconds))),
@@ -110,6 +114,7 @@ writeFileSync(`${base}-bench-summary.md`, [
   `- false pauses on strict legit: ${summary.false_positives.legit_strict_false_pauses} of ${strict.length}`,
   `- forced fill-before-deposit pause seconds: ${f(summary.false_positives.forced_pause_seconds)}${summary.false_positives.forced_no_duration.length ? ` (${summary.false_positives.forced_no_duration.length} of ${forced.length} left out, no duration: ${summary.false_positives.forced_no_duration.join(", ")}; see the row note)` : ""}`,
   `- same-chain check, whole-second Unichain block timestamps (mint block → gate U Paused block): ${f(summary.block_timestamp_pause_gate_u_s)}`,
+  `- cross-chain sequencer clocks, whole seconds (Unichain mint block → Base gate B Paused block): ${f(summary.block_timestamp_pause_gate_b_s)}; both gates shut (the later of the two Paused blocks): ${f(summary.block_timestamp_both_gates_s)}; two sequencers' clocks, so allow about ±1 s (Lasna blocks are stamped up to 1 s before their origin block, so no mint → react leg is given)`,
   `- recovery (seize + resolve + both gates reopened): ${f(summary.recovery_s)} (successful recoveries only; ${recLeftOut} of ${okAttacks.length} attack rows left out: ${hasRecovery ? "recovery not ok" : "a gate resume was not observed"})${recoveryFailed ? `; recovery failures: ${recoveryFailed.length}${recoveryFailed.length ? " (" + recoveryFailed.join(", ") + ")" : ""}` : ""}`,
   `- burst exposure: ${eb.runs} runs: ${eb.reached_cap === 0 ? "every run" : eb.stopped_at_revert + " of them"} stopped before the ${eb.copycat_cap}-copycat cap (${eb.reached_cap} reached the cap)${bv ? `; ${bv.after}/${bv.rows} stopped at the first reverted copycat mined after the gate U Paused tx (burst-verify: ${bv.after}/${bv.rows}; gate U receipt holds this run's Paused event ${bv.paused_event_ok}/${bv.rows})${bv.reason_gatepaused > 0 ? `; replaying the stopping copycat at its block reverts GatePaused ${bv.reason_gatepaused}/${bv.rows}` : "; revert reason not confirmed (historical eth_call unavailable)"}` : ""}; copycats landed p50 ${eb.copycats_landed.p50} · p95 ${eb.copycats_landed.p95} · max ${eb.copycats_landed.max}`,
   `- burst carry-home release on Base: reverted ${eb.carry_home_reverted} of ${eb.carry_home_rows} rows`,

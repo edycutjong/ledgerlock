@@ -80,6 +80,11 @@ Regenerate every table above from the committed rows (no keys, no network):
 git submodule update --init --recursive
 pnpm install
 pnpm bench:summary          # evidence/frozen3-bench-summary.{md,json}
+```
+
+Re-check the burst rows on-chain (read-only public RPC calls; needs network, no keys):
+
+```bash
 pnpm burst:verify           # re-checks the 25 burst rows (20 headline + 5 paired-control) by public RPC reads (needs network, no keys)
 ```
 
