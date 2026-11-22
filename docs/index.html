@@ -793,7 +793,7 @@ Ran 6 test suites in 4.66s (13.92s CPU time): 113 tests passed, 0 failed, 0 skip
   const span = (cls, s) => { const e = document.createElement("span"); e.className = cls; String(s).split(/(<code>[^<]*<\/code>)/).forEach((p) => { const m = /^<code>([^<]*)<\/code>$/.exec(p); if (m) { const c = document.createElement("code"); c.textContent = m[1]; e.append(c); } else if (p) e.append(p); }); return e; };
   const rows = (R) => reg.replaceChildren(...R.rows.map((r) => {
     const li = document.createElement("li"), a = document.createElement("a");
-    li.dataset.at = r.at; a.className = "tx"; a.href = r.url; a.textContent = r.tx;
+    li.dataset.at = r.at; a.className = "tx"; if (/^https:\/\//.test(r.url)) a.href = r.url; a.textContent = r.tx;
     li.append(span("t", r.t), span("ch", r.chain), span("what", r.what), a); return li;
   }));
   const mark = (t) => reg.querySelectorAll("li").forEach((li) => li.classList.toggle("on", +li.dataset.at <= t));
