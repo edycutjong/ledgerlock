@@ -1,15 +1,15 @@
 <div align="center">
   <img src="docs/assets/brand/icon-animated.svg" alt="Ledgerlock — pauses a bridge seconds after it mints what was never locked" width="112">
-  <h1>Ledgerlock</h1>
+  <h1>Ledgerlock ⛓️‍💥</h1>
   <p><em>Two chains, one book: pause a bridge seconds after it mints what was never locked.</em></p>
   <img src="docs/assets/brand/readme-hero-animated.svg" alt="Ledgerlock — pauses a bridge seconds after it mints what was never locked. Minted on Unichain, never locked on Base: one react() turns both lamps from white to red, shutting both gates." width="100%">
   <p><b>One Reactive Omni contract on Lasna sees Base <code>Locked</code> and Unichain <code>Minted</code> together, which a contract on either chain cannot.</b> Over 100 forged-mint attacks on our own fixture bridge, both gates' <code>Paused</code> blocks land <b>2 s</b> (p50) and <b>3 s</b> (p95) after the mint's block (block timestamps, whole seconds, two chains' clocks; the Base gate alone p50 1 s). In 20 of 20 bursts the next copycat reverted <code>GatePaused</code>, and <b>0 of 80</b> in-order legitimate transfers paused. Seen by a polling observer through public RPCs (400 ms poll, includes RPC lag): the mint reaches Lasna in 3.9 s (p50) and both gates read shut by 5.9 s (p50) / 8.2 s (p95). Regenerate from the committed rows: <code>pnpm bench:summary</code>.</p>
 
   <br/>
 
-  [![Live Demo](https://img.shields.io/badge/🚀_Live-Demo-06b6d4?style=for-the-badge)](https://edycutjong.github.io/ledgerlock/)
-  [![For Judges](https://img.shields.io/badge/⚖️_For-Judges-e4412a?style=for-the-badge)](https://edycutjong.github.io/ledgerlock/judge)
-  [![Pitch Deck](https://img.shields.io/badge/📊_Pitch-Deck-f59e0b?style=for-the-badge)](https://edycutjong.github.io/ledgerlock/pitch/)
+  [![For Judges](https://img.shields.io/badge/⚖️_For-Judges-e4412a?style=for-the-badge)](https://ledgerlock.edycu.dev/judge)
+  [![Live Demo](https://img.shields.io/badge/🚀_Live-Demo-06b6d4?style=for-the-badge)](https://ledgerlock.edycu.dev/)
+  [![Pitch Deck](https://img.shields.io/badge/📊_Pitch-Deck-f59e0b?style=for-the-badge)](https://ledgerlock.edycu.dev/pitch/)
   [![Built for Reactive Omni Buildathon](https://img.shields.io/badge/DoraHacks-Reactive_Omni_Buildathon-8b5cf6?style=for-the-badge)](https://dorahacks.io/hackathon/reactive-omni-buildathon/detail)
 
   <br/>
@@ -21,7 +21,7 @@
   [![CI](https://github.com/edycutjong/ledgerlock/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/ledgerlock/actions/workflows/ci.yml)
   [![Release](https://img.shields.io/github/v/release/edycutjong/ledgerlock?sort=semver)](https://github.com/edycutjong/ledgerlock/releases/latest)
 
-  <p><b>Judging?</b> Start at <a href="https://edycutjong.github.io/ledgerlock/judge">/judge</a> (<a href="JUDGE.md">JUDGE.md</a>): one forged mint, one Lasna <code>react()</code>, both gates paused, the copycat reverted, in six explorer links. No wallet needed.</p>
+  <p><b>Judging?</b> Start at <a href="https://ledgerlock.edycu.dev/judge">/judge</a> (<a href="JUDGE.md">JUDGE.md</a>): one forged mint, one Lasna <code>react()</code>, both gates paused, the copycat reverted, in six explorer links. No wallet needed.</p>
 
 </div>
 
@@ -99,7 +99,7 @@ Testnet only; no wallet is needed to verify anything below, every item is a read
 | Gate (Unichain Sepolia) | `0x6533d804Ef6D70765b981931083Fd332D4F78ef1` |
 | LockBox (Base Sepolia) / Minter (Unichain Sepolia) | `0x871b6da60da6Cf44482a055EE24031220021873F` / `0x7be8C4bf9De88Cc037F61203C8692E3514ec4e90` |
 
-Landing page, pitch deck and read-only status page: <https://edycutjong.github.io/ledgerlock/> (GitHub Pages from `docs/`; `/pitch/`, `/status/`). Route B's addresses are in `deployments/testnet.json`. Explorers: [Base Sepolia](https://sepolia.basescan.org), [Unichain Sepolia](https://sepolia.uniscan.xyz), [Lasna](https://lasna.reactscan.net).
+Landing page, pitch deck and read-only status page: <https://ledgerlock.edycu.dev/> (GitHub Pages from `docs/`; `/pitch/`, `/status/`). Route B's addresses are in `deployments/testnet.json`. Explorers: [Base Sepolia](https://sepolia.basescan.org), [Unichain Sepolia](https://sepolia.uniscan.xyz), [Lasna](https://lasna.reactscan.net).
 
 Every pause is a triple: origin transaction → Lasna `react()` → gate callback. `evidence/frozen3-triples.csv` has 846 rows, one per callback leg (or one row where no callback is sent): 636 origin-log rows (491 distinct origin transactions) joined to their Lasna `react()`, plus 210 owner-`resolve()` rows (105 `resolve()` calls, one row per resume leg); 500 of the 846 carry a gate callback (500 of 500 callback legs joined: 250 pause legs = 125 `react()`s × 2 gates, 40 auto-resume legs, 210 resolve-driven resume legs) and 0 `CallbackFailure`. The other 346 rows send no callback: 140 locks, 80 matched mints, 105 seizures, 21 mints that arrived while the gates were already paused.
 
